@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Yahoo Fantasy Demo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="box">
+    <h1>Yahoo Fantasy Basketball Login</h1>
+    {% if logged_in %}
+      <a class="btn" href="{{ url_for('select') }}">Choose your league</a>
+      <p><a href="{{ url_for('logout') }}">Log out</a></p>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Log in with Yahoo</a>
+    {% endif %}
+  </div>
+</body>
+</html>

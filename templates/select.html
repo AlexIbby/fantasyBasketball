@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Select League</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='select.js') }}"></script>
+</head>
+<body>
+  <div class="box">
+    <h2>Select your H2H NBA league</h2>
+
+    <label for="year">Season:</label>
+    <select id="year">
+      <option value="" disabled selected>‒ choose ‒</option>
+      {% for y in seasons %}
+        <option value="{{ y }}">{{ y }}</option>
+      {% endfor %}
+    </select>
+
+    <form id="leagueForm" action="{{ url_for('greet') }}" method="post">
+      <label for="league">League / Team:</label>
+      <select id="league" name="league_key">
+        <option value="" disabled selected>‒ select league ‒</option>
+        {% for l in leagues %}
+          <option value="{{ l.league_key }}"
+                  data-season="{{ l.season }}"
+                  data-team="{{ l.team_name }}">
+            {{ l.season }} – {{ l.team_name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <input type="hidden" name="team_name" id="teamField">
+      <button class="btn" type="submit">Continue</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,8 @@
+body{margin:0;font-family:system-ui;background:#f3f3f3}
+.box{max-width:460px;margin:5rem auto;padding:2rem;background:#fff;border-radius:8px;
+     box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center}
+.btn{display:inline-block;padding:.7rem 1.6rem;margin-top:1rem;
+     background:#0a0511;color:#fff;text-decoration:none;border-radius:4px}
+.btn:hover{background:#3700b3}
+label{display:block;margin-top:1.2rem;font-weight:600}
+select,button{margin-top:.4rem;padding:.4rem .6rem}

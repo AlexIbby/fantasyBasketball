@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hello {{ team_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="box">
+    <h1>Hello {{ team_name }}!</h1>
+    <p>You’re successfully authenticated.  Have fun!</p>
+    <a href="{{ url_for('logout') }}">Log out</a>
+  </div>
+</body>
+</html>
