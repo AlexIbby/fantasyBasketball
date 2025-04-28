@@ -1,7 +1,5 @@
 # main.py
-import os
-import logging
-import time
+import os, json, logging, time
 from typing import Any, Dict, Iterable, Iterator, List
 
 import requests
@@ -91,8 +89,8 @@ def yahoo_api(rel_path: str, *, _retry: bool = True) -> Dict[str, Any]:
         timeout=20,
     )
 
-    # token expired → refresh once and retry
-    if resp.status_code == 401 and _retry and "expired_token" in resp.text:
+    # token expired or otherwise invalid → refresh once and retry
+    if resp.status_code == 401 and _retry:
         _refresh_token()
         return yahoo_api(rel_path, _retry=False)
 
@@ -183,6 +181,7 @@ def dashboard():
         league_key=session["league_key"],
     )
 
+# ---------- WEEKLY SCOREBOARD ----------
 @app.route("/api/scoreboard")
 def api_scoreboard():
     if "league_key" not in session:
@@ -193,6 +192,31 @@ def api_scoreboard():
     rel = f"fantasy/v2/league/{session['league_key']}/scoreboard;week={week}"
     return jsonify(yahoo_api(rel))
 
+# ---------- NEW: SEASON AVERAGES ----------
+@app.route("/api/season_avg")
+def api_season_avg():
+    """
+    League-wide season totals for every team.
+    Front-end turns them into per-week averages by dividing
+    by <current_week>.  The *raw* payload gets dumped to
+    “json loadout from api call.json” so you can inspect it
+    if something looks off.
+    """
+    if "league_key" not in session:
+        return jsonify({"error": "no league chosen"}), 400
+
+    rel = f"fantasy/v2/league/{session['league_key']}/teams;out=stats;type=season"
+    data = yahoo_api(rel)
+
+    # dump raw payload for quick post-mortem debugging
+    try:
+        with open("json loadout from api call.json", "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2)
+    except Exception as e:
+        log.warning("⚠️  couldn’t write debug JSON: %s", e)
+
+    return jsonify(data)
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -200,5 +224,5 @@ def logout():
 
 # ─────────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":
-    # use `flask run` in production; this is for local dev
+    # use `flask run` in production; this is for local dev only
     app.run(debug=True, port=5000)

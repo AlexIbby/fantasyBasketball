@@ -15,14 +15,14 @@
       <h2 class="team-title">{{ team_name }}</h2>
     </header>
 
-    <!-- nav tabs (content for the last two panes to come later) -->
+    <!-- nav tabs -->
     <nav class="nav-tabs">
       <button class="nav-tab active" data-target="tab-cat">Category Strengths</button>
       <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
       <button class="nav-tab"        data-target="tab-roster">Roster Strength</button>
     </nav>
 
-    <!-- Category Strengths pane -->
+    <!-- Category Strengths (existing) -->
     <section id="tab-cat" class="tab-pane active">
       <div class="info-box">
         <p>Compare how you would have performed against each team in the league, and not just your matchup.</p>
@@ -47,11 +47,26 @@
       </div>
     </section>
 
-    <!-- placeholders for upcoming pages -->
+    <!-- NEW  📊  Compare Teams = season averages -->
     <section id="tab-compare" class="tab-pane">
-      <div class="placeholder">Compare Teams – coming soon</div>
+      <div class="info-box">
+        <p>This view shows every team’s <strong>per-week average</strong> since opening day.</p>
+        <p>The league-wide average is listed first so you can spot strengths &amp; gaps instantly.</p>
+      </div>
+
+      <div class="filters">
+        <div class="week-selector">
+          <span class="week-label">View:</span>
+          <select disabled><option selected>Average</option></select>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="avgTable"></table>
+      </div>
     </section>
 
+    <!-- placeholder -->
     <section id="tab-roster" class="tab-pane">
       <div class="placeholder">Roster Strength – coming soon</div>
     </section>
