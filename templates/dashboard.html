@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ team_name }} – Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- header (static title – no drop-down) -->
+    <header class="header">
+      <h1 class="league-title">{{ league_key }}</h1>
+      <h2 class="team-title">{{ team_name }}</h2>
+    </header>
+
+    <!-- nav tabs (content for the last two panes to come later) -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-target="tab-cat">Category Strengths</button>
+      <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
+      <button class="nav-tab"        data-target="tab-roster">Roster Strength</button>
+    </nav>
+
+    <!-- Category Strengths pane -->
+    <section id="tab-cat" class="tab-pane active">
+      <div class="info-box">
+        <p>Compare how you would have performed against each team in the league, and not just your matchup.</p>
+        <p>Take note of how many teams you would have edged out.</p>
+        <p><span class="info-note">Note:</span> This data will refresh once a day for the current week.</p>
+      </div>
+
+      <div class="filters">
+        <div class="week-selector">
+          <span class="week-label">Week:</span>
+          <select id="weekSel"></select>
+        </div>
+
+        <label class="checkbox-container">
+          <input type="checkbox" id="showRanks">
+          Show team ranks per category
+        </label>
+      </div>
+
+      <div class="table-container">
+        <table id="scoreTable"></table>
+      </div>
+    </section>
+
+    <!-- placeholders for upcoming pages -->
+    <section id="tab-compare" class="tab-pane">
+      <div class="placeholder">Compare Teams – coming soon</div>
+    </section>
+
+    <section id="tab-roster" class="tab-pane">
+      <div class="placeholder">Roster Strength – coming soon</div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,8 +1,135 @@
-body{margin:0;font-family:system-ui;background:#f3f3f3}
-.box{max-width:460px;margin:5rem auto;padding:2rem;background:#fff;border-radius:8px;
-     box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center}
-.btn{display:inline-block;padding:.7rem 1.6rem;margin-top:1rem;
-     background:#0a0511;color:#fff;text-decoration:none;border-radius:4px}
-.btn:hover{background:#3700b3}
-label{display:block;margin-top:1.2rem;font-weight:600}
-select,button{margin-top:.4rem;padding:.4rem .6rem}
+/*  ---------- base ----------  */
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  background:#f5f7fa;
+  color:#333;
+}
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,.1);
+  overflow:hidden;
+}
+
+/* ---------- header ---------- */
+.header{
+  background:#1a365d;
+  color:#fff;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.league-title{font-size:24px;font-weight:700;margin:0}
+.team-title{font-size:18px;font-weight:400;margin:0;opacity:.8}
+
+/* ---------- nav tabs ---------- */
+.nav-tabs{
+  display:flex;
+  background:#f1f5f9;
+  border-bottom:1px solid #e2e8f0;
+}
+.nav-tab{
+  flex:1 1 0;
+  padding:15px 20px;
+  font-weight:600;
+  text-align:center;
+  background:none;
+  border:none;
+  cursor:pointer;
+  transition:.2s;
+  border-bottom:3px solid transparent;
+}
+.nav-tab:hover:not(.active){background:#e2e8f0}
+.nav-tab.active{
+  border-bottom-color:#4299e1;
+  color:#2b6cb0;
+}
+
+/* ---------- panes ---------- */
+.tab-pane{display:none;padding-bottom:30px}
+.tab-pane.active{display:block}
+.placeholder{
+  padding:40px;
+  text-align:center;
+  color:#666;
+  font-style:italic;
+}
+
+/* ---------- info box ---------- */
+.info-box{
+  background:#f8fafc;
+  padding:15px 20px;
+  border-left:4px solid #3182ce;
+  margin:15px 20px;
+}
+.info-note{color:#ed8936;font-weight:600}
+
+/* ---------- filters ---------- */
+.filters{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 20px;
+  border-bottom:1px solid #e2e8f0;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.week-selector{display:flex;align-items:center;gap:10px}
+.week-label{font-size:20px;font-weight:700}
+select{
+  padding:8px 12px;
+  border:1px solid #ddd;
+  border-radius:4px;
+  background:#fff;
+  font-size:16px;
+}
+.checkbox-container{display:flex;align-items:center;gap:8px}
+
+/* ---------- table ---------- */
+.table-container{width:100%;overflow-x:auto}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:800px;
+}
+th{
+  background:#2d3748;
+  color:#fff;
+  padding:12px;
+  font-weight:600;
+  text-align:center;
+  position:sticky;
+  top:0;
+  z-index:1;
+}
+th:first-child{text-align:left}
+td{
+  padding:12px;
+  text-align:center;
+  border-bottom:1px solid #e2e8f0;
+}
+td:first-child{text-align:left;font-weight:600}
+tr:nth-child(even){background:#f7fafc}
+tr:hover{background:#ebf4ff}
+
+/* traffic-light values (leave logic to JS) */
+td.better{background:#c6f6d5}
+td.worse{background:#fed7d7}
+td.medium{background:#feebc8}
+
+/* highlight user row & score cell */
+.user-row{background:#e8f3ff !important}
+.score-cell{font-weight:700;background:#ebf8ff}
+
+/* ---------- responsiveness ---------- */
+@media(max-width:768px){
+  .nav-tabs{flex-wrap:wrap}
+  th,td{padding:10px}
+}
+
+
