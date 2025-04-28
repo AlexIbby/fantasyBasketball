@@ -1,14 +1,16 @@
 /*  /static/dashboard.js  – full file  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  /* ──────────────────── DOM handles ──────────────────── */
+  /* ─────────────────── DOM handles ─────────────────── */
   const weekSel      = document.getElementById("weekSel");
   const tbl          = document.getElementById("scoreTable");
+  const viewSel      = document.getElementById("viewSel");
+  const compareTbl   = document.getElementById("compareTable");
   const tabs         = document.querySelectorAll(".nav-tab");
   const panes        = document.querySelectorAll(".tab-pane");
   const showRanksChk = document.getElementById("showRanks");
 
-  /* ───────────── simple tab switcher ───────────── */
+  /* ─────────── simple tab switcher ─────────── */
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
       tabs.forEach(t => t.classList.remove("active"));
@@ -18,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  /* ─────────────────── league specifics ─────────────────── */
+  /* ──────────────── constants ──────────────── */
   const MAX_WEEKS = 26;
   const COLS = [
     ["10", "3PTM",  "high"],
@@ -32,19 +34,25 @@ document.addEventListener("DOMContentLoaded", () => {
     ["27", "DD",    "high"],
   ];
 
-  /* ───────────────── populate week selector ───────────────── */
+  /* ────────── populate week selector ────────── */
   for (let w = 1; w <= MAX_WEEKS; w++) {
     weekSel.insertAdjacentHTML("beforeend", `<option value="${w}">${w}</option>`);
   }
 
-  /* ───────────────────────── state ───────────────────────── */
-  let loadedTeams = [];
+  /* ──────────────── state ──────────────── */
+  let loadedTeams   = [];          // for weekly
+  let seasonPayload = null;        // for totals/averages
+  let seasonMode    = "tot";       // current compare view
 
-  /* ─────────────────────── listeners ─────────────────────── */
-  weekSel.addEventListener("change", () => loadWeek(+weekSel.value));
+  /* ───────────── listeners ───────────── */
+  weekSel .addEventListener("change", ()   => loadWeek(+weekSel.value));
   showRanksChk.addEventListener("change", () => renderTable(loadedTeams));
+  viewSel.addEventListener("change", () => {
+    seasonMode = viewSel.value;
+    if (seasonPayload) renderCompare(seasonPayload, seasonMode);
+  });
 
-  /* ═════════════ WEEKLY CATEGORY-STRENGTHS VIEW ═════════════ */
+  /* ═══════════ WEEKLY CATEGORY-STRENGTHS ═══════════ */
 
   async function loadWeek(week) {
     tbl.innerHTML = "<caption>Loading …</caption>";
@@ -198,46 +206,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadWeek(1);   // initial weekly load
 
-  /* ═════════════ COMPARE-TEAMS (season averages) ═════════════ */
-
-  const avgTbl    = document.getElementById("avgTable");
-  let   avgLoaded = false;
+  /* ══════════ SEASON TOTALS / AVERAGES ══════════ */
 
   document
     .querySelector('[data-target="tab-compare"]')
     .addEventListener("click", () => {
-      if (!avgLoaded) loadAverages();
+      if (!seasonPayload) loadSeasonStats();
     });
 
-  async function loadAverages() {
-    avgTbl.innerHTML = "<caption>Loading …</caption>";
+  async function loadSeasonStats() {
+    compareTbl.innerHTML = "<caption>Loading …</caption>";
     try {
-      const r   = await fetch("/api/season_avg");
+      const r = await fetch("/api/season_avg");      // returns SEASON TOTALS
       const raw = await r.json();
-      const { teams, leagueAvg } = extractSeasonTeams(raw);
-      renderAvgTable(teams, leagueAvg);
-      avgLoaded = true;
+      seasonPayload = transformSeasonData(raw);
+      renderCompare(seasonPayload, seasonMode);
     } catch (e) {
       console.error(e);
-      avgTbl.innerHTML = "<caption>Couldn’t load data</caption>";
+      compareTbl.innerHTML = "<caption>Couldn’t load data</caption>";
     }
   }
 
-  /* ---------- flatten Yahoo JSON & compute per-week averages ---------- */
-  function extractSeasonTeams(data) {
+  /* ---- flatten Yahoo JSON into {teams, leagueAvg} ---- */
+  function transformSeasonData(data) {
     const fc       = data.fantasy_content || {};
     const lgBlocks = Array.isArray(fc.league) ? fc.league : [fc.league];
 
-    // first block with meta (current_week), second with teams
     const metaBlock  = lgBlocks.find(b => b.current_week) || lgBlocks[0];
     const teamsBlock = lgBlocks.find(b => b.teams)        || {};
 
     const weeksCompleted = parseInt(metaBlock.current_week, 10) || 1;
+    const yes = v => v === 1 || v === "1";
+
     const teams = [];
-    const yes   = v => v === 1 || v === "1";
 
     Object.entries(teamsBlock.teams || {}).forEach(([key, tWrap]) => {
-      if (key === "count") return;                    // skip the count node
+      if (key === "count") return;
       const arr = tWrap.team;
       if (!Array.isArray(arr) || arr.length < 2) return;
 
@@ -255,50 +259,58 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      /* stats → average per completed week */
-      const statMap = {};
+      /* stats → totals & averages */
+      const tot = {}, avg = {};
       (arr[1].team_stats.stats || []).forEach(s => {
         const id  = s.stat.stat_id;
         let  val  = parseFloat(s.stat.value);
         if (isNaN(val)) return;
 
-        if (id !== "11") {             // 3PT% is already a percentage
+        // format totals
+        const totFmt = id === "11" ? val.toFixed(3) : val.toFixed(0);
+        tot[id] = totFmt;
+
+        // format averages
+        if (id !== "11") {
           val = val / weeksCompleted;
           val = id === "10" ? val.toFixed(0) : val.toFixed(1);
         } else {
           val = val.toFixed(3);
         }
-        statMap[id] = val;
+        avg[id] = val;
       });
 
-      teams.push({ name, isMine, statMap });
+      teams.push({ name, isMine, tot, avg });
     });
 
-    /* league-wide average row */
-    const leagueAvg = {};
+    /* league-wide averages (for both modes) */
+    const leagueAvg = { tot: {}, avg: {} };
     COLS.forEach(([id]) => {
-      const vals = teams
-        .map(t => parseFloat(t.statMap[id]))
-        .filter(v => !isNaN(v));
-      const avg  = vals.reduce((a, b) => a + b, 0) / vals.length;
-      leagueAvg[id] = id === "11" ? avg.toFixed(3) : avg.toFixed(1);
+      const tVals = teams.map(t => parseFloat(t.tot[id])).filter(v => !isNaN(v));
+      const aVals = teams.map(t => parseFloat(t.avg[id])).filter(v => !isNaN(v));
+
+      const tMean = tVals.reduce((a,b)=>a+b,0)/tVals.length;
+      const aMean = aVals.reduce((a,b)=>a+b,0)/aVals.length;
+
+      leagueAvg.tot[id] = id === "11" ? tMean.toFixed(3) : tMean.toFixed(0);
+      leagueAvg.avg[id] = id === "11" ? aMean.toFixed(3) : aMean.toFixed(1);
     });
 
     teams.sort((a, b) => Number(b.isMine) - Number(a.isMine));
     return { teams, leagueAvg };
   }
 
-  /* ---------- render season-average table ---------- */
-  function renderAvgTable(teams, leagueAvg) {
-    avgTbl.innerHTML = "";
+  /* ---- render compare table ---- */
+  function renderCompare(payload, mode) {
+    compareTbl.innerHTML = "";
+    const { teams, leagueAvg } = payload;
     if (!teams.length) return;
 
-    avgTbl.insertAdjacentHTML(
+    compareTbl.insertAdjacentHTML(
       "afterbegin",
       `<thead><tr><th>Team</th>${COLS.map(c => `<th>${c[1]}</th>`).join("")}</tr></thead><tbody></tbody>`
     );
-
-    const tbody = avgTbl.querySelector("tbody");
+    const tbody = compareTbl.querySelector("tbody");
 
     const addRow = (statMap, label, isUser = false) => {
       const tr = document.createElement("tr");
@@ -307,10 +319,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       COLS.forEach(([id, , dir]) => {
         const raw = statMap[id] ?? "–";
-        let cls   = "";
+        let cls = "";
 
         if (label !== "League Avg." && raw !== "–") {
-          const base = parseFloat(leagueAvg[id]);
+          const base = parseFloat(leagueAvg[mode][id]);
           const val  = parseFloat(raw);
           if (!isNaN(base) && !isNaN(val) && val !== base) {
             const better = dir === "high" ? val > base : val < base;
@@ -323,7 +335,9 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.appendChild(tr);
     };
 
-    addRow(leagueAvg, "League Avg.");      // top row
-    teams.forEach(t => addRow(t.statMap, t.name, t.isMine));
+    // league row first
+    addRow(leagueAvg[mode], "League Avg.");
+    // then every team
+    teams.forEach(t => addRow(t[mode], t.name, t.isMine));
   }
 });

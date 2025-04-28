@@ -22,7 +22,7 @@
       <button class="nav-tab"        data-target="tab-roster">Roster Strength</button>
     </nav>
 
-    <!-- Category Strengths (existing) -->
+    <!-- Category Strengths (weekly view) -->
     <section id="tab-cat" class="tab-pane active">
       <div class="info-box">
         <p>Compare how you would have performed against each team in the league, and not just your matchup.</p>
@@ -47,22 +47,25 @@
       </div>
     </section>
 
-    <!-- NEW  📊  Compare Teams = season averages -->
+    <!-- Compare Teams – season totals ⇄ averages -->
     <section id="tab-compare" class="tab-pane">
       <div class="info-box">
-        <p>This view shows every team’s <strong>per-week average</strong> since opening day.</p>
-        <p>The league-wide average is listed first so you can spot strengths &amp; gaps instantly.</p>
+        <p>This view compares every team’s <strong>season totals</strong> or their <strong>per-week averages</strong>.  
+           Switch between them with the menu below.</p>
       </div>
 
       <div class="filters">
         <div class="week-selector">
           <span class="week-label">View:</span>
-          <select disabled><option selected>Average</option></select>
+          <select id="viewSel">
+            <option value="tot" selected>Totals</option>
+            <option value="avg">Averages</option>
+          </select>
         </div>
       </div>
 
       <div class="table-container">
-        <table id="avgTable"></table>
+        <table id="compareTable"></table>
       </div>
     </section>
 
