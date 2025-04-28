@@ -5,9 +5,11 @@ body{
   font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
   background:#f5f7fa;
   color:#333;
+  line-height:1.4;
 }
 .container{
-  max-width:1200px;
+  width:95%;                    /* stretch nearly full-width */
+  max-width:1400px;             /* but cap on very wide monitors */
   margin:0 auto;
   background:#fff;
   border-radius:8px;
@@ -19,13 +21,13 @@ body{
 .header{
   background:#1a365d;
   color:#fff;
-  padding:20px;
+  padding:24px 28px;
   display:flex;
   flex-direction:column;
-  gap:4px;
+  gap:6px;
 }
-.league-title{font-size:24px;font-weight:700;margin:0}
-.team-title{font-size:18px;font-weight:400;margin:0;opacity:.8}
+.league-title{font-size:26px;font-weight:700;margin:0}
+.team-title{font-size:18px;font-weight:400;margin:0;opacity:.85}
 
 /* ---------- nav tabs ---------- */
 .nav-tabs{
@@ -35,7 +37,7 @@ body{
 }
 .nav-tab{
   flex:1 1 0;
-  padding:15px 20px;
+  padding:16px 22px;
   font-weight:600;
   text-align:center;
   background:none;
@@ -63,9 +65,9 @@ body{
 /* ---------- info box ---------- */
 .info-box{
   background:#f8fafc;
-  padding:15px 20px;
+  padding:16px 24px;
   border-left:4px solid #3182ce;
-  margin:15px 20px;
+  margin:18px 24px;
 }
 .info-note{color:#ed8936;font-weight:600}
 
@@ -74,10 +76,10 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:15px 20px;
+  padding:18px 24px;
   border-bottom:1px solid #e2e8f0;
   flex-wrap:wrap;
-  gap:10px;
+  gap:12px;
 }
 .week-selector{display:flex;align-items:center;gap:10px}
 .week-label{font-size:20px;font-weight:700}
@@ -95,41 +97,65 @@ select{
 table{
   width:100%;
   border-collapse:collapse;
-  min-width:800px;
+  min-width:1000px;
+  table-layout:fixed;          /* keeps columns steady */
+  font-size:15px;
 }
 th{
-  background:#2d3748;
+  background:#1f2937;
   color:#fff;
-  padding:12px;
+  padding:14px 8px;
   font-weight:600;
   text-align:center;
   position:sticky;
   top:0;
   z-index:1;
 }
-th:first-child{text-align:left}
+th:first-child{
+  text-align:left;
+  width:220px;                 /* wider headline for team names */
+  min-width:220px;
+}
 td{
-  padding:12px;
+  padding:14px 8px;
   text-align:center;
   border-bottom:1px solid #e2e8f0;
+  position:relative;
+  white-space:nowrap;
 }
-td:first-child{text-align:left;font-weight:600}
+td:first-child{
+  text-align:left;
+  font-weight:600;
+  width:220px;                 /* match header */
+  min-width:220px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 tr:nth-child(even){background:#f7fafc}
 tr:hover{background:#ebf4ff}
 
-/* traffic-light values (leave logic to JS) */
+/* traffic-light values */
 td.better{background:#c6f6d5}
 td.worse{background:#fed7d7}
-td.medium{background:#feebc8}
 
 /* highlight user row & score cell */
 .user-row{background:#e8f3ff !important}
 .score-cell{font-weight:700;background:#ebf8ff}
 
+/* ---------- rank superscript ---------- */
+sup.rank{
+  position:absolute;
+  top:2px;
+  right:4px;
+  font-size:.65em;
+  font-weight:400;
+  opacity:.75;
+  line-height:1;
+}
+
 /* ---------- responsiveness ---------- */
 @media(max-width:768px){
   .nav-tabs{flex-wrap:wrap}
-  th,td{padding:10px}
+  th,td{padding:10px 6px}
+  th:first-child,td:first-child{width:160px;min-width:160px}
 }
-
-
