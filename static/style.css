@@ -1,4 +1,4 @@
-/*  ---------- base ----------  */
+/* ───── /static/style.css (FULL FILE) ───── */
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -8,8 +8,8 @@ body{
   line-height:1.4;
 }
 .container{
-  width:95%;                    /* stretch nearly full-width */
-  max-width:1400px;             /* but cap on very wide monitors */
+  width:95%;
+  max-width:1400px;
   margin:0 auto;
   background:#fff;
   border-radius:8px;
@@ -17,7 +17,7 @@ body{
   overflow:hidden;
 }
 
-/* ---------- header ---------- */
+/* header */
 .header{
   background:#1a365d;
   color:#fff;
@@ -29,7 +29,7 @@ body{
 .league-title{font-size:26px;font-weight:700;margin:0}
 .team-title{font-size:18px;font-weight:400;margin:0;opacity:.85}
 
-/* ---------- nav tabs ---------- */
+/* nav-tabs */
 .nav-tabs{
   display:flex;
   background:#f1f5f9;
@@ -52,17 +52,14 @@ body{
   color:#2b6cb0;
 }
 
-/* ---------- panes ---------- */
+/* panes */
 .tab-pane{display:none;padding-bottom:30px}
 .tab-pane.active{display:block}
 .placeholder{
-  padding:40px;
-  text-align:center;
-  color:#666;
-  font-style:italic;
+  padding:40px;text-align:center;color:#666;font-style:italic;
 }
 
-/* ---------- info box ---------- */
+/* info-box */
 .info-box{
   background:#f8fafc;
   padding:16px 24px;
@@ -71,7 +68,7 @@ body{
 }
 .info-note{color:#ed8936;font-weight:600}
 
-/* ---------- filters ---------- */
+/* filters */
 .filters{
   display:flex;
   justify-content:space-between;
@@ -92,13 +89,13 @@ select{
 }
 .checkbox-container{display:flex;align-items:center;gap:8px}
 
-/* ---------- table ---------- */
+/* table */
 .table-container{width:100%;overflow-x:auto}
 table{
   width:100%;
   border-collapse:collapse;
   min-width:1000px;
-  table-layout:fixed;          /* keeps columns steady */
+  table-layout:fixed;
   font-size:15px;
 }
 th{
@@ -111,11 +108,7 @@ th{
   top:0;
   z-index:1;
 }
-th:first-child{
-  text-align:left;
-  width:220px;                 /* wider headline for team names */
-  min-width:220px;
-}
+th:first-child{text-align:left;width:220px;min-width:220px}
 td{
   padding:14px 8px;
   text-align:center;
@@ -126,7 +119,7 @@ td{
 td:first-child{
   text-align:left;
   font-weight:600;
-  width:220px;                 /* match header */
+  width:220px;
   min-width:220px;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -134,28 +127,98 @@ td:first-child{
 tr:nth-child(even){background:#f7fafc}
 tr:hover{background:#ebf4ff}
 
-/* traffic-light values */
 td.better{background:#c6f6d5}
-td.worse{background:#fed7d7}
+td.worse {background:#fed7d7}
 
-/* highlight user row & score cell */
 .user-row{background:#e8f3ff !important}
 .score-cell{font-weight:700;background:#ebf8ff}
 
-/* ---------- rank superscript ---------- */
 sup.rank{
-  position:absolute;
-  top:2px;
-  right:4px;
-  font-size:.65em;
-  font-weight:400;
-  opacity:.75;
-  line-height:1;
+  position:absolute;top:2px;right:4px;
+  font-size:.65em;font-weight:400;opacity:.75;line-height:1;
 }
 
-/* ---------- responsiveness ---------- */
+/* ───────── MOBILE CARD VIEW ADDITIONS ───────── */
+.view-toggle{
+  display:none;
+  gap:8px;
+}
+.view-toggle button{
+  padding:8px 12px;
+  border:1px solid #ddd;
+  border-radius:4px;
+  background:#f0f0f0;
+  cursor:pointer;
+  transition:.2s;
+}
+.view-toggle button.active{
+  background:#4299e1;
+  color:#fff;
+  border-color:#3182ce;
+}
+
+.cards-container{
+  display:none;
+  flex-direction:column;
+  gap:18px;
+  padding:0 24px 24px;
+}
+.reference-team{
+  background:#f5f5f5;
+  padding:10px 16px;
+  border-radius:4px;
+  font-size:14px;
+  font-weight:600;
+}
+.card{
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+  overflow:hidden;
+}
+.card-header{
+  background:#1a365d;
+  color:#fff;
+  padding:12px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.card-record{
+  font-size:14px;
+  background:rgba(255,255,255,.25);
+  padding:4px 8px;
+  border-radius:4px;
+}
+.card-content{padding:16px}
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+.stat-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  font-size:14px;
+  padding:8px;
+  border-radius:4px;
+}
+.stat-item .stat-label{font-size:12px;color:#555}
+.stat-item .stat-value{font-weight:600}
+.stat-item .comparison-indicator{font-size:12px;opacity:.8}
+.stat-item.better{background:#c6f6d5}
+.stat-item.worse {background:#fed7d7}
+
 @media(max-width:768px){
   .nav-tabs{flex-wrap:wrap}
   th,td{padding:10px 6px}
   th:first-child,td:first-child{width:160px;min-width:160px}
+
+  /* default to CARD view on mobile */
+  .table-container{display:none}
+  .cards-container{display:flex}
+  .view-toggle{display:flex}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
 }

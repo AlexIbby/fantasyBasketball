@@ -1,3 +1,4 @@
+<!-- ───── /templates/dashboard.html (FULL FILE) ───── -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,7 +10,7 @@
 </head>
 <body>
   <div class="container">
-    <!-- header (static title – no drop-down) -->
+    <!-- header -->
     <header class="header">
       <h1 class="league-title">{{ league_key }}</h1>
       <h2 class="team-title">{{ team_name }}</h2>
@@ -22,12 +23,12 @@
       <button class="nav-tab"        data-target="tab-roster">Roster Strength</button>
     </nav>
 
-    <!-- Category Strengths (weekly view) -->
+    <!-- ─────────── CATEGORY STRENGTHS ─────────── -->
     <section id="tab-cat" class="tab-pane active">
       <div class="info-box">
-        <p>Compare how you would have performed against each team in the league, and not just your matchup.</p>
+        <p>Compare how you would have performed against <em>every</em> team, not just this week’s matchup.</p>
         <p>Take note of how many teams you would have edged out.</p>
-        <p><span class="info-note">Note:</span> This data will refresh once a day for the current week.</p>
+        <p><span class="info-note">Note:</span> This data refreshes once a day for the current week.</p>
       </div>
 
       <div class="filters">
@@ -40,17 +41,27 @@
           <input type="checkbox" id="showRanks">
           Show team ranks per category
         </label>
+
+        <!-- view-toggle only appears on mobile (< 768 px) -->
+        <div class="view-toggle">
+          <button id="cardsView" class="active">Cards</button>
+          <button id="tableView">Table</button>
+        </div>
       </div>
 
+      <!-- desktop table -->
       <div class="table-container">
         <table id="scoreTable"></table>
       </div>
+
+      <!-- mobile cards -->
+      <div class="cards-container" id="cardsContainer"></div>
     </section>
 
-    <!-- Compare Teams – season totals ⇄ averages -->
+    <!-- ─────────── COMPARE TEAMS ─────────── -->
     <section id="tab-compare" class="tab-pane">
       <div class="info-box">
-        <p>This view compares every team’s <strong>season totals</strong> or their <strong>per-week averages</strong>.  
+        <p>Compare every team’s <strong>season totals</strong> or their <strong>per-week averages</strong>.  
            Switch between them with the menu below.</p>
       </div>
 
