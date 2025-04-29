@@ -1,4 +1,4 @@
-<!-- ───── /templates/dashboard.html (FULL FILE) ───── -->
+<!-- ───── /templates/dashboard.html ───── -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -23,7 +23,7 @@
       <button class="nav-tab"        data-target="tab-roster">Roster Strength</button>
     </nav>
 
-    <!-- ─────────── CATEGORY STRENGTHS ─────────── -->
+    <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
     <section id="tab-cat" class="tab-pane active">
       <div class="info-box">
         <p>Compare how you would have performed against <em>every</em> team, not just this week’s matchup.</p>
@@ -42,7 +42,7 @@
           Show team ranks per category
         </label>
 
-        <!-- view-toggle only appears on mobile (< 768 px) -->
+        <!-- view-toggle appears on mobile -->
         <div class="view-toggle">
           <button id="cardsView" class="active">Cards</button>
           <button id="tableView">Table</button>
@@ -58,11 +58,10 @@
       <div class="cards-container" id="cardsContainer"></div>
     </section>
 
-    <!-- ─────────── COMPARE TEAMS ─────────── -->
+    <!-- ═══════════ COMPARE TEAMS ═══════════ -->
     <section id="tab-compare" class="tab-pane">
       <div class="info-box">
-        <p>Compare every team’s <strong>season totals</strong> or their <strong>per-week averages</strong>.  
-           Switch between them with the menu below.</p>
+        <p>Compare every team’s <strong>season totals</strong> or their <strong>per-week averages</strong>. Switch using the menu below.</p>
       </div>
 
       <div class="filters">
@@ -73,11 +72,21 @@
             <option value="avg">Averages</option>
           </select>
         </div>
+
+        <!-- view-toggle appears on mobile -->
+        <div class="view-toggle">
+          <button id="compareCardsView" class="active">Cards</button>
+          <button id="compareTableView">Table</button>
+        </div>
       </div>
 
+      <!-- desktop table -->
       <div class="table-container">
         <table id="compareTable"></table>
       </div>
+
+      <!-- mobile cards -->
+      <div class="cards-container" id="compareCardsContainer"></div>
     </section>
 
     <!-- placeholder -->
