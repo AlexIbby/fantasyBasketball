@@ -211,6 +211,159 @@ sup.rank{
 .stat-item.better{background:#c6f6d5}
 .stat-item.worse {background:#fed7d7}
 
+/* ───────── LOGIN AND SELECT PAGE STYLES ───────── */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 500px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.login-header {
+  background: #1a365d;
+  color: #fff;
+  padding: 30px;
+  text-align: center;
+}
+
+.login-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.login-content {
+  padding: 30px;
+}
+
+.login-welcome {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-welcome p {
+  color: #4a5568;
+  margin-bottom: 20px;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+}
+
+.btn-primary {
+  background: #4299e1;
+  color: white;
+  border: 1px solid #3182ce;
+}
+
+.btn-primary:hover {
+  background: #3182ce;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+}
+
+.btn-secondary:hover {
+  background: #cbd5e0;
+}
+
+.btn-yahoo {
+  background: #400090;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 30px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.btn-yahoo:hover {
+  background: #300080;
+}
+
+.yahoo-icon {
+  background: white;
+  color: #400090;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* Select form styles */
+.select-card {
+  max-width: 600px;
+}
+
+.select-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.form-select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 16px;
+  background-color: white;
+  color: #4a5568;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
 @media(max-width:768px){
   .nav-tabs{flex-wrap:wrap}
   th,td{padding:10px 6px}
@@ -221,4 +374,14 @@ sup.rank{
   .cards-container{display:flex}
   .view-toggle{display:flex}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
+  
+  /* Login/select mobile adjustments */
+  .form-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn {
+    width: 100%;
+  }
 }

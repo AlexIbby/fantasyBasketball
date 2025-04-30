@@ -2,18 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Yahoo Fantasy Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fantasy Basketball Stats - Login</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="box">
-    <h1>Yahoo Fantasy Basketball Login</h1>
-    {% if logged_in %}
-      <a class="btn" href="{{ url_for('select') }}">Choose your league</a>
-      <p><a href="{{ url_for('logout') }}">Log out</a></p>
-    {% else %}
-      <a class="btn" href="{{ url_for('login') }}">Log in with Yahoo</a>
-    {% endif %}
+  <div class="container login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>Fantasy Basketball Stats</h1>
+      </div>
+      <div class="login-content">
+        {% if logged_in %}
+          <div class="login-welcome">
+            <p>You're already logged in.</p>
+            <div class="login-buttons">
+              <a href="{{ url_for('select') }}" class="btn btn-primary">Choose your league</a>
+              <a href="{{ url_for('logout') }}" class="btn btn-secondary">Log out</a>
+            </div>
+          </div>
+        {% else %}
+          <div class="login-welcome">
+            <p>Please sign in with your Yahoo account to access your fantasy basketball statistics.</p>
+            <div class="login-buttons">
+              <a href="{{ url_for('login') }}" class="btn btn-yahoo">
+                <span class="yahoo-icon">Y!</span>
+                Log in with Yahoo
+              </a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </body>
 </html>
