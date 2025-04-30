@@ -209,7 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         const rk=ranks[idx+1][id];
-        const sup=(showRanks&&rk!=='-')?`<sup class="rank">${ordinal(rk)}</sup>`:'';
+        // Fix: Adding a small superscript span for the rank in the mobile cards
+        const sup=(showRanks&&rk!=='-')?`<span class="stat-rank">${ordinal(rk)}</span>`:'';
         grid.insertAdjacentHTML('beforeend',
           `<div class="stat-item ${cls}">
              <div class="stat-label">${label}</div>
@@ -389,7 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         const rk=ranks[idx+1][id];
-        const sup=(showRanks&&rk!=='-')?`<sup class="rank">${ordinal(rk)}</sup>`:'';
+        // Fix: Adding a small superscript span for the rank in the mobile cards
+        const sup=(showRanks&&rk!=='-')?`<span class="stat-rank">${ordinal(rk)}</span>`:'';
         grid.insertAdjacentHTML('beforeend',
           `<div class="stat-item ${cls}">
              <div class="stat-label">${label}</div>

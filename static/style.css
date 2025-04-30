@@ -385,3 +385,18 @@ sup.rank{
     width: 100%;
   }
 }
+
+/*Mobile Ranking */
+.stat-value {
+  position: relative;
+  display: inline-block;
+}
+
+.stat-rank {
+  font-size: 0.65em;
+  font-weight: 400;
+  opacity: 0.75;
+  line-height: 1;
+  vertical-align: super;
+  margin-left: 2px;
+}
