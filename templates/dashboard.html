@@ -26,7 +26,7 @@
     <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
     <section id="tab-cat" class="tab-pane active">
       <div class="info-box">
-        <p>Compare how you would have performed against <em>every</em> team, not just this week’s matchup.</p>
+        <p>Compare how you would have performed against <em>every</em> team, not just this week's matchup.</p>
         <p>Take note of how many teams you would have edged out.</p>
         <p><span class="info-note">Note:</span> This data refreshes once a day for the current week.</p>
       </div>
@@ -61,7 +61,7 @@
     <!-- ═══════════ COMPARE TEAMS ═══════════ -->
     <section id="tab-compare" class="tab-pane">
       <div class="info-box">
-        <p>Compare every team’s <strong>season totals</strong> or their <strong>per-week averages</strong>. Switch using the menu below.</p>
+        <p>Compare every team's <strong>season totals</strong> or their <strong>per-week averages</strong>. Switch using the menu below.</p>
       </div>
 
       <div class="filters">
@@ -72,6 +72,12 @@
             <option value="avg">Averages</option>
           </select>
         </div>
+
+        <!-- Added checkbox for showing ranks in the Compare Teams tab -->
+        <label class="checkbox-container">
+          <input type="checkbox" id="showRanks">
+          Show team ranks per category
+        </label>
 
         <!-- view-toggle appears on mobile -->
         <div class="view-toggle">

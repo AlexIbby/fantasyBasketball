@@ -234,13 +234,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   cardsViewBtn.addEventListener('click',()=>switchWeekView('cards'));
   tableViewBtn.addEventListener('click',()=>switchWeekView('table'));
-  if(innerWidth<=768) switchWeekView('cards');
+  
+  // Initialize view based on screen width
+  if(window.innerWidth <= 768) {
+    switchWeekView('cards');
+  } else {
+    switchWeekView('table');
+  }
 
   /* listeners */
   weekSel.addEventListener('change', ()=>loadWeek(+weekSel.value));
   showRanksChk.addEventListener('change', ()=>{
-    renderWeekTable(loadedTeams); renderWeekCards(loadedTeams);
-    if(seasonPayload) renderCompare(seasonPayload,seasonMode); // re-superscript ranks
+    renderWeekTable(loadedTeams); 
+    renderWeekCards(loadedTeams);
+    if(seasonPayload) renderCompare(seasonPayload, seasonMode); // re-superscript ranks
   });
 
   /* load week-1 initially */
@@ -415,7 +422,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   cmpCardsViewBtn.addEventListener('click',()=>switchCompareView('cards'));
   cmpTableViewBtn.addEventListener('click',()=>switchCompareView('table'));
-  if(innerWidth<=768) switchCompareView('cards'); else switchCompareView('table');
+  
+  // Initialize compare view based on screen width
+  if(window.innerWidth <= 768) {
+    switchCompareView('cards');
+  } else {
+    switchCompareView('table');
+  }
+
+  // Add resize event listener to handle window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth <= 768) {
+      switchWeekView('cards');
+      switchCompareView('cards');
+    } else {
+      switchWeekView('table');
+      switchCompareView('table');
+    }
+  });
 
   /* totals / averages selector */
   viewSel.addEventListener('change',()=>{
