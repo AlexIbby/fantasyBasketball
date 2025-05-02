@@ -5,25 +5,228 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ibby's Fantasy Basketball App - Login</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Add Font Awesome for basketball icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Additional styles for enhanced login page */
+    .login-container {
+      background: linear-gradient(rgba(26, 54, 93, 0.2), rgba(26, 54, 93, 0.05));
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+    
+    .login-card {
+      max-width: 550px;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+    
+    .login-header {
+      position: relative;
+      background: linear-gradient(135deg, #1a365d, #2d4a77);
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .login-header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    
+    .basketball-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+      color: #f39c12;
+    }
+    
+    .basketball-left {
+      left: 25px;
+    }
+    
+    .basketball-right {
+      right: 25px;
+    }
+    
+    .login-content {
+      position: relative;
+      padding: 40px 30px;
+      background: white;
+    }
+    
+    .court-background {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 80px;
+      opacity: 0.1;
+      z-index: 0;
+    }
+    
+    .login-welcome {
+      position: relative;
+      text-align: center;
+      margin-bottom: 30px;
+      z-index: 1;
+    }
+    
+    .login-welcome p {
+      color: #4a5568;
+      margin-bottom: 25px;
+      font-size: 17px;
+    }
+    
+    .login-buttons {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+      z-index: 1;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+      font-size: 16px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary {
+      background: #4299e1;
+      color: white;
+      border: 1px solid #3182ce;
+    }
+    
+    .btn-primary:hover {
+      background: #3182ce;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #4a5568;
+      border: 1px solid #cbd5e0;
+    }
+    
+    .btn-secondary:hover {
+      background: #cbd5e0;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-yahoo {
+      background: #400090;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 32px;
+      width: 100%;
+      max-width: 280px;
+    }
+    
+    .btn-yahoo:hover {
+      background: #300080;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .yahoo-icon {
+      background: white;
+      color: #400090;
+      font-weight: 700;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .nba-emblem {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    
+    .nba-emblem i {
+      font-size: 60px;
+      color: rgba(26, 54, 93, 0.15);
+    }
+    
+    /* Animation for basketballs */
+    @keyframes bounce {
+      0%, 100% { transform: translateY(-50%) scale(1); }
+      50% { transform: translateY(-60%) scale(1.05); }
+    }
+    
+    .animated-ball {
+      animation: bounce 2s infinite ease-in-out;
+    }
+    
+    .basketball-right {
+      animation-delay: 1s;
+    }
+    
+    /* Basketball court pattern */
+    .court-pattern {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(to right, rgba(26, 54, 93, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(26, 54, 93, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+      opacity: 0.3;
+      z-index: 0;
+    }
+  </style>
 </head>
 <body>
   <div class="container login-container">
     <div class="login-card">
       <div class="login-header">
+        <i class="fas fa-basketball-ball basketball-icon basketball-left animated-ball"></i>
         <h1>Ibby's Fantasy Basketball App</h1>
+        <i class="fas fa-basketball-ball basketball-icon basketball-right animated-ball"></i>
       </div>
       <div class="login-content">
+        <div class="court-pattern"></div>
+        
         {% if logged_in %}
           <div class="login-welcome">
-            <p>You're already logged in.</p>
+            <p>You're already logged in and ready to dominate the fantasy courts!</p>
             <div class="login-buttons">
-              <a href="{{ url_for('select') }}" class="btn btn-primary">Choose your league</a>
-              <a href="{{ url_for('logout') }}" class="btn btn-secondary">Log out</a>
+              <a href="{{ url_for('select') }}" class="btn btn-primary">
+                <i class="fas fa-trophy"></i> Choose your league
+              </a>
+              <a href="{{ url_for('logout') }}" class="btn btn-secondary">
+                <i class="fas fa-sign-out-alt"></i> Log out
+              </a>
             </div>
           </div>
         {% else %}
           <div class="login-welcome">
-            <p>Please sign in with your Yahoo account to access your fantasy basketball statistics.</p>
+            <p>Sign in with your Yahoo account to access your fantasy basketball statistics and gain the competitive edge!</p>
             <div class="login-buttons">
               <a href="{{ url_for('login') }}" class="btn btn-yahoo">
                 <span class="yahoo-icon">Y!</span>
@@ -32,6 +235,10 @@
             </div>
           </div>
         {% endif %}
+        
+        <div class="nba-emblem">
+          <i class="fas fa-basketball-ball"></i>
+        </div>
       </div>
     </div>
   </div>
