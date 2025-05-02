@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>About - Fantasy Basketball Stats</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='navbar.js') }}"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="{{ url_for('dashboard') }}" class="navbar-brand">Ibby's Fantasy App</a>
+    <div class="navbar-links">
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="https://github.com/AlexIbby/fantasyBasketball" target="_blank">GitHub</a>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+    <button class="hamburger">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+  </nav>
+  <div class="overlay"></div>
+  
+  <div class="container">
+    <header class="header">
+      <h1 class="team-title">About Fantasy Basketball Stats</h1>
+    </header>
+    
+    <div style="padding: 2rem;">
+      <h2>Welcome to Ibby's Fantasy Basketball Stats</h2>
+      
+      <p>This application helps fantasy basketball managers analyze their team's performance across different statistical categories. By connecting to your Yahoo Fantasy Basketball account, you can:</p>
+      
+      <ul style="line-height: 1.6; margin-bottom: 2rem;">
+        <li><strong>Compare Category Strengths</strong> - See how your team would perform against every team in your league, not just your weekly matchup.</li>
+        <li><strong>Team Comparisons</strong> - View season totals or weekly averages for all teams in your league.</li>
+        <li><strong>Roster Analysis</strong> - (Coming soon) Analyze the strengths and weaknesses of your roster.</li>
+      </ul>
+      
+      <h2>Development</h2>
+      <p>This application is built with Flask and connects to the Yahoo Fantasy Sports API. The frontend uses vanilla JavaScript for interactivity and responsive design.</p>
+      
+      <p>The full source code is available on <a href="https://github.com/AlexIbby/fantasyBasketball" target="_blank">GitHub</a>.</p>
+      
+      <div style="margin-top: 3rem;">
+        <p><a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Dashboard</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

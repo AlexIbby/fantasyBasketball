@@ -180,6 +180,10 @@ def dashboard():
         team_name=session["team_name"],
         league_key=session["league_key"],
     )
+#Dashboard
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
 # ---------- WEEKLY SCOREBOARD ----------
 @app.route("/api/scoreboard")
