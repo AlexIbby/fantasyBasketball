@@ -90,10 +90,15 @@ select{
 .checkbox-container{display:flex;align-items:center;gap:8px}
 
 /* table */
-.table-container{width:100%;overflow-x:auto}
+.table-container{
+  width:100%;
+  overflow-x:auto;
+  position:relative; /* Important for positioning */
+}
 table{
   width:100%;
-  border-collapse:collapse;
+  border-collapse:separate; /* Changed from collapse for sticky to work properly */
+  border-spacing:0; /* Ensure no gaps between cells */
   min-width:1000px;
   table-layout:fixed;
   font-size:15px;
@@ -106,15 +111,22 @@ th{
   text-align:center;
   position:sticky;
   top:0;
-  z-index:1;
+  z-index:2; /* Higher than td:first-child */
 }
-th:first-child{text-align:left;width:220px;min-width:220px}
+th:first-child{
+  text-align:left;
+  width:220px;
+  min-width:220px;
+  z-index:3; /* Highest z-index to stay on top when scrolling */
+  left:0; /* Stick to the left */
+}
 td{
   padding:14px 8px;
   text-align:center;
   border-bottom:1px solid #e2e8f0;
   position:relative;
   white-space:nowrap;
+  background:inherit; /* This helps with the sticky column */
 }
 td:first-child{
   text-align:left;
@@ -123,15 +135,30 @@ td:first-child{
   min-width:220px;
   overflow:hidden;
   text-overflow:ellipsis;
+  position:sticky; /* Make the first column sticky */
+  left:0; /* Stick to the left */
+  z-index:1; /* Above other cells but below headers */
+  background:inherit; /* Inherit the background from tr */
 }
 tr:nth-child(even){background:#f7fafc}
 tr:hover{background:#ebf4ff}
+/* Ensure the background colors are properly applied to sticky cells */
+tr:nth-child(even) td:first-child{background:#f7fafc}
+tr:nth-child(odd) td:first-child{background:#fff}
+tr:hover td:first-child{background:#ebf4ff}
+
+/* Keep the user row background persistent on sticky column */
+.user-row{background:#e8f3ff !important}
+.user-row td:first-child{background:#e8f3ff !important}
 
 td.better{background:#c6f6d5}
 td.worse {background:#fed7d7}
+/* Apply the background color to sticky cells */
+td.better:first-child{background:#c6f6d5}
+td.worse:first-child{background:#fed7d7}
 
-.user-row{background:#e8f3ff !important}
 .score-cell{font-weight:700;background:#ebf8ff}
+td.score-cell:first-child{background:#ebf8ff} /* For consistency */
 
 sup.rank{
   position:absolute;top:2px;right:4px;
@@ -399,4 +426,16 @@ sup.rank{
   line-height: 1;
   vertical-align: super;
   margin-left: 2px;
+}
+
+/* Add a shadow to indicate there's more content to scroll to */
+.table-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 15px;
+  background: linear-gradient(to right, transparent, rgba(0,0,0,0.05));
+  pointer-events: none; /* Allow scrolling underneath */
 }
