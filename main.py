@@ -226,6 +226,89 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
+# ---------- LEAGUE SETTINGS ----------
+@app.route("/api/league_settings")
+def api_league_settings():
+    """
+    Get league settings including stat categories.
+    This allows the frontend to dynamically determine which stat categories
+    are in use for the current league.
+    """
+    if "league_key" not in session:
+        return jsonify({"error": "no league chosen"}), 400
+    
+    rel = f"fantasy/v2/league/{session['league_key']}/settings"
+    try:
+        data = yahoo_api(rel)
+        # Log success for debugging
+        log.info("Successfully fetched league settings")
+        return jsonify(data)
+    except Exception as e:
+        log.error(f"Error fetching league settings: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/debug/league_settings")
+def debug_league_settings():
+    """
+    Debug endpoint to view raw league settings response.
+    """
+    if "league_key" not in session:
+        return jsonify({"error": "No league chosen. Please select a league first."}), 400
+    
+    try:
+        rel = f"fantasy/v2/league/{session['league_key']}/settings"
+        data = yahoo_api(rel)
+        return f"""
+        <html>
+        <head>
+            <title>League Settings Debug</title>
+            <style>
+                body {{ font-family: monospace; padding: 20px; }}
+                pre {{ background: #f5f5f5; padding: 15px; overflow: auto; max-height: 80vh; }}
+            </style>
+        </head>
+        <body>
+            <h2>League Settings API Response</h2>
+            <a href="/debug/scoreboard?week=1">View Scoreboard Debug</a>
+            <pre>{json.dumps(data, indent=2)}</pre>
+        </body>
+        </html>
+        """
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@app.route("/debug/scoreboard")
+def debug_scoreboard():
+    """
+    Debug endpoint to view raw scoreboard response.
+    """
+    if "league_key" not in session:
+        return jsonify({"error": "No league chosen. Please select a league first."}), 400
+    
+    week = request.args.get("week", "1")
+    
+    try:
+        rel = f"fantasy/v2/league/{session['league_key']}/scoreboard;week={week}"
+        data = yahoo_api(rel)
+        return f"""
+        <html>
+        <head>
+            <title>Scoreboard Debug - Week {week}</title>
+            <style>
+                body {{ font-family: monospace; padding: 20px; }}
+                pre {{ background: #f5f5f5; padding: 15px; overflow: auto; max-height: 80vh; }}
+            </style>
+        </head>
+        <body>
+            <h2>Scoreboard API Response - Week {week}</h2>
+            <a href="/debug/league_settings">View League Settings Debug</a>
+            <pre>{json.dumps(data, indent=2)}</pre>
+        </body>
+        </html>
+        """
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 # ─────────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":
     # use `flask run` in production; this is for local dev only

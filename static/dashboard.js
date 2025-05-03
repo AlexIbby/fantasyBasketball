@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============ CONFIG ============
   const CONFIG = {
     MAX_WEEKS: 26,
+    // Default categories - will be used as fallback
     COLS: [
       ['10', '3PTM', 'high'],
       ['11', '3PT%', 'high'],
@@ -13,7 +14,41 @@ document.addEventListener('DOMContentLoaded', () => {
       ['18', 'BLK', 'high'],
       ['19', 'TO', 'low'], // lower is better
       ['27', 'DD', 'high'],
-    ]
+    ],
+    // Mapping of stat IDs to their metadata
+    STAT_METADATA: {
+      '0': { name: 'GP', display_name: 'Games Played', sort_order: '1' },
+      '1': { name: 'GS', display_name: 'Games Started', sort_order: '1' },
+      '2': { name: 'MIN', display_name: 'Minutes Played', sort_order: '1' },
+      '3': { name: 'FGA', display_name: 'Field Goals Attempted', sort_order: '1' },
+      '4': { name: 'FGM', display_name: 'Field Goals Made', sort_order: '1' },
+      '5': { name: 'FG%', display_name: 'Field Goal Percentage', sort_order: '1' },
+      '6': { name: 'FTA', display_name: 'Free Throws Attempted', sort_order: '1' },
+      '7': { name: 'FTM', display_name: 'Free Throws Made', sort_order: '1' },
+      '8': { name: 'FT%', display_name: 'Free Throw Percentage', sort_order: '1' },
+      '9': { name: '3PTA', display_name: '3-point Shots Attempted', sort_order: '1' },
+      '10': { name: '3PTM', display_name: '3-point Shots Made', sort_order: '1' },
+      '11': { name: '3PT%', display_name: '3-point Percentage', sort_order: '1' },
+      '12': { name: 'PTS', display_name: 'Points Scored', sort_order: '1' },
+      '13': { name: 'OREB', display_name: 'Offensive Rebounds', sort_order: '1' },
+      '14': { name: 'DREB', display_name: 'Defensive Rebounds', sort_order: '1' },
+      '15': { name: 'REB', display_name: 'Total Rebounds', sort_order: '1' },
+      '16': { name: 'AST', display_name: 'Assists', sort_order: '1' },
+      '17': { name: 'ST', display_name: 'Steals', sort_order: '1' },
+      '18': { name: 'BLK', display_name: 'Blocked Shots', sort_order: '1' },
+      '19': { name: 'TO', display_name: 'Turnovers', sort_order: '0' },
+      '20': { name: 'A/T', display_name: 'Assist/Turnover Ratio', sort_order: '1' },
+      '21': { name: 'PF', display_name: 'Personal Fouls', sort_order: '0' },
+      '22': { name: 'DISQ', display_name: 'Times Fouled Out', sort_order: '0' },
+      '23': { name: 'TECH', display_name: 'Technical Fouls', sort_order: '0' },
+      '24': { name: 'EJCT', display_name: 'Ejections', sort_order: '0' },
+      '25': { name: 'FF', display_name: 'Flagrant Fouls', sort_order: '0' },
+      '26': { name: 'MPG', display_name: 'Minutes Per Game', sort_order: '1' },
+      '27': { name: 'DD', display_name: 'Double-Doubles', sort_order: '1' },
+      '28': { name: 'TD', display_name: 'Triple-Doubles', sort_order: '1' }
+    },
+    // Percentage stat IDs for special formatting
+    PERCENTAGE_STATS: ['5', '8', '11']
   };
 
   // ============ DOM REFERENCES ============
@@ -135,11 +170,82 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Update on resize
       window.addEventListener('resize', setViewsByScreenWidth);
+    },
+    
+    // Format stat value based on type
+    formatStatValue: (id, value) => {
+      if (value === null || value === undefined || value === '') return '–';
+      
+      // Handle percentage stats specially
+      if (CONFIG.PERCENTAGE_STATS.includes(id)) {
+        // Convert values like ".333" to "0.333"
+        const num = parseFloat(value);
+        if (isNaN(num)) return value;
+        
+        // Format with leading zero if needed
+        return num.toFixed(3).replace(/^0\./, '.');
+      }
+      
+      return value;
     }
   };
   
   // ============ DATA HANDLING ============
   const DataService = {
+    // Try to fetch and parse the league settings
+    tryGetLeagueSettings: async () => {
+      try {
+        const r = await fetch('/api/league_settings');
+        if (!r.ok) throw new Error(`API returned ${r.status}`);
+        
+        const data = await r.json();
+        
+        // Access the stat_categories directly
+        const settings = data.fantasy_content.league[1]?.settings?.[0];
+        if (!settings || !settings.stat_categories || !settings.stat_categories.stats) {
+          console.warn('No stat_categories found in expected structure');
+          return false;
+        }
+        
+        const statCats = settings.stat_categories.stats;
+        console.log('Found stat categories:', statCats.length);
+        
+        const categories = [];
+        
+// Process each stat category
+statCats.forEach(catObj => {
+  const stat = catObj.stat;
+  if (!stat || stat.enabled !== '1') return;
+  
+  const id = stat.stat_id.toString();
+  const meta = CONFIG.STAT_METADATA[id] || {
+    name: stat.name,
+    display_name: stat.display_name,
+    sort_order: stat.sort_order
+  };
+  
+  // Use the abbreviation (display_name from API) instead of the full name
+  categories.push([
+    id, 
+    stat.display_name || stat.abbr || meta.name, // This will use the abbreviation from the API response
+    meta.sort_order === '1' ? 'high' : 'low'
+  ]);
+});
+        
+        if (categories.length > 0) {
+          console.log('Successfully loaded league categories:', categories);
+          CONFIG.COLS = categories;
+          return true;
+        } else {
+          console.warn('No enabled categories found in league settings');
+          return false;
+        }
+      } catch (e) {
+        console.error('Error loading league settings:', e);
+        return false;
+      }
+    },
+
     // Extract team data from weekly scoreboard API response
     extractWeekTeams: (data) => {
       const league = (data.fantasy_content.league || []).find(l => l.scoreboard);
@@ -221,19 +327,29 @@ document.addEventListener('DOMContentLoaded', () => {
       return teams.map(t => {
         const sm = {};
         CONFIG.COLS.forEach(([id, ,]) => {
-          let v = parseFloat(t.statMap[id]);
-          if (isNaN(v)) { 
+          let v = t.statMap[id];
+          if (v === null || v === undefined || v === '') { 
             sm[id] = '–'; 
             return; 
           }
           
-          if (mode === 'avg') {
-            v = id === '11' ? (v / currentWeek).toFixed(3) : (v / currentWeek).toFixed(0);
-          } else if (id === '11') {
-            v = v.toFixed(3);
+          // Parse the value
+          const numVal = parseFloat(v);
+          if (isNaN(numVal)) {
+            sm[id] = v;
+            return;
           }
           
-          sm[id] = v;
+          if (mode === 'avg') {
+            // Special handling for percentages
+            if (CONFIG.PERCENTAGE_STATS.includes(id)) {
+              sm[id] = Utils.formatStatValue(id, numVal);
+            } else {
+              sm[id] = (numVal / currentWeek).toFixed(0);
+            }
+          } else {
+            sm[id] = Utils.formatStatValue(id, numVal);
+          }
         });
         
         return { ...t, statMap: sm };
@@ -275,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add stat cells
         CONFIG.COLS.forEach(([id, , dir]) => {
-          const raw = t.statMap[id] ?? '–';
+          const raw = Utils.formatStatValue(id, t.statMap[id]);
           let cls = '';
           
           if (idx && raw !== '–' && base.statMap[id] !== '–') {
@@ -331,8 +447,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add stat items
         CONFIG.COLS.forEach(([id, label, dir]) => {
-          const raw = t.statMap[id] ?? '–';
-          const ur = base.statMap[id] ?? '–';
+          const raw = Utils.formatStatValue(id, t.statMap[id]);
+          const ur = Utils.formatStatValue(id, base.statMap[id]);
           let cls = '', diff = '';
           
           if (raw !== '–' && ur !== '–') {
@@ -340,7 +456,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
               let d = a - b; 
-              diff = id === '11' ? d.toFixed(3) : d.toFixed(0);
+              // Special handling for percentages
+              diff = CONFIG.PERCENTAGE_STATS.includes(id) ? d.toFixed(3).replace(/^-?0\./, '.') : d.toFixed(0);
               if (d > 0) diff = '+' + diff;
             }
           }
@@ -446,8 +563,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const a = parseFloat(raw), b = parseFloat(ur);
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
-              let d = a - b; 
-              diff = id === '11' ? d.toFixed(3) : d.toFixed(0);
+              let d = a - b;
+              // Special handling for percentages
+              diff = CONFIG.PERCENTAGE_STATS.includes(id) ? d.toFixed(3).replace(/^-?0\./, '.') : d.toFixed(0);
               if (d > 0) diff = '+' + diff;
             }
           }
@@ -469,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ============ API SERVICES ============
-  const API = {
+  const API = {    
     // Load weekly scoreboard data
     loadWeek: async (week) => {
       const { scoreTable } = DOM.weekly;
@@ -478,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const r = await fetch(`/api/scoreboard?week=${week}`);
         const raw = await r.json();
+        
         const teams = DataService.extractWeekTeams(raw);
         
         STATE.weekly.loadedTeams = teams;
@@ -519,7 +638,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ============ Initialize UI ============
-  const initUI = () => {
+  const initUI = async () => {
+    // Try to load league settings first
+    try {
+      await DataService.tryGetLeagueSettings();
+      console.log('Final CONFIG.COLS after initialization:', CONFIG.COLS);
+    } catch (e) {
+      console.error('Failed to load league settings:', e);
+      // Continue with default categories
+    }
+    
     // Initialize tab navigation
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -534,10 +662,10 @@ document.addEventListener('DOMContentLoaded', () => {
     Renderer.initWeekSelector();
     
     // Set up toggle buttons for views
-    DOM.weekly.cardsViewBtn.addEventListener('click', () => Utils.switchView('cards', DOM.weekly));
-    DOM.weekly.tableViewBtn.addEventListener('click', () => Utils.switchView('table', DOM.weekly));
-    DOM.compare.cardsViewBtn.addEventListener('click', () => Utils.switchView('cards', DOM.compare));
-    DOM.compare.tableViewBtn.addEventListener('click', () => Utils.switchView('table', DOM.compare));
+    DOM.weekly.cardsViewBtn?.addEventListener('click', () => Utils.switchView('cards', DOM.weekly));
+    DOM.weekly.tableViewBtn?.addEventListener('click', () => Utils.switchView('table', DOM.weekly));
+    DOM.compare.cardsViewBtn?.addEventListener('click', () => Utils.switchView('cards', DOM.compare));
+    DOM.compare.tableViewBtn?.addEventListener('click', () => Utils.switchView('table', DOM.compare));
     
     // Set up responsive views
     Utils.initResponsiveView();
@@ -546,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.weekly.weekSel.addEventListener('change', () => API.loadWeek(+DOM.weekly.weekSel.value));
     
     // Add event listener for the weekly showRanks checkbox 
-    DOM.weekly.showRanksChk.addEventListener('change', () => {
+    DOM.weekly.showRanksChk?.addEventListener('change', () => {
       if (STATE.weekly.loadedTeams.length) {
         Renderer.renderWeekTable(STATE.weekly.loadedTeams);
         Renderer.renderWeekCards(STATE.weekly.loadedTeams);
@@ -554,21 +682,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Add event listener for the compare showRanks checkbox
-    DOM.compare.showRanksChk.addEventListener('change', () => {
+    DOM.compare.showRanksChk?.addEventListener('change', () => {
       if (STATE.compare.seasonPayload) {
         API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode);
       }
     });
     
     // Load compare tab data when selected
-    document.querySelector('[data-target="tab-compare"]').addEventListener('click', () => {
+    document.querySelector('[data-target="tab-compare"]')?.addEventListener('click', () => {
       if (!STATE.compare.seasonPayload) {
         API.loadSeasonStats();
       }
     });
     
     // Set up view selector for season data
-    DOM.compare.viewSel.addEventListener('change', () => {
+    DOM.compare.viewSel?.addEventListener('change', () => {
       STATE.compare.seasonMode = DOM.compare.viewSel.value;
       if (STATE.compare.seasonPayload) {
         API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode);
