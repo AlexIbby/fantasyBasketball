@@ -424,6 +424,232 @@ def _analyze_scoreboard_for_teams(data):
     except Exception as e:
         return f"Error analyzing scoreboard: {str(e)}"
 
+# Add these new routes to your main.py file
+
+# ---------- PLAYER STATS BY WEEK ----------
+@app.route("/api/player_stats_week/<int:week>")
+def api_player_stats_week(week):
+    """Get player stats for a specific week"""
+    if "league_key" not in session:
+        return jsonify({"error": "no league chosen"}), 400
+    
+    # Get the team key from the league key and team name
+    try:
+        # First get the team key for the current user's team
+        league_key = session["league_key"]
+        rel = f"fantasy/v2/league/{league_key}/teams"
+        teams_data = yahoo_api(rel)
+        
+        team_key = None
+        fc = teams_data.get("fantasy_content", {})
+        league = fc.get("league", [{}])
+        teams = league[1].get("teams", {}) if isinstance(league, list) and len(league) > 1 else {}
+        
+        for team_obj in _safe_iter(teams, "team"):
+            if isinstance(team_obj, list) and len(team_obj) > 0:
+                for item in team_obj[0]:
+                    if isinstance(item, dict):
+                        if 'name' in item and item['name'] == session["team_name"]:
+                            team_key = _first(team_obj[0], "team_key")
+                        elif 'is_owned_by_current_login' in item and item['is_owned_by_current_login'] == '1':
+                            team_key = _first(team_obj[0], "team_key")
+                            
+        if not team_key:
+            return jsonify({"error": "could not find team key"}), 404
+        
+        # Now get the player stats for that team for the specified week
+        rel = f"fantasy/v2/team/{team_key}/players/stats;type=week;week={week}"
+        data = yahoo_api(rel)
+        
+        # Debug output to file
+        try:
+            with open(f"player_stats_week_{week}.json", "w", encoding="utf-8") as fh:
+                json.dump(data, fh, indent=2)
+        except Exception as e:
+            log.warning(f"⚠️  couldn't write debug JSON for week {week}: {e}")
+            
+        return jsonify(data)
+        
+    except Exception as e:
+        log.error(f"Error fetching player stats for week {week}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ---------- PLAYER STATS SEASON TOTALS ----------
+@app.route("/api/player_stats_season")
+def api_player_stats_season():
+    """Get player stats for the entire season"""
+    if "league_key" not in session:
+        return jsonify({"error": "no league chosen"}), 400
+    
+    try:
+        # First get the team key for the current user's team
+        league_key = session["league_key"]
+        rel = f"fantasy/v2/league/{league_key}/teams"
+        teams_data = yahoo_api(rel)
+        
+        team_key = None
+        fc = teams_data.get("fantasy_content", {})
+        league = fc.get("league", [{}])
+        teams = league[1].get("teams", {}) if isinstance(league, list) and len(league) > 1 else {}
+        
+        for team_obj in _safe_iter(teams, "team"):
+            if isinstance(team_obj, list) and len(team_obj) > 0:
+                for item in team_obj[0]:
+                    if isinstance(item, dict):
+                        if 'name' in item and item['name'] == session["team_name"]:
+                            team_key = _first(team_obj[0], "team_key")
+                        elif 'is_owned_by_current_login' in item and item['is_owned_by_current_login'] == '1':
+                            team_key = _first(team_obj[0], "team_key")
+        
+        if not team_key:
+            return jsonify({"error": "could not find team key"}), 404
+        
+        # Now get the season stats for the team's players
+        rel = f"fantasy/v2/team/{team_key}/players/stats;type=season"
+        data = yahoo_api(rel)
+        
+        # Debug output to file
+        try:
+            with open("player_stats_season.json", "w", encoding="utf-8") as fh:
+                json.dump(data, fh, indent=2)
+        except Exception as e:
+            log.warning(f"⚠️  couldn't write debug JSON for season stats: {e}")
+            
+        return jsonify(data)
+        
+    except Exception as e:
+        log.error(f"Error fetching player stats for season: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ---------- DEBUG ENDPOINTS ----------
+@app.route("/debug/player_stats_week/<int:week>")
+def debug_player_stats_week(week):
+    """Debug endpoint to view raw player stats response for a week"""
+    if "league_key" not in session:
+        return jsonify({"error": "No league chosen. Please select a league first."}), 400
+    
+    try:
+        # First get the team key
+        league_key = session["league_key"]
+        rel = f"fantasy/v2/league/{league_key}/teams"
+        teams_data = yahoo_api(rel)
+        
+        team_key = None
+        fc = teams_data.get("fantasy_content", {})
+        league = fc.get("league", [{}])
+        teams = league[1].get("teams", {}) if isinstance(league, list) and len(league) > 1 else {}
+        
+        for team_obj in _safe_iter(teams, "team"):
+            if isinstance(team_obj, list) and len(team_obj) > 0:
+                for item in team_obj[0]:
+                    if isinstance(item, dict):
+                        if 'name' in item and item['name'] == session["team_name"]:
+                            team_key = _first(team_obj[0], "team_key")
+                        elif 'is_owned_by_current_login' in item and item['is_owned_by_current_login'] == '1':
+                            team_key = _first(team_obj[0], "team_key")
+        
+        if not team_key:
+            return "Could not find team key"
+        
+        # Now get the player stats
+        rel = f"fantasy/v2/team/{team_key}/players/stats;type=week;week={week}"
+        data = yahoo_api(rel)
+        
+        # Pretty print the JSON data
+        formatted_json = json.dumps(data, indent=2, sort_keys=True)
+        
+        return f"""
+        <html>
+        <head>
+            <title>Player Stats - Week {week} Debug</title>
+            <style>
+                body {{ font-family: monospace; padding: 20px; }}
+                pre {{ background: #f5f5f5; padding: 15px; overflow: auto; max-height: 80vh; }}
+                .analysis {{ background: #e6f7ff; padding: 15px; margin-bottom: 15px; border-left: 4px solid #1890ff; }}
+            </style>
+        </head>
+        <body>
+            <h2>Player Stats API Response - Week {week}</h2>
+            <div class="analysis">
+                <h3>Team Key</h3>
+                <pre>{team_key}</pre>
+                
+                <h3>Data Analysis</h3>
+                <p>Checking for player data structure...</p>
+                <pre>{json.dumps(list(data.get('fantasy_content', {}).keys()), indent=2)}</pre>
+            </div>
+            <h3>Full Response:</h3>
+            <pre>{formatted_json}</pre>
+        </body>
+        </html>
+        """
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@app.route("/debug/player_stats_season")
+def debug_player_stats_season():
+    """Debug endpoint to view raw player stats for the season"""
+    if "league_key" not in session:
+        return jsonify({"error": "No league chosen. Please select a league first."}), 400
+    
+    try:
+        # First get the team key
+        league_key = session["league_key"]
+        rel = f"fantasy/v2/league/{league_key}/teams"
+        teams_data = yahoo_api(rel)
+        
+        team_key = None
+        fc = teams_data.get("fantasy_content", {})
+        league = fc.get("league", [{}])
+        teams = league[1].get("teams", {}) if isinstance(league, list) and len(league) > 1 else {}
+        
+        for team_obj in _safe_iter(teams, "team"):
+            if isinstance(team_obj, list) and len(team_obj) > 0:
+                for item in team_obj[0]:
+                    if isinstance(item, dict):
+                        if 'name' in item and item['name'] == session["team_name"]:
+                            team_key = _first(team_obj[0], "team_key")
+                        elif 'is_owned_by_current_login' in item and item['is_owned_by_current_login'] == '1':
+                            team_key = _first(team_obj[0], "team_key")
+        
+        if not team_key:
+            return "Could not find team key"
+        
+        # Now get the player stats
+        rel = f"fantasy/v2/team/{team_key}/players/stats;type=season"
+        data = yahoo_api(rel)
+        
+        # Pretty print the JSON data
+        formatted_json = json.dumps(data, indent=2, sort_keys=True)
+        
+        return f"""
+        <html>
+        <head>
+            <title>Player Stats - Season Debug</title>
+            <style>
+                body {{ font-family: monospace; padding: 20px; }}
+                pre {{ background: #f5f5f5; padding: 15px; overflow: auto; max-height: 80vh; }}
+                .analysis {{ background: #e6f7ff; padding: 15px; margin-bottom: 15px; border-left: 4px solid #1890ff; }}
+            </style>
+        </head>
+        <body>
+            <h2>Player Stats API Response - Season Totals</h2>
+            <div class="analysis">
+                <h3>Team Key</h3>
+                <pre>{team_key}</pre>
+                
+                <h3>Data Analysis</h3>
+                <p>Checking for player data structure...</p>
+                <pre>{json.dumps(list(data.get('fantasy_content', {}).keys()), indent=2)}</pre>
+            </div>
+            <h3>Full Response:</h3>
+            <pre>{formatted_json}</pre>
+        </body>
+        </html>
+        """
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 # ─────────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":
     # use `flask run` in production; this is for local dev only
