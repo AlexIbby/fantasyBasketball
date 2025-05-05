@@ -1,4 +1,5 @@
 /* ───── Refactored dashboard.js ───── */
+/* ───── Refactored dashboard.js ───── */
 document.addEventListener('DOMContentLoaded', () => {
   // ============ CONFIG ============
   const CONFIG = {
@@ -51,6 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
     PERCENTAGE_STATS: ['5', '8', '11']
   };
 
+  // Make CONFIG globally available for other scripts
+  window.CONFIG = CONFIG;
+  
   // ============ DOM REFERENCES ============
   const DOM = {
     // Weekly view elements

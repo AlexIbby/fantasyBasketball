@@ -309,6 +309,121 @@ def debug_scoreboard():
     except Exception as e:
         return f"Error: {str(e)}"
 
+@app.route("/debug/week_data/<int:week>")
+def debug_week_data(week):
+    """
+    Debug endpoint to view raw weekly data for analysis.
+    """
+    if "league_key" not in session:
+        return jsonify({"error": "No league chosen. Please select a league first."}), 400
+    
+    try:
+        rel = f"fantasy/v2/league/{session['league_key']}/scoreboard;week={week}"
+        data = yahoo_api(rel)
+        
+        # Pretty print the JSON data
+        formatted_json = json.dumps(data, indent=2, sort_keys=True)
+        
+        return f"""
+        <html>
+        <head>
+            <title>Week {week} Data Debug</title>
+            <style>
+                body {{ font-family: monospace; padding: 20px; }}
+                pre {{ background: #f5f5f5; padding: 15px; overflow: auto; max-height: 80vh; }}
+                .analysis {{ background: #e6f7ff; padding: 15px; margin-bottom: 15px; border-left: 4px solid #1890ff; }}
+            </style>
+        </head>
+        <body>
+            <h2>Week {week} Scoreboard API Response</h2>
+            <div class="analysis">
+                <h3>Data Analysis</h3>
+                <p>Checking for league structure...</p>
+                <pre>{json.dumps(list(data.get('fantasy_content', {}).keys()), indent=2)}</pre>
+                
+                <p>Checking for scoreboard data...</p>
+                <pre>{json.dumps(list(data.get('fantasy_content', {}).get('league', [{}])[0].keys()) if isinstance(data.get('fantasy_content', {}).get('league'), list) else "League not found or not a list", indent=2)}</pre>
+                
+                <p>Trying to find user's team:</p>
+                {_analyze_scoreboard_for_teams(data)}
+            </div>
+            <h3>Full Response:</h3>
+            <pre>{formatted_json}</pre>
+        </body>
+        </html>
+        """
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def _analyze_scoreboard_for_teams(data):
+    """Helper function to extract team info from scoreboard data"""
+    result = []
+    try:
+        fc = data.get('fantasy_content', {})
+        league = None
+        
+        if isinstance(fc.get('league'), list):
+            for item in fc.get('league'):
+                if 'scoreboard' in item:
+                    league = item
+                    break
+        else:
+            league = fc.get('league')
+        
+        if not league or 'scoreboard' not in league:
+            return "League or scoreboard not found in expected structure"
+            
+        scoreboard = league['scoreboard']
+        matchups = scoreboard.get('0', {}).get('matchups', scoreboard.get('matchups', {}))
+        
+        for matchup_key, matchup_data in matchups.items():
+            if matchup_key == 'count':
+                continue
+                
+            result.append(f"<p><strong>Matchup {matchup_key}:</strong></p>")
+            
+            matchup = matchup_data.get('matchup', {})
+            teams = matchup.get('0', {}).get('teams', matchup.get('teams', {}))
+            
+            for team_key, team_data in teams.items():
+                if team_key == 'count':
+                    continue
+                    
+                team = team_data.get('team', [])
+                team_info = team[0] if isinstance(team, list) and len(team) > 0 else {}
+                
+                team_name = None
+                is_current_user = False
+                
+                for item in team_info:
+                    if isinstance(item, dict):
+                        if 'name' in item:
+                            team_name = item['name']
+                        if item.get('is_owned_by_current_login') == '1' or item.get('is_current_login') == '1':
+                            is_current_user = True
+                        if 'managers' in item:
+                            for manager in item.get('managers', []):
+                                if isinstance(manager, dict) and manager.get('manager', {}).get('is_current_login') == '1':
+                                    is_current_user = True
+                
+                result.append(f"<p>{'👤 ' if is_current_user else ''}Team: {team_name or 'Unknown'} {'(Current User)' if is_current_user else ''}</p>")
+                
+                # Check if team stats exist
+                if len(team) > 1 and isinstance(team[1], dict) and 'team_stats' in team[1]:
+                    stats = team[1]['team_stats'].get('stats', [])
+                    result.append(f"<p>Stats count: {len(stats)}</p>")
+                    
+                    if len(stats) > 0:
+                        # Show first few stats as examples
+                        sample_stats = stats[:3]
+                        result.append("<p>Sample stats:</p><pre>" + json.dumps(sample_stats, indent=2) + "</pre>")
+                else:
+                    result.append("<p>⚠️ No team stats found for this team</p>")
+                
+        return "".join(result)
+    except Exception as e:
+        return f"Error analyzing scoreboard: {str(e)}"
+
 # ─────────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":
     # use `flask run` in production; this is for local dev only

@@ -1,37 +1,37 @@
 {
   "fantasy_content": {
     "xml:lang": "en-US",
-    "yahoo:uri": "/fantasy/v2/league/418.l.89398/teams;out=stats;type=season",
+    "yahoo:uri": "/fantasy/v2/league/454.l.3604/teams;out=stats;type=season",
     "league": [
       {
-        "league_key": "418.l.89398",
-        "league_id": "89398",
+        "league_key": "454.l.3604",
+        "league_id": "3604",
         "name": "For Realzz",
-        "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398",
-        "logo_url": false,
+        "url": "https://basketball.fantasysports.yahoo.com/nba/3604",
+        "logo_url": "https://s.yimg.com/ep/cx/blendr/v2/image-y-png_1721252122724.png",
         "draft_status": "postdraft",
         "num_teams": 10,
-        "edit_key": "2023-03-19",
-        "weekly_deadline": "1",
-        "league_update_timestamp": "1679298939",
+        "edit_key": "2025-03-23",
+        "weekly_deadline": "intraday",
+        "league_update_timestamp": "1742803176",
         "scoring_type": "head",
         "league_type": "private",
-        "renew": "410_76346",
-        "renewed": "428_50576",
+        "renew": "428_50576",
+        "renewed": "",
         "felo_tier": "silver",
         "iris_group_chat_id": "",
         "allow_add_to_dl_extra_pos": 1,
         "is_pro_league": "0",
         "is_cash_league": "0",
-        "current_week": "21",
+        "current_week": "20",
         "start_week": "1",
-        "start_date": "2022-10-18",
-        "end_week": "21",
-        "end_date": "2023-03-19",
+        "start_date": "2024-10-22",
+        "end_week": "20",
+        "end_date": "2025-03-23",
         "is_finished": 1,
         "is_plus_league": "0",
         "game_code": "nba",
-        "season": "2022"
+        "season": "2024"
       },
       {
         "teams": {
@@ -39,7 +39,7 @@
             "team": [
               [
                 {
-                  "team_key": "418.l.89398.t.1"
+                  "team_key": "454.l.3604.t.1"
                 },
                 {
                   "team_id": "1"
@@ -49,7 +49,7 @@
                 },
                 [],
                 {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/1"
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/1"
                 },
                 {
                   "team_logos": [
@@ -63,19 +63,19 @@
                 },
                 [],
                 {
-                  "waiver_priority": 6
+                  "waiver_priority": 4
                 },
                 [],
                 {
-                  "number_of_moves": 28
+                  "number_of_moves": 59
                 },
                 {
-                  "number_of_trades": "5"
+                  "number_of_trades": "1"
                 },
                 {
                   "roster_adds": {
                     "coverage_type": "week",
-                    "coverage_value": 24,
+                    "coverage_value": 23,
                     "value": "0"
                   }
                 },
@@ -106,8 +106,8 @@
                         "is_commissioner": "1",
                         "email": "mcewanc8@gmail.com",
                         "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
-                        "felo_score": "763",
-                        "felo_tier": "gold"
+                        "felo_score": "859",
+                        "felo_tier": "platinum"
                       }
                     }
                   ]
@@ -116,73 +116,73 @@
               {
                 "team_stats": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "stats": [
                     {
                       "stat": {
                         "stat_id": "10",
-                        "value": "862"
+                        "value": "1418"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "9",
-                        "value": "2390"
+                        "value": "3956"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "11",
-                        "value": ".361"
+                        "value": ".358"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "12",
-                        "value": "12563"
+                        "value": "16530"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "15",
-                        "value": "4836"
+                        "value": "6282"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "16",
-                        "value": "2957"
+                        "value": "4178"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "17",
-                        "value": "640"
+                        "value": "952"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "18",
-                        "value": "511"
+                        "value": "728"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "19",
-                        "value": "1505"
+                        "value": "2192"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "27",
-                        "value": "192"
+                        "value": "259"
                       }
                     }
                   ]
                 },
                 "team_points": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "total": ""
                 }
               }
@@ -192,7 +192,7 @@
             "team": [
               [
                 {
-                  "team_key": "418.l.89398.t.2"
+                  "team_key": "454.l.3604.t.2"
                 },
                 {
                   "team_id": "2"
@@ -202,7 +202,7 @@
                 },
                 [],
                 {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/2"
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/2"
                 },
                 {
                   "team_logos": [
@@ -216,19 +216,19 @@
                 },
                 [],
                 {
-                  "waiver_priority": 9
+                  "waiver_priority": 7
                 },
                 [],
                 {
-                  "number_of_moves": 13
+                  "number_of_moves": 30
                 },
                 {
-                  "number_of_trades": "1"
+                  "number_of_trades": 0
                 },
                 {
                   "roster_adds": {
                     "coverage_type": "week",
-                    "coverage_value": 24,
+                    "coverage_value": 23,
                     "value": "0"
                   }
                 },
@@ -256,8 +256,8 @@
                         "guid": "BHY4TXUDETFSN3IDORIOQXUI6B",
                         "email": "brodieoneil@gmail.com",
                         "image_url": "https://s.yimg.com/ag/images/830db45b-05b8-4e77-acc7-355ce9dac381_64sq.jpg",
-                        "felo_score": "629",
-                        "felo_tier": "silver"
+                        "felo_score": "579",
+                        "felo_tier": "bronze"
                       }
                     }
                   ]
@@ -266,73 +266,73 @@
               {
                 "team_stats": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "stats": [
                     {
                       "stat": {
                         "stat_id": "10",
-                        "value": "1085"
+                        "value": "1701"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "9",
-                        "value": "3080"
+                        "value": "4701"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "11",
-                        "value": ".352"
+                        "value": ".362"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "12",
-                        "value": "11429"
+                        "value": "13444"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "15",
-                        "value": "3584"
+                        "value": "3689"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "16",
-                        "value": "2557"
+                        "value": "3042"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "17",
-                        "value": "683"
+                        "value": "843"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "18",
-                        "value": "305"
+                        "value": "583"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "19",
-                        "value": "1341"
+                        "value": "1580"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "27",
-                        "value": "108"
+                        "value": "82"
                       }
                     }
                   ]
                 },
                 "team_points": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "total": ""
                 }
               }
@@ -342,7 +342,7 @@
             "team": [
               [
                 {
-                  "team_key": "418.l.89398.t.3"
+                  "team_key": "454.l.3604.t.3"
                 },
                 {
                   "team_id": "3"
@@ -354,7 +354,7 @@
                   "is_owned_by_current_login": 1
                 },
                 {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/3"
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/3"
                 },
                 {
                   "team_logos": [
@@ -368,19 +368,19 @@
                 },
                 [],
                 {
-                  "waiver_priority": 8
+                  "waiver_priority": 9
                 },
                 [],
                 {
-                  "number_of_moves": 41
+                  "number_of_moves": 50
                 },
                 {
-                  "number_of_trades": "3"
+                  "number_of_trades": 0
                 },
                 {
                   "roster_adds": {
                     "coverage_type": "week",
-                    "coverage_value": 24,
+                    "coverage_value": 23,
                     "value": "0"
                   }
                 },
@@ -411,8 +411,8 @@
                         "is_current_login": "1",
                         "email": "alex.a.ibrahim@gmail.com",
                         "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
-                        "felo_score": "720",
-                        "felo_tier": "gold"
+                        "felo_score": "674",
+                        "felo_tier": "silver"
                       }
                     }
                   ]
@@ -421,73 +421,73 @@
               {
                 "team_stats": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "stats": [
                     {
                       "stat": {
                         "stat_id": "10",
-                        "value": "785"
+                        "value": "1500"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "9",
-                        "value": "2273"
+                        "value": "4053"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "11",
-                        "value": ".345"
+                        "value": ".370"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "12",
-                        "value": "11226"
+                        "value": "13295"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "15",
-                        "value": "4872"
+                        "value": "5234"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "16",
-                        "value": "2982"
+                        "value": "3248"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "17",
-                        "value": "554"
+                        "value": "963"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "18",
-                        "value": "630"
+                        "value": "530"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "19",
-                        "value": "1391"
+                        "value": "1427"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "27",
-                        "value": "219"
+                        "value": "146"
                       }
                     }
                   ]
                 },
                 "team_points": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "total": ""
                 }
               }
@@ -497,43 +497,43 @@
             "team": [
               [
                 {
-                  "team_key": "418.l.89398.t.4"
+                  "team_key": "454.l.3604.t.4"
                 },
                 {
                   "team_id": "4"
                 },
                 {
-                  "name": "Gregory Drive Gems"
+                  "name": "Peanut butter jelly time"
                 },
                 [],
                 {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/4"
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/4"
                 },
                 {
                   "team_logos": [
                     {
                       "team_logo": {
                         "size": "large",
-                        "url": "https://s.yimg.com/cv/apiv2/default/nba/nba_2_g.png"
+                        "url": "https://yahoofantasysports-res.cloudinary.com/image/upload/t_s192sq/fantasy-logos/597c143900bd769eed4ca9cc1b609e071f0ab1975f5cf86655d67df5d8728622.jpg"
                       }
                     }
                   ]
                 },
                 [],
                 {
-                  "waiver_priority": 7
+                  "waiver_priority": 6
                 },
                 [],
                 {
-                  "number_of_moves": 19
+                  "number_of_moves": 68
                 },
                 {
-                  "number_of_trades": 0
+                  "number_of_trades": "2"
                 },
                 {
                   "roster_adds": {
                     "coverage_type": "week",
-                    "coverage_value": 24,
+                    "coverage_value": 23,
                     "value": "0"
                   }
                 },
@@ -559,163 +559,10 @@
                     {
                       "manager": {
                         "manager_id": "4",
-                        "nickname": "Greg",
-                        "guid": "NWTUYMYBPSIK5F6RLVAZQLB4BQ",
-                        "is_commissioner": "1",
-                        "email": "ghouston_88@hotmail.com",
-                        "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
-                        "felo_score": "805",
-                        "felo_tier": "platinum"
-                      }
-                    }
-                  ]
-                }
-              ],
-              {
-                "team_stats": {
-                  "coverage_type": "season",
-                  "season": "2022",
-                  "stats": [
-                    {
-                      "stat": {
-                        "stat_id": "10",
-                        "value": "1704"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "9",
-                        "value": "4516"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "11",
-                        "value": ".377"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "12",
-                        "value": "12881"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "15",
-                        "value": "3491"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "16",
-                        "value": "3077"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "17",
-                        "value": "629"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "18",
-                        "value": "274"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "19",
-                        "value": "1415"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "27",
-                        "value": "100"
-                      }
-                    }
-                  ]
-                },
-                "team_points": {
-                  "coverage_type": "season",
-                  "season": "2022",
-                  "total": ""
-                }
-              }
-            ]
-          },
-          "4": {
-            "team": [
-              [
-                {
-                  "team_key": "418.l.89398.t.5"
-                },
-                {
-                  "team_id": "5"
-                },
-                {
-                  "name": "Peanut butter jelly time"
-                },
-                [],
-                {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/5"
-                },
-                {
-                  "team_logos": [
-                    {
-                      "team_logo": {
-                        "size": "large",
-                        "url": "https://yahoofantasysports-res.cloudinary.com/image/upload/t_s192sq/fantasy-logos/e36af3d64592a0688099f548c9c43e7408ffda6f0c7829454a7f7af644013cbc.jpg"
-                      }
-                    }
-                  ]
-                },
-                [],
-                {
-                  "waiver_priority": 4
-                },
-                [],
-                {
-                  "number_of_moves": 13
-                },
-                {
-                  "number_of_trades": "1"
-                },
-                {
-                  "roster_adds": {
-                    "coverage_type": "week",
-                    "coverage_value": 24,
-                    "value": "0"
-                  }
-                },
-                {
-                  "clinched_playoffs": 1
-                },
-                {
-                  "league_scoring_type": "head"
-                },
-                [],
-                [],
-                {
-                  "has_draft_grade": 0
-                },
-                {
-                  "auction_budget_total": "200"
-                },
-                {
-                  "auction_budget_spent": 200
-                },
-                {
-                  "managers": [
-                    {
-                      "manager": {
-                        "manager_id": "5",
                         "nickname": "John",
                         "guid": "PUV4WVBNJJOFXPETEJ5X7CPLVM",
                         "image_url": "https://s.yimg.com/ag/images/263d3cd8-660f-4f78-9e6d-c84c79dce209_64sq.jpg",
-                        "felo_score": "648",
+                        "felo_score": "635",
                         "felo_tier": "silver"
                       }
                     }
@@ -725,93 +572,93 @@
               {
                 "team_stats": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "stats": [
                     {
                       "stat": {
                         "stat_id": "10",
-                        "value": "1360"
+                        "value": "1715"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "9",
-                        "value": "3609"
+                        "value": "4854"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "11",
-                        "value": ".377"
+                        "value": ".353"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "12",
-                        "value": "12742"
+                        "value": "15409"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "15",
-                        "value": "4186"
+                        "value": "5232"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "16",
-                        "value": "2890"
+                        "value": "3807"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "17",
-                        "value": "659"
+                        "value": "963"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "18",
-                        "value": "370"
+                        "value": "409"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "19",
-                        "value": "1408"
+                        "value": "1952"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "27",
-                        "value": "143"
+                        "value": "173"
                       }
                     }
                   ]
                 },
                 "team_points": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "total": ""
                 }
               }
             ]
           },
-          "5": {
+          "4": {
             "team": [
               [
                 {
-                  "team_key": "418.l.89398.t.6"
+                  "team_key": "454.l.3604.t.5"
                 },
                 {
-                  "team_id": "6"
+                  "team_id": "5"
                 },
                 {
                   "name": "Simp and a hasbeen"
                 },
                 [],
                 {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/6"
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/5"
                 },
                 {
                   "team_logos": [
@@ -829,15 +676,15 @@
                 },
                 [],
                 {
-                  "number_of_moves": 12
+                  "number_of_moves": 20
                 },
                 {
-                  "number_of_trades": "1"
+                  "number_of_trades": 0
                 },
                 {
                   "roster_adds": {
                     "coverage_type": "week",
-                    "coverage_value": 24,
+                    "coverage_value": 23,
                     "value": "0"
                   }
                 },
@@ -856,18 +703,18 @@
                   "auction_budget_total": "200"
                 },
                 {
-                  "auction_budget_spent": 199
+                  "auction_budget_spent": 187
                 },
                 {
                   "managers": [
                     {
                       "manager": {
-                        "manager_id": "6",
+                        "manager_id": "5",
                         "nickname": "Conor",
                         "guid": "VWBSTX6BLBEVYUAN27GZ55BLT6",
                         "email": "c_allin_@hotmail.com",
                         "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
-                        "felo_score": "531",
+                        "felo_score": "544",
                         "felo_tier": "bronze"
                       }
                     }
@@ -877,93 +724,93 @@
               {
                 "team_stats": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "stats": [
                     {
                       "stat": {
                         "stat_id": "10",
-                        "value": "682"
+                        "value": "1259"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "9",
-                        "value": "1954"
+                        "value": "3508"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "11",
-                        "value": ".349"
+                        "value": ".359"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "12",
-                        "value": "10220"
+                        "value": "13132"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "15",
-                        "value": "4143"
+                        "value": "4931"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "16",
-                        "value": "2383"
+                        "value": "3186"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "17",
-                        "value": "615"
+                        "value": "884"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "18",
-                        "value": "515"
+                        "value": "643"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "19",
-                        "value": "1159"
+                        "value": "1488"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "27",
-                        "value": "137"
+                        "value": "141"
                       }
                     }
                   ]
                 },
                 "team_points": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "total": ""
                 }
               }
             ]
           },
-          "6": {
+          "5": {
             "team": [
               [
                 {
-                  "team_key": "418.l.89398.t.7"
+                  "team_key": "454.l.3604.t.6"
                 },
                 {
-                  "team_id": "7"
+                  "team_id": "6"
                 },
                 {
                   "name": "\ud83d\udc10"
                 },
                 [],
                 {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/7"
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/6"
                 },
                 {
                   "team_logos": [
@@ -977,321 +824,19 @@
                 },
                 [],
                 {
-                  "waiver_priority": 10
+                  "waiver_priority": 8
                 },
                 [],
                 {
-                  "number_of_moves": 26
+                  "number_of_moves": 69
                 },
                 {
-                  "number_of_trades": "3"
+                  "number_of_trades": "1"
                 },
                 {
                   "roster_adds": {
                     "coverage_type": "week",
-                    "coverage_value": 24,
-                    "value": "0"
-                  }
-                },
-                [],
-                {
-                  "league_scoring_type": "head"
-                },
-                [],
-                [],
-                {
-                  "has_draft_grade": 0
-                },
-                {
-                  "auction_budget_total": "200"
-                },
-                {
-                  "auction_budget_spent": 200
-                },
-                {
-                  "managers": [
-                    {
-                      "manager": {
-                        "manager_id": "7",
-                        "nickname": "Slam",
-                        "guid": "ZXQS3RGLIPHCTXNTCG5DBLPQL3",
-                        "email": "tsirimbis@gmail.com",
-                        "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
-                        "felo_score": "608",
-                        "felo_tier": "silver"
-                      }
-                    }
-                  ]
-                }
-              ],
-              {
-                "team_stats": {
-                  "coverage_type": "season",
-                  "season": "2022",
-                  "stats": [
-                    {
-                      "stat": {
-                        "stat_id": "10",
-                        "value": "974"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "9",
-                        "value": "2700"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "11",
-                        "value": ".361"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "12",
-                        "value": "10741"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "15",
-                        "value": "3496"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "16",
-                        "value": "1581"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "17",
-                        "value": "488"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "18",
-                        "value": "462"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "19",
-                        "value": "1156"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "27",
-                        "value": "86"
-                      }
-                    }
-                  ]
-                },
-                "team_points": {
-                  "coverage_type": "season",
-                  "season": "2022",
-                  "total": ""
-                }
-              }
-            ]
-          },
-          "7": {
-            "team": [
-              [
-                {
-                  "team_key": "418.l.89398.t.8"
-                },
-                {
-                  "team_id": "8"
-                },
-                {
-                  "name": "North York Incels"
-                },
-                [],
-                {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/8"
-                },
-                {
-                  "team_logos": [
-                    {
-                      "team_logo": {
-                        "size": "large",
-                        "url": "https://s.yimg.com/cv/apiv2/default/nba/nba_12_j.png"
-                      }
-                    }
-                  ]
-                },
-                [],
-                {
-                  "waiver_priority": 3
-                },
-                [],
-                {
-                  "number_of_moves": 6
-                },
-                {
-                  "number_of_trades": 0
-                },
-                {
-                  "roster_adds": {
-                    "coverage_type": "week",
-                    "coverage_value": 24,
-                    "value": "0"
-                  }
-                },
-                {
-                  "clinched_playoffs": 1
-                },
-                {
-                  "league_scoring_type": "head"
-                },
-                [],
-                [],
-                {
-                  "has_draft_grade": 0
-                },
-                {
-                  "auction_budget_total": "200"
-                },
-                {
-                  "auction_budget_spent": 199
-                },
-                {
-                  "managers": [
-                    {
-                      "manager": {
-                        "manager_id": "8",
-                        "nickname": "John",
-                        "guid": "HHD7YG2XDPPKD2M2ECFOKAOGVU",
-                        "email": "jtsirimbis@gmail.com",
-                        "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
-                        "felo_score": "783",
-                        "felo_tier": "gold"
-                      }
-                    }
-                  ]
-                }
-              ],
-              {
-                "team_stats": {
-                  "coverage_type": "season",
-                  "season": "2022",
-                  "stats": [
-                    {
-                      "stat": {
-                        "stat_id": "10",
-                        "value": "1352"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "9",
-                        "value": "3674"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "11",
-                        "value": ".368"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "12",
-                        "value": "12742"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "15",
-                        "value": "3997"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "16",
-                        "value": "2529"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "17",
-                        "value": "509"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "18",
-                        "value": "346"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "19",
-                        "value": "1398"
-                      }
-                    },
-                    {
-                      "stat": {
-                        "stat_id": "27",
-                        "value": "162"
-                      }
-                    }
-                  ]
-                },
-                "team_points": {
-                  "coverage_type": "season",
-                  "season": "2022",
-                  "total": ""
-                }
-              }
-            ]
-          },
-          "8": {
-            "team": [
-              [
-                {
-                  "team_key": "418.l.89398.t.9"
-                },
-                {
-                  "team_id": "9"
-                },
-                {
-                  "name": "cameron's Dandy Team"
-                },
-                [],
-                {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/9"
-                },
-                {
-                  "team_logos": [
-                    {
-                      "team_logo": {
-                        "size": "large",
-                        "url": "https://s.yimg.com/cv/apiv2/default/nba/nba_3_c.png"
-                      }
-                    }
-                  ]
-                },
-                [],
-                {
-                  "waiver_priority": 1
-                },
-                [],
-                {
-                  "number_of_moves": 0
-                },
-                {
-                  "number_of_trades": 0
-                },
-                {
-                  "roster_adds": {
-                    "coverage_type": "week",
-                    "coverage_value": 24,
+                    "coverage_value": 23,
                     "value": "0"
                   }
                 },
@@ -1316,12 +861,314 @@
                   "managers": [
                     {
                       "manager": {
-                        "manager_id": "9",
+                        "manager_id": "6",
+                        "nickname": "Slam",
+                        "guid": "ZXQS3RGLIPHCTXNTCG5DBLPQL3",
+                        "email": "tsirimbis@gmail.com",
+                        "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
+                        "felo_score": "723",
+                        "felo_tier": "gold"
+                      }
+                    }
+                  ]
+                }
+              ],
+              {
+                "team_stats": {
+                  "coverage_type": "season",
+                  "season": "2024",
+                  "stats": [
+                    {
+                      "stat": {
+                        "stat_id": "10",
+                        "value": "1740"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "9",
+                        "value": "4656"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "11",
+                        "value": ".374"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "12",
+                        "value": "16989"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "15",
+                        "value": "5748"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "16",
+                        "value": "3737"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "17",
+                        "value": "850"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "18",
+                        "value": "623"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "19",
+                        "value": "1811"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "27",
+                        "value": "218"
+                      }
+                    }
+                  ]
+                },
+                "team_points": {
+                  "coverage_type": "season",
+                  "season": "2024",
+                  "total": ""
+                }
+              }
+            ]
+          },
+          "6": {
+            "team": [
+              [
+                {
+                  "team_key": "454.l.3604.t.7"
+                },
+                {
+                  "team_id": "7"
+                },
+                {
+                  "name": "North York Incels"
+                },
+                [],
+                {
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/7"
+                },
+                {
+                  "team_logos": [
+                    {
+                      "team_logo": {
+                        "size": "large",
+                        "url": "https://yahoofantasysports-res.cloudinary.com/image/upload/t_s192sq/fantasy-logos/3787bfa62e8dac837e8cb820e516c1b52bbef2ec3913aebe9ac3f1bcece8b849.jpg"
+                      }
+                    }
+                  ]
+                },
+                [],
+                {
+                  "waiver_priority": 10
+                },
+                [],
+                {
+                  "number_of_moves": 71
+                },
+                {
+                  "number_of_trades": 0
+                },
+                {
+                  "roster_adds": {
+                    "coverage_type": "week",
+                    "coverage_value": 23,
+                    "value": "0"
+                  }
+                },
+                {
+                  "clinched_playoffs": 1
+                },
+                {
+                  "league_scoring_type": "head"
+                },
+                [],
+                [],
+                {
+                  "has_draft_grade": 0
+                },
+                {
+                  "auction_budget_total": "200"
+                },
+                {
+                  "auction_budget_spent": 190
+                },
+                {
+                  "managers": [
+                    {
+                      "manager": {
+                        "manager_id": "7",
+                        "nickname": "John",
+                        "guid": "HHD7YG2XDPPKD2M2ECFOKAOGVU",
+                        "email": "jtsirimbis@gmail.com",
+                        "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
+                        "felo_score": "779",
+                        "felo_tier": "gold"
+                      }
+                    }
+                  ]
+                }
+              ],
+              {
+                "team_stats": {
+                  "coverage_type": "season",
+                  "season": "2024",
+                  "stats": [
+                    {
+                      "stat": {
+                        "stat_id": "10",
+                        "value": "1630"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "9",
+                        "value": "4618"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "11",
+                        "value": ".353"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "12",
+                        "value": "15463"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "15",
+                        "value": "5706"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "16",
+                        "value": "3614"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "17",
+                        "value": "1000"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "18",
+                        "value": "509"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "19",
+                        "value": "1896"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "27",
+                        "value": "174"
+                      }
+                    }
+                  ]
+                },
+                "team_points": {
+                  "coverage_type": "season",
+                  "season": "2024",
+                  "total": ""
+                }
+              }
+            ]
+          },
+          "7": {
+            "team": [
+              [
+                {
+                  "team_key": "454.l.3604.t.8"
+                },
+                {
+                  "team_id": "8"
+                },
+                {
+                  "name": "cameron's Dandy Team"
+                },
+                [],
+                {
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/8"
+                },
+                {
+                  "team_logos": [
+                    {
+                      "team_logo": {
+                        "size": "large",
+                        "url": "https://s.yimg.com/cv/apiv2/default/nba/nba_3_c.png"
+                      }
+                    }
+                  ]
+                },
+                [],
+                {
+                  "waiver_priority": 2
+                },
+                [],
+                {
+                  "number_of_moves": 9
+                },
+                {
+                  "number_of_trades": 0
+                },
+                {
+                  "roster_adds": {
+                    "coverage_type": "week",
+                    "coverage_value": 23,
+                    "value": "0"
+                  }
+                },
+                [],
+                {
+                  "league_scoring_type": "head"
+                },
+                [],
+                [],
+                {
+                  "has_draft_grade": 0
+                },
+                {
+                  "auction_budget_total": "200"
+                },
+                {
+                  "auction_budget_spent": 197
+                },
+                {
+                  "managers": [
+                    {
+                      "manager": {
+                        "manager_id": "8",
                         "nickname": "cameron",
                         "guid": "OJY4NDX2I2DBDZSF7HUWK6TSXM",
                         "email": "cambartlett4@gmail.com",
                         "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
-                        "felo_score": "596",
+                        "felo_score": "561",
                         "felo_tier": "bronze"
                       }
                     }
@@ -1331,93 +1178,93 @@
               {
                 "team_stats": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "stats": [
                     {
                       "stat": {
                         "stat_id": "10",
-                        "value": "1122"
+                        "value": "1480"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "9",
-                        "value": "3136"
+                        "value": "4039"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "11",
-                        "value": ".358"
+                        "value": ".366"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "12",
-                        "value": "13149"
+                        "value": "12611"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "15",
-                        "value": "3864"
+                        "value": "4167"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "16",
-                        "value": "2785"
+                        "value": "2992"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "17",
-                        "value": "644"
+                        "value": "798"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "18",
-                        "value": "375"
+                        "value": "521"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "19",
-                        "value": "1494"
+                        "value": "1352"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "27",
-                        "value": "106"
+                        "value": "121"
                       }
                     }
                   ]
                 },
                 "team_points": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "total": ""
                 }
               }
             ]
           },
-          "9": {
+          "8": {
             "team": [
               [
                 {
-                  "team_key": "418.l.89398.t.10"
+                  "team_key": "454.l.3604.t.9"
                 },
                 {
-                  "team_id": "10"
+                  "team_id": "9"
                 },
                 {
                   "name": "Game Time Decision"
                 },
                 [],
                 {
-                  "url": "https://basketball.fantasysports.yahoo.com/2022/nba/89398/10"
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/9"
                 },
                 {
                   "team_logos": [
@@ -1431,19 +1278,171 @@
                 },
                 [],
                 {
-                  "waiver_priority": 2
+                  "waiver_priority": 1
                 },
                 [],
                 {
-                  "number_of_moves": 7
+                  "number_of_moves": 24
                 },
                 {
-                  "number_of_trades": "2"
+                  "number_of_trades": 0
                 },
                 {
                   "roster_adds": {
                     "coverage_type": "week",
-                    "coverage_value": 24,
+                    "coverage_value": 23,
+                    "value": "0"
+                  }
+                },
+                {
+                  "clinched_playoffs": 1
+                },
+                {
+                  "league_scoring_type": "head"
+                },
+                [],
+                [],
+                {
+                  "has_draft_grade": 0
+                },
+                {
+                  "auction_budget_total": "200"
+                },
+                {
+                  "auction_budget_spent": 197
+                },
+                {
+                  "managers": [
+                    {
+                      "manager": {
+                        "manager_id": "9",
+                        "nickname": "Dave",
+                        "guid": "SQU3EWBR4HHAWAT6MYHFL7IXXQ",
+                        "email": "d_hodgson12@hotmail.com",
+                        "image_url": "https://s.yimg.com/ag/images/4530/37909660400_bd6bc4_64sq.jpg",
+                        "felo_score": "589",
+                        "felo_tier": "bronze"
+                      }
+                    }
+                  ]
+                }
+              ],
+              {
+                "team_stats": {
+                  "coverage_type": "season",
+                  "season": "2024",
+                  "stats": [
+                    {
+                      "stat": {
+                        "stat_id": "10",
+                        "value": "1384"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "9",
+                        "value": "3739"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "11",
+                        "value": ".370"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "12",
+                        "value": "12778"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "15",
+                        "value": "5148"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "16",
+                        "value": "2941"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "17",
+                        "value": "912"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "18",
+                        "value": "686"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "19",
+                        "value": "1600"
+                      }
+                    },
+                    {
+                      "stat": {
+                        "stat_id": "27",
+                        "value": "152"
+                      }
+                    }
+                  ]
+                },
+                "team_points": {
+                  "coverage_type": "season",
+                  "season": "2024",
+                  "total": ""
+                }
+              }
+            ]
+          },
+          "9": {
+            "team": [
+              [
+                {
+                  "team_key": "454.l.3604.t.10"
+                },
+                {
+                  "team_id": "10"
+                },
+                {
+                  "name": "Gregory Drive Gems"
+                },
+                [],
+                {
+                  "url": "https://basketball.fantasysports.yahoo.com/nba/3604/10"
+                },
+                {
+                  "team_logos": [
+                    {
+                      "team_logo": {
+                        "size": "large",
+                        "url": "https://s.yimg.com/ep/cx/blendr/v2/image-spring-shoe-png_1721241802396.png"
+                      }
+                    }
+                  ]
+                },
+                [],
+                {
+                  "waiver_priority": 3
+                },
+                [],
+                {
+                  "number_of_moves": 69
+                },
+                {
+                  "number_of_trades": 0
+                },
+                {
+                  "roster_adds": {
+                    "coverage_type": "week",
+                    "coverage_value": 23,
                     "value": "0"
                   }
                 },
@@ -1469,12 +1468,12 @@
                     {
                       "manager": {
                         "manager_id": "10",
-                        "nickname": "Dave",
-                        "guid": "SQU3EWBR4HHAWAT6MYHFL7IXXQ",
-                        "email": "d_hodgson12@hotmail.com",
-                        "image_url": "https://s.yimg.com/ag/images/4530/37909660400_bd6bc4_64sq.jpg",
-                        "felo_score": "586",
-                        "felo_tier": "bronze"
+                        "nickname": "Greg",
+                        "guid": "NWTUYMYBPSIK5F6RLVAZQLB4BQ",
+                        "email": "ghouston_88@hotmail.com",
+                        "image_url": "https://s.yimg.com/ag/images/default_user_profile_pic_64sq.jpg",
+                        "felo_score": "726",
+                        "felo_tier": "gold"
                       }
                     }
                   ]
@@ -1483,73 +1482,73 @@
               {
                 "team_stats": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "stats": [
                     {
                       "stat": {
                         "stat_id": "10",
-                        "value": "1115"
+                        "value": "1846"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "9",
-                        "value": "3063"
+                        "value": "5143"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "11",
-                        "value": ".364"
+                        "value": ".359"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "12",
-                        "value": "12419"
+                        "value": "16524"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "15",
-                        "value": "3930"
+                        "value": "5496"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "16",
-                        "value": "2570"
+                        "value": "3897"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "17",
-                        "value": "736"
+                        "value": "1019"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "18",
-                        "value": "480"
+                        "value": "529"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "19",
-                        "value": "1555"
+                        "value": "2148"
                       }
                     },
                     {
                       "stat": {
                         "stat_id": "27",
-                        "value": "138"
+                        "value": "186"
                       }
                     }
                   ]
                 },
                 "team_points": {
                   "coverage_type": "season",
-                  "season": "2022",
+                  "season": "2024",
                   "total": ""
                 }
               }
@@ -1559,7 +1558,7 @@
         }
       }
     ],
-    "time": "112.13493347168ms",
+    "time": "35.123825073242ms",
     "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
     "refresh_rate": "60"
   }

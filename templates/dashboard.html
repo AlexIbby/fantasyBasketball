@@ -5,7 +5,9 @@
   <title>{{ team_name }} – Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='trends.js') }}"></script>
   <script defer src="{{ url_for('static', filename='navbar.js') }}"></script>
 </head>
 <body>
@@ -28,17 +30,16 @@
   
   <div class="container">
     <!-- header -->
-<!-- header -->
-  <header class="header">
-    <h1 class="team-title">{{ team_name }}</h1>
-    <span class="league-id">League ID: {{ league_key }}</span>
-  </header>
+    <header class="header">
+      <h1 class="team-title">{{ team_name }}</h1>
+      <span class="league-id">League ID: {{ league_key }}</span>
+    </header>
 
     <!-- nav tabs -->
     <nav class="nav-tabs">
       <button class="nav-tab active" data-target="tab-cat">Category Strengths</button>
       <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
-      <button class="nav-tab"        data-target="tab-roster">Roster Strength</button>
+      <button class="nav-tab"        data-target="tab-trends">Trends</button>
     </nav>
 
     <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
@@ -113,9 +114,37 @@
       <div class="cards-container" id="compareCardsContainer"></div>
     </section>
 
-    <!-- placeholder -->
-    <section id="tab-roster" class="tab-pane">
-      <div class="placeholder">Roster Strength – coming soon</div>
+    <!-- ═══════════ TRENDS ═══════════ -->
+    <section id="tab-trends" class="tab-pane">
+      <div class="info-box">
+        <p>View how your <strong>team's statistical performance</strong> has changed over the weeks.</p>
+        <p>Select different categories from the dropdown to see trends for each stat.</p>
+      </div>
+
+      <div id="trendsContainer" class="trends-container">
+        <!-- Initial load button -->
+        <button id="loadTrendsBtn" class="btn btn-primary load-trends-btn">Load Data</button>
+        
+        <!-- Loading state -->
+        <div id="trendsLoadingWrapper" class="trends-loading-wrapper">
+          <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          <div class="trends-loading-text">Gathering Trends</div>
+        </div>
+        
+        <!-- Chart container (initially hidden) -->
+        <div id="chartContainer" class="chart-container">
+          <div class="filters trends-filters">
+            <div class="stat-selector">
+              <span class="stat-label">Statistic:</span>
+              <select id="statSelector" class="form-select"></select>
+            </div>
+          </div>
+          
+          <div class="trends-chart-wrapper">
+            <canvas id="trendsChart"></canvas>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 </body>
