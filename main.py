@@ -196,28 +196,19 @@ def api_scoreboard():
     rel = f"fantasy/v2/league/{session['league_key']}/scoreboard;week={week}"
     return jsonify(yahoo_api(rel))
 
-# ---------- NEW: SEASON AVERAGES ----------
+# ---------- SEASON AVERAGES ----------
 @app.route("/api/season_avg")
 def api_season_avg():
     """
     League-wide season totals for every team.
     Front-end turns them into per-week averages by dividing
-    by <current_week>.  The *raw* payload gets dumped to
-    “json loadout from api call.json” so you can inspect it
-    if something looks off.
+    by <current_week>.
     """
     if "league_key" not in session:
         return jsonify({"error": "no league chosen"}), 400
 
     rel = f"fantasy/v2/league/{session['league_key']}/teams;out=stats;type=season"
     data = yahoo_api(rel)
-
-    # dump raw payload for quick post-mortem debugging
-    try:
-        with open("json loadout from api call.json", "w", encoding="utf-8") as fh:
-            json.dump(data, fh, indent=2)
-    except Exception as e:
-        log.warning("⚠️  couldn’t write debug JSON: %s", e)
 
     return jsonify(data)
 
@@ -424,8 +415,6 @@ def _analyze_scoreboard_for_teams(data):
     except Exception as e:
         return f"Error analyzing scoreboard: {str(e)}"
 
-# Add these new routes to your main.py file
-
 # ---------- PLAYER STATS BY WEEK ----------
 @app.route("/api/player_stats_week/<int:week>")
 def api_player_stats_week(week):
@@ -460,13 +449,6 @@ def api_player_stats_week(week):
         # Now get the player stats for that team for the specified week
         rel = f"fantasy/v2/team/{team_key}/players/stats;type=week;week={week}"
         data = yahoo_api(rel)
-        
-        # Debug output to file
-        try:
-            with open(f"player_stats_week_{week}.json", "w", encoding="utf-8") as fh:
-                json.dump(data, fh, indent=2)
-        except Exception as e:
-            log.warning(f"⚠️  couldn't write debug JSON for week {week}: {e}")
             
         return jsonify(data)
         
@@ -507,13 +489,6 @@ def api_player_stats_season():
         # Now get the season stats for the team's players
         rel = f"fantasy/v2/team/{team_key}/players/stats;type=season"
         data = yahoo_api(rel)
-        
-        # Debug output to file
-        try:
-            with open("player_stats_season.json", "w", encoding="utf-8") as fh:
-                json.dump(data, fh, indent=2)
-        except Exception as e:
-            log.warning(f"⚠️  couldn't write debug JSON for season stats: {e}")
             
         return jsonify(data)
         
