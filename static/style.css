@@ -778,3 +778,61 @@ sup.rank{
     font-size: 16px;
   }
 }
+
+/* Add these styles to your style.css file */
+
+/* Progress bar container */
+.loading-progress-bar {
+  width: 80%;
+  max-width: 300px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin-top: 20px;
+  overflow: hidden;
+  display: none;
+}
+
+/* Progress bar */
+.loading-progress {
+  height: 100%;
+  background-color: #4299e1;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* Current week indicator */
+.loading-current-week {
+  font-size: 14px;
+  color: #3182ce;
+  margin-top: 8px;
+  font-weight: 500;
+  display: none;
+}
+
+/* Make the loading wrapper more spacious */
+.trends-loading-wrapper {
+  padding: 30px 0;
+}
+
+/* Keep some space between loading text and animation */
+.trends-loading-text {
+  margin-top: 16px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #3182ce;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .loading-progress-bar {
+    max-width: 240px;
+    height: 6px;
+  }
+  
+  .loading-current-week {
+    font-size: 12px;
+  }
+}

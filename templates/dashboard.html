@@ -125,10 +125,17 @@
         <!-- Initial load button -->
         <button id="loadTrendsBtn" class="btn btn-primary load-trends-btn">Load Data</button>
         
-        <!-- Loading state -->
-        <div id="trendsLoadingWrapper" class="trends-loading-wrapper">
+      <div id="trendsLoadingWrapper" class="trends-loading-wrapper">
           <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-          <div class="trends-loading-text">Gathering Trends</div>
+          <div id="trendsLoadingText" class="trends-loading-text">Gathering Trends</div>
+          
+          <!-- Progress bar for week loading -->
+          <div id="loadingProgressBar" class="loading-progress-bar">
+            <div id="loadingProgress" class="loading-progress"></div>
+          </div>
+          
+          <!-- Current week indicator -->
+          <div id="loadingCurrentWeek" class="loading-current-week">Week 0 of 0</div>
         </div>
         
         <!-- Chart container (initially hidden) -->

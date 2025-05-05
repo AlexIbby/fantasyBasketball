@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Basketball Stats</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        select, button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: white;
+            font-size: 14px;
+        }
+
+        button {
+            cursor: pointer;
+            background-color: #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #e0e0e0;
+        }
+
+        button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0069d9;
+        }
+
+        .view-toggle {
+            display: none;
+        }
+
+        /* Table styles */
+        .table-container {
+            overflow-x: auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #1a2639;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .team-name {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .top-team {
+            background-color: #e3f2fd;
+        }
+
+        .better-stat {
+            background-color: #e8f5e9;
+        }
+
+        .worse-stat {
+            background-color: #ffebee;
+        }
+
+        .score-column {
+            font-weight: 600;
+        }
+
+        /* Card styles */
+        .cards-container {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: #1a2639;
+            color: white;
+            padding: 12px 16px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-record {
+            font-size: 14px;
+            font-weight: normal;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .card-content {
+            padding: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .stat-item.better {
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+
+        .stat-item.worse {
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+
+        .comparison-indicator {
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .better .comparison-indicator {
+            color: #2e7d32;
+        }
+
+        .worse .comparison-indicator {
+            color: #c62828;
+        }
+
+        .reference-team {
+            background-color: #f5f5f5;
+            padding: 8px 16px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Media queries */
+        @media (max-width: 768px) {
+            .table-container {
+                display: none;
+            }
+
+            .cards-container {
+                display: flex;
+            }
+
+            .view-toggle {
+                display: block;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <label for="week-select">Week:</label>
+                <select id="week-select">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <div class="header-right">
+                <label>
+                    <input type="checkbox" id="show-ranks"> Show team ranks
+                </label>
+                <div class="view-toggle">
+                    <button id="cards-view" class="active">Cards</button>
+                    <button id="table-view">Table</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>3PTM</th>
+                        <th>3PT%</th>
+                        <th>PTS</th>
+                        <th>REB</th>
+                        <th>AST</th>
+                        <th>ST</th>
+                        <th>BLK</th>
+                        <th>TO</th>
+                        <th>DD</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="top-team">
+                        <td class="team-name">Barack O'Balla</td>
+                        <td>48</td>
+                        <td>.364</td>
+                        <td>447</td>
+                        <td>191</td>
+                        <td>110</td>
+                        <td>43</td>
+                        <td>27</td>
+                        <td>63</td>
+                        <td>3</td>
+                        <td class="score-column"></td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">Asterisks Clapper **************</td>
+                        <td class="worse-stat">58</td>
+                        <td class="better-stat">.347</td>
+                        <td class="worse-stat">724</td>
+                        <td class="worse-stat">267</td>
+                        <td class="worse-stat">178</td>
+                        <td class="better-stat">31</td>
+                        <td class="worse-stat">31</td>
+                        <td class="worse-stat">109</td>
+                        <td class="worse-stat">8</td>
+                        <td class="score-column">3 - 6</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">Simp and a hasbeen</td>
+                        <td class="worse-stat">57</td>
+                        <td class="worse-stat">.377</td>
+                        <td class="worse-stat">612</td>
+                        <td class="worse-stat">250</td>
+                        <td class="worse-stat">137</td>
+                        <td class="worse-stat">48</td>
+                        <td class="worse-stat">45</td>
+                        <td class="worse-stat">80</td>
+                        <td class="worse-stat">5</td>
+                        <td class="score-column">1 - 8</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">I Knooorrrrrr</td>
+                        <td class="worse-stat">80</td>
+                        <td class="worse-stat">.372</td>
+                        <td class="worse-stat">674</td>
+                        <td class="better-stat">190</td>
+                        <td class="worse-stat">137</td>
+                        <td class="better-stat">36</td>
+                        <td>27</td>
+                        <td class="worse-stat">91</td>
+                        <td>3</td>
+                        <td class="score-column">3 - 4</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">North York Incels</td>
+                        <td class="worse-stat">67</td>
+                        <td class="better-stat">.362</td>
+                        <td class="worse-stat">619</td>
+                        <td class="worse-stat">212</td>
+                        <td class="worse-stat">143</td>
+                        <td class="worse-stat">54</td>
+                        <td class="better-stat">17</td>
+                        <td class="worse-stat">68</td>
+                        <td class="worse-stat">4</td>
+                        <td class="score-column">3 - 6</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">Game Time Decision</td>
+                        <td class="worse-stat">53</td>
+                        <td class="better-stat">.349</td>
+                        <td class="worse-stat">526</td>
+                        <td class="worse-stat">226</td>
+                        <td class="worse-stat">119</td>
+                        <td class="better-stat">29</td>
+                        <td>27</td>
+                        <td class="worse-stat">82</td>
+                        <td class="worse-stat">6</td>
+                        <td class="score-column">3 - 5</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">Peanut butter jelly time</td>
+                        <td class="worse-stat">67</td>
+                        <td class="better-stat">.344</td>
+                        <td class="worse-stat">635</td>
+                        <td class="better-stat">188</td>
+                        <td class="worse-stat">123</td>
+                        <td class="better-stat">26</td>
+                        <td class="better-stat">16</td>
+                        <td class="worse-stat">71</td>
+                        <td class="worse-stat">5</td>
+                        <td class="score-column">5 - 4</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">cameron's Dandy Team</td>
+                        <td class="better-stat">40</td>
+                        <td class="better-stat">.313</td>
+                        <td class="better-stat">387</td>
+                        <td class="better-stat">182</td>
+                        <td class="better-stat">93</td>
+                        <td class="better-stat">25</td>
+                        <td class="better-stat">22</td>
+                        <td class="better-stat">50</td>
+                        <td class="worse-stat">7</td>
+                        <td class="score-column">7 - 2</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">🦊</td>
+                        <td class="worse-stat">81</td>
+                        <td class="worse-stat">.403</td>
+                        <td class="worse-stat">680</td>
+                        <td class="worse-stat">233</td>
+                        <td class="worse-stat">133</td>
+                        <td class="worse-stat">39</td>
+                        <td class="worse-stat">30</td>
+                        <td class="worse-stat">72</td>
+                        <td class="worse-stat">9</td>
+                        <td class="score-column">2 - 7</td>
+                    </tr>
+                    <tr>
+                        <td class="team-name">Gregory Drive Gems</td>
+                        <td class="worse-stat">66</td>
+                        <td class="better-stat">.316</td>
+                        <td class="worse-stat">659</td>
+                        <td class="worse-stat">212</td>
+                        <td class="worse-stat">146</td>
+                        <td class="better-stat">37</td>
+                        <td class="better-stat">17</td>
+                        <td class="worse-stat">93</td>
+                        <td class="worse-stat">10</td>
+                        <td class="score-column">4 - 5</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="cards-container">
+            <div class="reference-team">
+                <strong>Comparing with:</strong> Barack O'Balla
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>Asterisks Clapper **************</span>
+                    <span class="card-record">3 - 6</span>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PTM</div>
+                            <div class="stat-value">58</div>
+                            <div class="comparison-indicator">+10</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">3PT%</div>
+                            <div class="stat-value">.347</div>
+                            <div class="comparison-indicator">-.017</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">PTS</div>
+                            <div class="stat-value">724</div>
+                            <div class="comparison-indicator">+277</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">REB</div>
+                            <div class="stat-value">267</div>
+                            <div class="comparison-indicator">+76</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">AST</div>
+                            <div class="stat-value">178</div>
+                            <div class="comparison-indicator">+68</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">ST</div>
+                            <div class="stat-value">31</div>
+                            <div class="comparison-indicator">-12</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">BLK</div>
+                            <div class="stat-value">31</div>
+                            <div class="comparison-indicator">+4</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">TO</div>
+                            <div class="stat-value">109</div>
+                            <div class="comparison-indicator">+46</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">DD</div>
+                            <div class="stat-value">8</div>
+                            <div class="comparison-indicator">+5</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>Simp and a hasbeen</span>
+                    <span class="card-record">1 - 8</span>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PTM</div>
+                            <div class="stat-value">57</div>
+                            <div class="comparison-indicator">+9</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PT%</div>
+                            <div class="stat-value">.377</div>
+                            <div class="comparison-indicator">+.013</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">PTS</div>
+                            <div class="stat-value">612</div>
+                            <div class="comparison-indicator">+165</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">REB</div>
+                            <div class="stat-value">250</div>
+                            <div class="comparison-indicator">+59</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">AST</div>
+                            <div class="stat-value">137</div>
+                            <div class="comparison-indicator">+27</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">ST</div>
+                            <div class="stat-value">48</div>
+                            <div class="comparison-indicator">+5</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">BLK</div>
+                            <div class="stat-value">45</div>
+                            <div class="comparison-indicator">+18</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">TO</div>
+                            <div class="stat-value">80</div>
+                            <div class="comparison-indicator">+17</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">DD</div>
+                            <div class="stat-value">5</div>
+                            <div class="comparison-indicator">+2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>I Knooorrrrrr</span>
+                    <span class="card-record">3 - 4</span>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PTM</div>
+                            <div class="stat-value">80</div>
+                            <div class="comparison-indicator">+32</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PT%</div>
+                            <div class="stat-value">.372</div>
+                            <div class="comparison-indicator">+.008</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">PTS</div>
+                            <div class="stat-value">674</div>
+                            <div class="comparison-indicator">+227</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">REB</div>
+                            <div class="stat-value">190</div>
+                            <div class="comparison-indicator">-1</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">AST</div>
+                            <div class="stat-value">137</div>
+                            <div class="comparison-indicator">+27</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">ST</div>
+                            <div class="stat-value">36</div>
+                            <div class="comparison-indicator">-7</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">BLK</div>
+                            <div class="stat-value">27</div>
+                            <div class="comparison-indicator">0</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">TO</div>
+                            <div class="stat-value">91</div>
+                            <div class="comparison-indicator">+28</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">DD</div>
+                            <div class="stat-value">3</div>
+                            <div class="comparison-indicator">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>North York Incels</span>
+                    <span class="card-record">3 - 6</span>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PTM</div>
+                            <div class="stat-value">67</div>
+                            <div class="comparison-indicator">+19</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">3PT%</div>
+                            <div class="stat-value">.362</div>
+                            <div class="comparison-indicator">-.002</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">PTS</div>
+                            <div class="stat-value">619</div>
+                            <div class="comparison-indicator">+172</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">REB</div>
+                            <div class="stat-value">212</div>
+                            <div class="comparison-indicator">+21</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">AST</div>
+                            <div class="stat-value">143</div>
+                            <div class="comparison-indicator">+33</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">ST</div>
+                            <div class="stat-value">54</div>
+                            <div class="comparison-indicator">+11</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">BLK</div>
+                            <div class="stat-value">17</div>
+                            <div class="comparison-indicator">-10</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">TO</div>
+                            <div class="stat-value">68</div>
+                            <div class="comparison-indicator">+5</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">DD</div>
+                            <div class="stat-value">4</div>
+                            <div class="comparison-indicator">+1</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>Game Time Decision</span>
+                    <span class="card-record">3 - 5</span>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PTM</div>
+                            <div class="stat-value">53</div>
+                            <div class="comparison-indicator">+5</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">3PT%</div>
+                            <div class="stat-value">.349</div>
+                            <div class="comparison-indicator">-.015</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">PTS</div>
+                            <div class="stat-value">526</div>
+                            <div class="comparison-indicator">+79</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">REB</div>
+                            <div class="stat-value">226</div>
+                            <div class="comparison-indicator">+35</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">AST</div>
+                            <div class="stat-value">119</div>
+                            <div class="comparison-indicator">+9</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">ST</div>
+                            <div class="stat-value">29</div>
+                            <div class="comparison-indicator">-14</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">BLK</div>
+                            <div class="stat-value">27</div>
+                            <div class="comparison-indicator">0</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">TO</div>
+                            <div class="stat-value">82</div>
+                            <div class="comparison-indicator">+19</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">DD</div>
+                            <div class="stat-value">6</div>
+                            <div class="comparison-indicator">+3</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>Peanut butter jelly time</span>
+                    <span class="card-record">5 - 4</span>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item worse">
+                            <div class="stat-label">3PTM</div>
+                            <div class="stat-value">67</div>
+                            <div class="comparison-indicator">+19</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">3PT%</div>
+                            <div class="stat-value">.344</div>
+                            <div class="comparison-indicator">-.020</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">PTS</div>
+                            <div class="stat-value">635</div>
+                            <div class="comparison-indicator">+188</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">REB</div>
+                            <div class="stat-value">188</div>
+                            <div class="comparison-indicator">-3</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">AST</div>
+                            <div class="stat-value">123</div>
+                            <div class="comparison-indicator">+13</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">ST</div>
+                            <div class="stat-value">26</div>
+                            <div class="comparison-indicator">-17</div>
+                        </div>
+                        <div class="stat-item better">
+                            <div class="stat-label">BLK</div>
+                            <div class="stat-value">16</div>
+                            <div class="comparison-indicator">-11</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">TO</div>
+                            <div class="stat-value">71</div>
+                            <div class="comparison-indicator">+8</div>
+                        </div>
+                        <div class="stat-item worse">
+                            <div class="stat-label">DD</div>
+                            <div class="stat-value">5</div>
+                            <div class="comparison-indicator">+2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>cameron's Dandy Team</span>
+                    <span class="card-record">7 - 2</span>
+                </div>
+                <div class="card-content">
+                    <div class="stats-grid">
+                        <div class="stat-item better">
+                            <div class="stat-label">3PTM</div>
+                            <div class="stat-value">40</div>
+                            <div class="

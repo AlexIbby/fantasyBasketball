@@ -67,6 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadButton: document.getElementById('loadTrendsBtn'),
     container: document.getElementById('trendsContainer'),
     loadingWrapper: document.getElementById('trendsLoadingWrapper'),
+    loadingText: document.getElementById('trendsLoadingText'),
+    loadingProgressBar: document.getElementById('loadingProgressBar'),
+    loadingProgress: document.getElementById('loadingProgress'),
+    loadingCurrentWeek: document.getElementById('loadingCurrentWeek'),
     chartContainer: document.getElementById('chartContainer'),
     statSelector: document.getElementById('statSelector'),
     chart: null // Will hold the Chart.js instance
@@ -77,7 +81,17 @@ document.addEventListener('DOMContentLoaded', () => {
     currentWeek: 0,
     weeklyStats: [],
     statCategories: [], // Will be populated from CONFIG.COLS
-    selectedStat: null
+    selectedStat: null,
+    loadingMessages: [
+      "Initializing trends system...",
+      "Getting league settings...",
+      "Connecting to Yahoo API...",
+      "Analyzing statistics...",
+      "Synchronizing data...",
+      "Reading performance metrics...",
+      "Preparing visualization...",
+      "Almost there!"
+    ]
   };
 
   // ============ UTILITIES ============
@@ -113,11 +127,54 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     },
     
+    // Update loading message and progress
+    updateLoadingMessage: (message, weekNum = null, totalWeeks = null) => {
+      if (DOM.loadingText) {
+        DOM.loadingText.textContent = message;
+      }
+      
+      if (weekNum !== null && totalWeeks !== null && DOM.loadingProgress && DOM.loadingCurrentWeek) {
+        const progressPercent = Math.round((weekNum / totalWeeks) * 100);
+        DOM.loadingProgress.style.width = `${progressPercent}%`;
+        DOM.loadingCurrentWeek.textContent = `Week ${weekNum} of ${totalWeeks}`;
+        
+        // Show the progress UI elements
+        if (DOM.loadingProgressBar) DOM.loadingProgressBar.style.display = 'block';
+        if (DOM.loadingCurrentWeek) DOM.loadingCurrentWeek.style.display = 'block';
+      }
+    },
+    
+    // Cycle through loading messages
+    cycleLoadingMessages: () => {
+      let index = 0;
+      return setInterval(() => {
+        if (!DOM.loadingText) return;
+        
+        // Don't change if we've started displaying week-specific messages
+        if (DOM.loadingText.textContent.includes('Week ')) return;
+        
+        DOM.loadingText.textContent = STATE.loadingMessages[index];
+        index = (index + 1) % STATE.loadingMessages.length;
+      }, 2000); // Change message every 2 seconds
+    },
+    
     // Show loading indicator
     showLoading: () => {
       if (DOM.loadingWrapper) {
         DOM.loadingWrapper.style.display = 'flex';
       }
+      
+      // Initialize with first message
+      if (DOM.loadingText) {
+        DOM.loadingText.textContent = STATE.loadingMessages[0];
+      }
+      
+      // Hide progress indicators initially
+      if (DOM.loadingProgressBar) DOM.loadingProgressBar.style.display = 'none';
+      if (DOM.loadingCurrentWeek) DOM.loadingCurrentWeek.style.display = 'none';
+      
+      // Start cycling through messages
+      return Utils.cycleLoadingMessages();
     },
     
     // Hide loading indicator
@@ -192,13 +249,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch all weekly data, week by week
     fetchAllWeeklyData: async () => {
       try {
+        // Start the loading message cycle
+        const messageCycleInterval = Utils.showLoading();
+        
         // First try to load league settings to get the proper categories
+        Utils.updateLoadingMessage('Loading league settings...');
         await DataService.tryGetLeagueSettings();
         
         // Ensure state has the latest categories
         STATE.statCategories = CONFIG.COLS;
         
         // Get the current week from the league
+        Utils.updateLoadingMessage('Determining current week...');
         const leagueResponse = await fetch('/api/league_settings');
         if (!leagueResponse.ok) throw new Error(`API returned ${leagueResponse.status}`);
         
@@ -211,33 +273,49 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize array to hold weekly stats
         const weeklyStats = [];
         
+        // Add progress bar to loading UI
+        Utils.updateLoadingMessage('Preparing to gather weekly data...', 0, currentWeek);
+        
         // Fetch data for each week sequentially
         for (let week = 1; week <= currentWeek; week++) {
-          Utils.showLoading();
-          const weekResponse = await fetch(`/api/scoreboard?week=${week}`);
-          if (!weekResponse.ok) {
-            console.warn(`Could not load data for week ${week}`);
-            weeklyStats.push(null); // Add null for weeks we couldn't load
-            continue;
-          }
+          // Update loading message to show which week is being processed
+          Utils.updateLoadingMessage(`Loading Week ${week} data...`, week, currentWeek);
           
-          const weekData = await weekResponse.json();
-          const teams = DataService.extractTeams(weekData);
-          
-          // Find the user's team (the one where isMine is true)
-          const userTeam = teams.find(team => team.isMine);
-          if (userTeam) {
-            weeklyStats.push({
-              week: week,
-              stats: userTeam.statMap
-            });
-          } else {
-            console.warn(`Could not find user's team in week ${week}`);
+          try {
+            const weekResponse = await fetch(`/api/scoreboard?week=${week}`);
+            if (!weekResponse.ok) {
+              console.warn(`Could not load data for week ${week}`);
+              weeklyStats.push(null); // Add null for weeks we couldn't load
+              continue;
+            }
+            
+            const weekData = await weekResponse.json();
+            const teams = DataService.extractTeams(weekData);
+            
+            // Find the user's team (the one where isMine is true)
+            const userTeam = teams.find(team => team.isMine);
+            if (userTeam) {
+              weeklyStats.push({
+                week: week,
+                stats: userTeam.statMap
+              });
+            } else {
+              console.warn(`Could not find user's team in week ${week}`);
+              weeklyStats.push(null);
+            }
+            
+          } catch (weekError) {
+            console.error(`Error loading week ${week}:`, weekError);
             weeklyStats.push(null);
           }
         }
         
-        Utils.hideLoading();
+        // Final loading message
+        Utils.updateLoadingMessage('Preparing visualization...', currentWeek, currentWeek);
+        
+        // Clear the message cycle interval
+        clearInterval(messageCycleInterval);
+        
         return weeklyStats;
       } catch (error) {
         console.error('Error fetching weekly data:', error);
@@ -448,7 +526,6 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.loadButton.addEventListener('click', async () => {
       // Hide the button and show loading
       DOM.loadButton.style.display = 'none';
-      Utils.showLoading();
       
       try {
         // Fetch all weekly data
