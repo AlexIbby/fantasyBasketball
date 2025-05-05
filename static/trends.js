@@ -565,11 +565,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
   
-  // Initialize when tab is activated
-  document.querySelector('[data-target="tab-trends"]')?.addEventListener('click', () => {
-    if (!STATE.weeklyStats.length) {
-      // Only initialize once when tab is clicked
-      initTrends();
-    }
-  });
+// Initialize when tab is activated
+document.querySelector('[data-target="tab-trends"]')?.addEventListener('click', () => {
+  // Initialize trends data if not already loaded
+  if (!STATE.weeklyStats.length) {
+    initTrends();
+  }
+  
+  // Also trigger player contributions initialization
+  if (typeof initPlayerContributions === 'function') {
+    initPlayerContributions();
+  }
+});
 });

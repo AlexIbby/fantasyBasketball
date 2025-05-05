@@ -949,3 +949,45 @@ sup.rank{
     width: 100%;
   }
 }
+
+/* Add these styles to your style.css file */
+
+/* Section headers for the trends page */
+.section-header {
+  background-color: #f7fafc;
+  border-left: 4px solid #4299e1;
+  padding: 16px 24px;
+  margin: 20px 24px 10px;
+  border-radius: 0 4px 4px 0;
+}
+
+.section-header h3 {
+  margin: 0 0 5px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c5282;
+}
+
+.section-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+/* Add some spacing between the charts */
+#trendsContainer {
+  margin-bottom: 30px;
+}
+
+/* Make the chart containers more distinct */
+.trends-chart-wrapper, 
+.contributions-chart-wrapper {
+  border: 1px solid #e2e8f0;
+}
+
+/* Add a divider between chart sections */
+#contributionsContainer {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 20px;
+  margin-top: 10px;
+}

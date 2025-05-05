@@ -832,10 +832,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // Initialize when player contributions tab is activated
-    document.querySelector('[data-target="tab-contributions"]')?.addEventListener('click', () => {
-      if (!STATE.weeklyPlayerStats.length && !STATE.seasonPlayerStats) {
-        // Only initialize once when tab is clicked
-        initPlayerContributions();
-      }
-    });
+// Make initPlayerContributions globally available so it can be called from trends.js
+window.initPlayerContributions = initPlayerContributions;
   });

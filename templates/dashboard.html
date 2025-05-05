@@ -41,7 +41,6 @@
       <button class="nav-tab active" data-target="tab-cat">Category Strengths</button>
       <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
       <button class="nav-tab"        data-target="tab-trends">Trends</button>
-      <button class="nav-tab"        data-target="tab-contributions">Player Contributions</button>
     </nav>
 
     <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
@@ -119,15 +118,21 @@
     <!-- ═══════════ TRENDS ═══════════ -->
     <section id="tab-trends" class="tab-pane">
       <div class="info-box">
-        <p>View how your <strong>team's statistical performance</strong> has changed over the weeks.</p>
-        <p>Select different categories from the dropdown to see trends for each stat.</p>
+        <p>View how your <strong>team's statistical performance</strong> has changed over the weeks and analyze player contributions.</p>
+        <p>Select different categories from the dropdowns to see trends for each stat.</p>
+      </div>
+
+      <!-- Team Stats Trends Section -->
+      <div class="section-header">
+        <h3>Team Statistical Trends</h3>
+        <p>View how your team's performance has changed over the season</p>
       </div>
 
       <div id="trendsContainer" class="trends-container">
         <!-- Initial load button -->
-        <button id="loadTrendsBtn" class="btn btn-primary load-trends-btn">Load Data</button>
+        <button id="loadTrendsBtn" class="btn btn-primary load-trends-btn">Load Trends Data</button>
         
-      <div id="trendsLoadingWrapper" class="trends-loading-wrapper">
+        <div id="trendsLoadingWrapper" class="trends-loading-wrapper">
           <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
           <div id="trendsLoadingText" class="trends-loading-text">Gathering Trends</div>
           
@@ -154,15 +159,13 @@
           </div>
         </div>
       </div>
-    </section>
-    
-    <!-- ═══════════ PLAYER CONTRIBUTIONS ═══════════ -->
-    <section id="tab-contributions" class="tab-pane">
-      <div class="info-box">
-        <p>See how your <strong>individual players contribute</strong> to your team's statistics.</p>
-        <p>Choose between weekly or season totals, and select different categories to analyze player impact.</p>
+      
+      <!-- Player Contributions Section -->
+      <div class="section-header">
+        <h3>Player Contributions</h3>
+        <p>Analyze how individual players contribute to your team's statistics</p>
       </div>
-
+      
       <div id="contributionsContainer" class="trends-container">
         <!-- Initial load button -->
         <button id="loadContributionsBtn" class="btn btn-primary load-trends-btn">Load Player Data</button>
