@@ -836,3 +836,30 @@ sup.rank{
     font-size: 12px;
   }
 }
+
+/* Add spacing between header and dashboard content */
+.header {
+  margin-bottom: 20px; /* Increases space below the header */
+}
+
+/* Ensure container has proper padding */
+.container {
+  padding-top: 15px;
+  padding-bottom: 30px;
+}
+
+/* Add space above the nav-tabs */
+.nav-tabs {
+  margin-top: 10px;
+}
+
+/* Add padding to the tab content */
+.tab-pane {
+  padding-top: 20px;
+}
+
+/* Improve info box spacing */
+.info-box {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
