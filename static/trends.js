@@ -82,6 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
     weeklyStats: [],
     statCategories: [], // Will be populated from CONFIG.COLS
     selectedStat: null,
+    initialized: false, // Track if we've initialized
+    dataLoaded: false,  // Track if data has been loaded
     loadingMessages: [
       "Initializing trends system...",
       "Getting league settings...",
@@ -366,6 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const ChartRenderer = {
     // Initialize the stat selector dropdown
     initStatSelector: () => {
+      if (!DOM.statSelector) return;
+      
       DOM.statSelector.innerHTML = '';
       
       // Add options for each stat category
@@ -392,7 +396,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render the Chart.js chart
     renderChart: () => {
       // Get the canvas element
-      const ctx = document.getElementById('trendsChart').getContext('2d');
+      const canvas = document.getElementById('trendsChart');
+      if (!canvas) {
+        console.warn('Trends chart canvas not found');
+        return;
+      }
+      
+      const ctx = canvas.getContext('2d');
       
       // If a chart already exists, destroy it
       if (DOM.chart) {
@@ -505,18 +515,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   
   // ============ INITIALIZATION ============
-  const initTrends = async () => {
-    // Check if we have the container
-    if (!DOM.container) {
-      console.error('Trends container not found');
-      return;
-    }
-    
-    // Save stat categories from CONFIG
-    STATE.statCategories = CONFIG.COLS;
-    console.log('Using stat categories:', STATE.statCategories);
-    
-    // Hide the load button (since we're auto-loading)
+  const loadTrendsData = async () => {
+    // Hide the button and show loading
     if (DOM.loadButton) {
       DOM.loadButton.style.display = 'none';
     }
@@ -529,9 +529,14 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('No data loaded');
       }
       
+      // Mark data as loaded
+      STATE.dataLoaded = true;
+      
       // Hide loading and show chart container
       Utils.hideLoading();
-      DOM.chartContainer.style.display = 'block';
+      if (DOM.chartContainer) {
+        DOM.chartContainer.style.display = 'block';
+      }
       
       // Initialize stat selector
       ChartRenderer.initStatSelector();
@@ -543,28 +548,88 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Error initializing trends:', error);
       Utils.hideLoading();
       
+      // Show error and reset button
+      if (DOM.loadButton) {
+        DOM.loadButton.style.display = 'block';
+      }
+      
       // Show error message
       const errorMsg = document.createElement('div');
       errorMsg.textContent = 'Error loading trend data. Please try again.';
       errorMsg.className = 'error-message';
-      DOM.container.appendChild(errorMsg);
+      if (DOM.container) {
+        DOM.container.appendChild(errorMsg);
+      }
       
       setTimeout(() => {
-        errorMsg.remove();
+        if (errorMsg.parentNode) {
+          errorMsg.remove();
+        }
       }, 5000);
     }
   };
   
-  // Initialize when tab is activated
-  document.querySelector('[data-target="tab-trends"]')?.addEventListener('click', () => {
-    // Initialize trends data if not already loaded
-    if (!STATE.weeklyStats.length) {
-      initTrends();
+  const initTrends = () => {
+    // Check if we have the container
+    if (!DOM.container) {
+      console.error('Trends container not found');
+      return;
     }
     
-    // Also trigger player contributions initialization
-    if (typeof initPlayerContributions === 'function') {
-      initPlayerContributions();
+    // Check if we've already initialized
+    if (STATE.initialized) {
+      // If it's already initialized but the button is showing, reshow the button
+      if (DOM.loadButton && DOM.loadButton.style.display === 'none' && !STATE.dataLoaded) {
+        DOM.loadButton.style.display = 'block';
+      }
+      return;
+    }
+    
+    // Mark as initialized
+    STATE.initialized = true;
+    
+    // Save stat categories from CONFIG
+    STATE.statCategories = CONFIG.COLS;
+    console.log('Using stat categories:', STATE.statCategories);
+    
+    // Make sure we have the load button
+    if (DOM.loadButton) {
+      // Setup load button click handler
+      DOM.loadButton.addEventListener('click', loadTrendsData);
+      
+      // Auto-load data when tab is active - this is the key change!
+      const trendsTab = document.querySelector('[data-target="tab-trends"]');
+      if (trendsTab && trendsTab.classList.contains('active')) {
+        loadTrendsData();
+      }
+    } else {
+      console.error('Load button not found');
+    }
+  };
+
+  // Initialize when tab is activated
+  document.querySelector('[data-target="tab-trends"]')?.addEventListener('click', () => {
+    // Initialize trends component
+    initTrends();
+    
+    // Auto-load data
+    if (STATE.initialized && !STATE.dataLoaded) {
+      loadTrendsData();
+    }
+    
+    // Also automatically initialize player contributions 
+    if (typeof window.initPlayerContributions === 'function') {
+      window.initPlayerContributions();
+      
+      // Automatically load player data by simulating a click on the loadContributionsBtn
+      const loadContributionsBtn = document.getElementById('loadContributionsBtn');
+      if (loadContributionsBtn && loadContributionsBtn.style.display !== 'none') {
+        loadContributionsBtn.click();
+      }
     }
   });
+  
+  // Also run initialization on page load just to set up event handlers
+  // (won't load data until tab is clicked)
+  initTrends();
 });
