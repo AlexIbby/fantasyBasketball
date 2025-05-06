@@ -516,65 +516,55 @@ document.addEventListener('DOMContentLoaded', () => {
     STATE.statCategories = CONFIG.COLS;
     console.log('Using stat categories:', STATE.statCategories);
     
-    // Make sure we have the load button
-    if (!DOM.loadButton) {
-      console.error('Load button not found');
-      return;
+    // Hide the load button (since we're auto-loading)
+    if (DOM.loadButton) {
+      DOM.loadButton.style.display = 'none';
     }
     
-    // Setup load button click handler
-    DOM.loadButton.addEventListener('click', async () => {
-      // Hide the button and show loading
-      DOM.loadButton.style.display = 'none';
+    try {
+      // Fetch all weekly data
+      STATE.weeklyStats = await DataService.fetchAllWeeklyData();
       
-      try {
-        // Fetch all weekly data
-        STATE.weeklyStats = await DataService.fetchAllWeeklyData();
-        
-        if (STATE.weeklyStats.length === 0) {
-          throw new Error('No data loaded');
-        }
-        
-        // Hide loading and show chart container
-        Utils.hideLoading();
-        DOM.chartContainer.style.display = 'block';
-        
-        // Initialize stat selector
-        ChartRenderer.initStatSelector();
-        
-        // Render the initial chart
-        ChartRenderer.renderChart();
-        
-      } catch (error) {
-        console.error('Error initializing trends:', error);
-        Utils.hideLoading();
-        
-        // Show error and reset button
-        DOM.loadButton.style.display = 'block';
-        
-        // Show error message
-        const errorMsg = document.createElement('div');
-        errorMsg.textContent = 'Error loading trend data. Please try again.';
-        errorMsg.className = 'error-message';
-        DOM.container.appendChild(errorMsg);
-        
-        setTimeout(() => {
-          errorMsg.remove();
-        }, 5000);
+      if (STATE.weeklyStats.length === 0) {
+        throw new Error('No data loaded');
       }
-    });
+      
+      // Hide loading and show chart container
+      Utils.hideLoading();
+      DOM.chartContainer.style.display = 'block';
+      
+      // Initialize stat selector
+      ChartRenderer.initStatSelector();
+      
+      // Render the initial chart
+      ChartRenderer.renderChart();
+      
+    } catch (error) {
+      console.error('Error initializing trends:', error);
+      Utils.hideLoading();
+      
+      // Show error message
+      const errorMsg = document.createElement('div');
+      errorMsg.textContent = 'Error loading trend data. Please try again.';
+      errorMsg.className = 'error-message';
+      DOM.container.appendChild(errorMsg);
+      
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 5000);
+    }
   };
   
-// Initialize when tab is activated
-document.querySelector('[data-target="tab-trends"]')?.addEventListener('click', () => {
-  // Initialize trends data if not already loaded
-  if (!STATE.weeklyStats.length) {
-    initTrends();
-  }
-  
-  // Also trigger player contributions initialization
-  if (typeof initPlayerContributions === 'function') {
-    initPlayerContributions();
-  }
-});
+  // Initialize when tab is activated
+  document.querySelector('[data-target="tab-trends"]')?.addEventListener('click', () => {
+    // Initialize trends data if not already loaded
+    if (!STATE.weeklyStats.length) {
+      initTrends();
+    }
+    
+    // Also trigger player contributions initialization
+    if (typeof initPlayerContributions === 'function') {
+      initPlayerContributions();
+    }
+  });
 });
