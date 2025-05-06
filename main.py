@@ -3,6 +3,7 @@ import os, json, logging, time
 from nba_api.stats.static import players as nba_static_players
 from nba_api.stats.endpoints import playerindex, PlayerDashboardByGeneralSplits
 from datetime import datetime
+import traceback # For detailed error logging
 
 from typing import Any, Dict, Iterable, Iterator, List
 
@@ -22,7 +23,7 @@ if os.getenv("FLASK_ENV", "development") == "development":
     except Exception as e:
         logging.warning("[dotenv] %s – check .env formatting (KEY=VALUE).", e)
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger("fantasy-app")
 
 # ─────────────────────────── Flask app ────────────────────────────────
@@ -50,8 +51,7 @@ yahoo = oauth.register( # Matches original
     },
 )
 
-# ─────────────────────────── helper utils ─────────────────────────────
-# These helpers are from your original and should be fine
+# ─────────────────────────── helper utils (original from prompt) ─────────────────────────────
 def _safe_iter(container: Any, key: str) -> Iterator[Any]:
     if not container: return
     iterable: Iterable[Any] = container.values() if isinstance(container, dict) else container
@@ -89,7 +89,7 @@ def yahoo_api(rel_path: str, *, _retry: bool = True) -> Dict[str, Any]: # Matche
         return yahoo_api(rel_path, _retry=False)
     resp.raise_for_status()
     try: return resp.json()
-    except ValueError:
+    except ValueError: # Original fallback to xmltodict
         import xmltodict
         return xmltodict.parse(resp.text)
 
@@ -105,7 +105,7 @@ def current_nba_season():
         end   =  today.year % 100
     return f"{start}-{end:02d}"
 
-# ─────────────────────────── routes ───────────────────────────────────
+# ─────────────────────────── routes (original from prompt) ───────────────────────────────────
 @app.route("/") # Matches original
 def index():
     return render_template("index.html", logged_in=("token" in session))
@@ -150,7 +150,8 @@ def select():
                         break
                 
                 leagues.append({
-                    "season": league_season, "league_key": _first(lg, "league_key"),
+                    "season": str(league_season) if league_season else "N/A", 
+                    "league_key": str(_first(lg, "league_key")) if _first(lg, "league_key") else "N/A",
                     "team_name": owner_team or fallback or "(team?)",
                 })
     leagues.sort(key=lambda x: (-int(x["season"]) if x["season"].isdigit() else 0, x["team_name"]))
@@ -172,7 +173,7 @@ def dashboard():
 def about():
     return render_template("about.html")
 
-# --- Yahoo API routes for dashboard data ---
+# --- Yahoo API routes for dashboard data (original from prompt) ---
 @app.route("/api/scoreboard") # Matches original
 def api_scoreboard():
     if "league_key" not in session: return jsonify({"error": "no league chosen"}), 400
@@ -201,7 +202,7 @@ def api_league_settings():
         log.error(f"Error fetching league settings: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Helper to get user's fantasy team_key from Yahoo data (kept from previous correct version)
+# Helper to get user's fantasy team_key from Yahoo data (original from prompt)
 def get_user_team_key(league_key, user_team_name_from_session):
     teams_data_raw = yahoo_api(f"fantasy/v2/league/{league_key}/teams")
     fc_teams = teams_data_raw.get("fantasy_content", {})
@@ -255,7 +256,7 @@ def get_user_team_key(league_key, user_team_name_from_session):
     return None
 
 
-@app.route("/api/player_stats_week/<int:week>") # Logic using get_user_team_key
+@app.route("/api/player_stats_week/<int:week>") # Logic using get_user_team_key (original from prompt)
 def api_player_stats_week(week):
     if "league_key" not in session: return jsonify({"error": "no league chosen"}), 400
     try:
@@ -267,7 +268,7 @@ def api_player_stats_week(week):
         log.error(f"Error fetching player stats for week {week}: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/player_stats_season") # Logic using get_user_team_key
+@app.route("/api/player_stats_season") # Logic using get_user_team_key (original from prompt)
 def api_player_stats_season():
     if "league_key" not in session: return jsonify({"error": "no league chosen"}), 400
     try:
@@ -279,7 +280,7 @@ def api_player_stats_season():
         log.error(f"Error fetching player stats for season: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/team_logo") # Logic using Yahoo data structure
+@app.route("/api/team_logo") # Logic using Yahoo data structure (original from prompt)
 def api_team_logo():
     if "league_key" not in session: return jsonify({"error": "no league chosen"}), 400
     try:
@@ -336,27 +337,44 @@ def api_team_logo():
         log.error(f"Error fetching team logo: {e}")
         return jsonify({"error": str(e)}), 500
 
-# --- NBA API routes (kept from previous correct version) ---
+# --- NBA API routes (original from prompt, with fix and logging) ---
 @app.route("/api/nba_players")
 def api_nba_players():
     if "token" not in session: return jsonify({"error": "authentication required"}), 401
     try:
         season_str = current_nba_season()
+        log.info(f"Fetching NBA players for season: {season_str} using PlayerIndex.")
         player_data_df = playerindex.PlayerIndex(season=season_str, league_id="00").get_data_frames()[0]
         players_list = [{
-            'id': row['PERSON_ID'], 'full_name': f"{row['PLAYER_FIRST_NAME']} {row['PLAYER_LAST_NAME']}",
-            'team_id': row['TEAM_ID'], 'team_abbreviation': row['TEAM_ABBREVIATION'],
+            'id': int(row['PERSON_ID']),
+            'full_name': f"{row['PLAYER_FIRST_NAME']} {row['PLAYER_LAST_NAME']}",
+            'team_id': int(row['TEAM_ID']) if row['TEAM_ID'] else None,
+            'team_abbreviation': row['TEAM_ABBREVIATION'],
             'position': row['POSITION']
         } for _, row in player_data_df.iterrows()]
+        # ADDED LOGGING
+        log.info(f"--- NBA PLAYERS API RESPONSE (SUMMARY) ---")
+        log.info(f"Total players fetched: {len(players_list)}")
+        if players_list:
+            log.info(f"Sample players: {json.dumps(players_list[:3], indent=2)}")
+        log.info(f"--- END NBA PLAYERS API RESPONSE ---")
         return jsonify(players_list)
     except Exception as e:
-        log.error(f"Error fetching NBA players list from PlayerIndex: {e}")
+        log.error(f"Error fetching NBA players list from PlayerIndex: {e}\n{traceback.format_exc()}")
+        log.info("Attempting fallback to nba_static_players.get_active_players() for NBA players list.")
         try:
             active_players_basic = nba_static_players.get_active_players()
-            return jsonify([{'id': p['id'], 'full_name': p['full_name'], 'team_id': None, 
-                             'team_abbreviation': 'N/A', 'position': 'N/A'} for p in active_players_basic])
+            players_list_fallback = [{'id': p['id'], 'full_name': p['full_name'], 'team_id': None, 
+                                      'team_abbreviation': 'N/A', 'position': 'N/A'} for p in active_players_basic]
+            # ADDED LOGGING FOR FALLBACK
+            log.info(f"--- NBA PLAYERS API FALLBACK RESPONSE (SUMMARY) ---")
+            log.info(f"Total players fetched (fallback): {len(players_list_fallback)}")
+            if players_list_fallback:
+                log.info(f"Sample players (fallback): {json.dumps(players_list_fallback[:3], indent=2)}")
+            log.info(f"--- END NBA PLAYERS API FALLBACK RESPONSE ---")
+            return jsonify(players_list_fallback)
         except Exception as fallback_e:
-            log.error(f"Error in fallback NBA players list: {fallback_e}")
+            log.error(f"Error in fallback NBA players list method: {fallback_e}\n{traceback.format_exc()}")
             return jsonify({"error": "Failed to fetch NBA players list"}), 500
 
 @app.route("/api/nba_player_stats/<int:player_id>")
@@ -364,44 +382,50 @@ def api_nba_player_stats(player_id):
     if "token" not in session: return jsonify({"error": "authentication required"}), 401
     try:
         season = current_nba_season()
+        log.info(f"Fetching NBA stats for player_id: {player_id}, season: {season}.")
+        
+        # FIX: Removed `season_type_all_star` argument as it caused the error
         dashboard = PlayerDashboardByGeneralSplits(
             player_id=player_id,
             season=season,
-            season_type_all_star="Regular Season",
             per_mode_detailed="PerGame"
         )
+        
         data_frames = dashboard.get_data_frames()
         if not data_frames:
-            log.warning(f"No dataframes for player {player_id}, season {season}")
-            return jsonify({"error": f"No stats dataframes for player {player_id}, season {season}"}), 404
+            log.warning(f"No dataframes returned from NBA API for player {player_id}, season {season}.")
+            return jsonify({"error": f"No stats dataframes available for player {player_id} in season {season}. NBA API might have no data."}), 404
 
         player_stats_df = data_frames[0] 
         if player_stats_df.empty:
-            log.warning(f"Stats DataFrame empty for player {player_id}, season {season}")
-            return jsonify({"error": f"No stats for player {player_id}, season {season}. DF empty."}), 404
+            log.warning(f"Stats DataFrame from NBA API is empty for player {player_id}, season {season}.")
+            return jsonify({"error": f"No stats found for player {player_id} in season {season} (DataFrame was empty). Player might be inactive or have no stats for this season type."}), 404
 
         stats_series = player_stats_df.iloc[0]
-        required_stats = {
-            'GP': stats_series.get('GP', 0), 'PTS': stats_series.get('PTS', 0),
-            'REB': stats_series.get('REB', 0), 'AST': stats_series.get('AST', 0),
-            'STL': stats_series.get('STL', 0), 'BLK': stats_series.get('BLK', 0),
-            'TOV': stats_series.get('TOV', 0), 'FG3M': stats_series.get('FG3M', 0),
-            'FGM': stats_series.get('FGM', 0), 'FGA': stats_series.get('FGA', 0),
-            'FTM': stats_series.get('FTM', 0), 'FTA': stats_series.get('FTA', 0),
-            'FG3A': stats_series.get('FG3A', 0), 'FG_PCT': stats_series.get('FG_PCT', 0),
-            'FT_PCT': stats_series.get('FT_PCT', 0), 'FG3_PCT': stats_series.get('FG3_PCT', 0),
-            'DD2': stats_series.get('DD2', 0), 'TD3': stats_series.get('TD3', 0)  
-        }
-        for key, value in required_stats.items():
-            if value is None: required_stats[key] = 0
+        
+        stat_keys_float = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG3M',
+                           'FGM', 'FGA', 'FTM', 'FTA', 'FG3A', 'FG_PCT', 'FT_PCT', 
+                           'FG3_PCT', 'DD2', 'TD3']
+        
+        required_stats = {'GP': int(stats_series.get('GP', 0) or 0)}
+        for key in stat_keys_float:
+            required_stats[key] = float(stats_series.get(key, 0.0) or 0.0)
+        
+        # ADDED LOGGING
+        log.info(f"--- NBA PLAYER STATS API RESPONSE FOR PLAYER ID: {player_id} ---")
+        log.info(json.dumps(required_stats, indent=2))
+        log.info(f"--- END NBA PLAYER STATS API RESPONSE ---")
+        
         return jsonify(required_stats)
-    except Exception as e:
-        log.error(f"Error NBA player stats {player_id}, season {current_nba_season()}: {type(e).__name__} - {e}")
-        if isinstance(e, (requests.exceptions.Timeout, requests.exceptions.ConnectionError)):
-            return jsonify({"error": "Timeout/Connection error NBA API"}), 504
-        return jsonify({"error": f"Could not fetch stats for player {player_id}: {str(e)}"}), 500
 
-# Debug routes (from your original, ensure they are still needed/wanted)
+    except Exception as e:
+        tb_str = traceback.format_exc()
+        log.error(f"Exception in /api/nba_player_stats for player {player_id}, season {current_nba_season()}: {type(e).__name__} - {e}\nTraceback:\n{tb_str}")
+        if isinstance(e, (requests.exceptions.Timeout, requests.exceptions.ConnectionError)):
+            return jsonify({"error": "A timeout or connection error occurred while contacting the NBA API."}), 504
+        return jsonify({"error": f"Could not fetch stats for player {player_id}: {type(e).__name__} - {str(e)}"}), 500
+
+# Debug routes (original from prompt)
 @app.route("/debug/league_settings")
 def debug_league_settings():
     if "league_key" not in session: return jsonify({"error": "No league chosen."}), 400
@@ -414,7 +438,6 @@ def debug_scoreboard():
     week = request.args.get("week", "1")
     data = yahoo_api(f"fantasy/v2/league/{session['league_key']}/scoreboard;week={week}")
     return f"<pre>{json.dumps(data, indent=2)}</pre>"
-# (Add other original debug routes if necessary)
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host='0.0.0.0')
