@@ -1,64 +1,92 @@
 /* ───── trade_analyzer.js - Fantasy Basketball Trade Analyzer ───── */
 document.addEventListener('DOMContentLoaded', () => {
-    // ============ DOM REFERENCES ============
     const DOM = {
-      tradingContainer: document.getElementById('tradingPlayersContainer'),
-      acquiringContainer: document.getElementById('acquiringPlayersContainer'),
-      tradingSearchInput: document.getElementById('tradingPlayerSearch'),
-      acquiringSearchInput: document.getElementById('acquiringPlayerSearch'),
-      tradingPlayerDropdown: document.getElementById('tradingPlayerSearch')?.nextElementSibling,
-      acquiringPlayerDropdown: document.getElementById('acquiringPlayerSearch')?.nextElementSibling,
-      evaluateButton: document.getElementById('evaluateTradeBtn'),
-      tradeResults: document.getElementById('tradeResultsContainer')
+      tradingContainer: null, acquiringContainer: null,
+      tradingSearchInput: null, acquiringSearchInput: null,
+      tradingPlayerDropdown: null, acquiringPlayerDropdown: null,
+      evaluateButton: null, tradeResultsContainer: null
     };
   
-    // ============ STATE ============
     const STATE = {
-      tradingPlayers: [],
-      acquiringPlayers: [],
-      allNbaPlayers: [], // To store all fetch NBA players
-      maxPlayers: 5, // Max players per side
-      initialized: false
+      tradingPlayers: [], acquiringPlayers: [],
+      allNbaPlayers: [], maxPlayers: 5, initialized: false,
+      NBA_STAT_MAP: { // Ensure nbaKey matches keys from Python's `required_stats`
+        '12': { nbaKey: 'PTS', type: 'counting', precision: 1 },    // Points
+        '15': { nbaKey: 'REB', type: 'counting', precision: 1 },    // Rebounds
+        '16': { nbaKey: 'AST', type: 'counting', precision: 1 },    // Assists
+        '17': { nbaKey: 'STL', type: 'counting', precision: 1 },    // Steals
+        '18': { nbaKey: 'BLK', type: 'counting', precision: 1 },    // Blocks
+        '10': { nbaKey: 'FG3M', type: 'counting', precision: 1 },   // 3-Pointers Made
+        '19': { nbaKey: 'TOV', type: 'counting', precision: 1 },    // Turnovers
+        '5':  { type: 'percentage', components: { made: 'FGM', attempted: 'FGA' }, nbaKey: 'FG_PCT', precision: 3 }, // FG%
+        '8':  { type: 'percentage', components: { made: 'FTM', attempted: 'FTA' }, nbaKey: 'FT_PCT', precision: 3 }, // FT%
+        '11': { type: 'percentage', components: { made: 'FG3M', attempted: 'FG3A'}, nbaKey: 'FG3_PCT',precision: 3 }, // 3PT%
+        '27': { nbaKey: 'DD2', type: 'counting', precision: 1 },    // Double-Doubles
+        '28': { nbaKey: 'TD3', type: 'counting', precision: 1 },    // Triple-Doubles
+        // GP is used internally but not usually a displayed cat for trade impact
+      }
     };
   
-    // ============ UTILITIES ============
     const Utils = {
-      // Generate a unique ID for each player card in the DOM
-      generatePlayerCardId: () => {
-        return Math.random().toString(36).substring(2, 15);
+      generatePlayerCardId: () => Math.random().toString(36).substring(2, 15),
+      formatStatDisplay: (value, precision, isPercentage = false) => {
+        if (typeof value !== 'number' || isNaN(value)) return 'N/A';
+        const num = Number(value);
+        if (isPercentage) return num.toFixed(precision).replace(/^0\./, '.');
+        return num.toFixed(precision);
+      },
+      formatImpactDisplay: (value, precision, isPercentage = false) => {
+        if (typeof value !== 'number' || isNaN(value)) return 'N/A';
+        const num = Number(value);
+        let sign = num > 0 ? '+' : '';
+        if (num === 0 && isPercentage && precision > 0) sign = '';
+        const fixedStr = num.toFixed(precision);
+        if (isPercentage && num > -1 && num < 1 && num !== 0) {
+            return sign + fixedStr.replace(/^0\./, '.').replace(/^-0\./, '-.');
+        }
+        return sign + fixedStr;
       }
     };
 
-    // ============ DATA SERVICE ============
     const DataService = {
         fetchNbaPlayers: async () => {
             try {
                 const response = await fetch('/api/nba_players');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 STATE.allNbaPlayers = await response.json();
-                console.log('NBA Players loaded:', STATE.allNbaPlayers.length);
             } catch (error) {
-                console.error("Could not fetch NBA players:", error);
-                STATE.allNbaPlayers = []; // Ensure it's an empty array on failure
+                console.error("Could not fetch NBA players for trade analyzer:", error);
+                STATE.allNbaPlayers = [];
+            }
+        },
+        fetchNbaPlayerStats: async (playerId) => {
+            try {
+                const response = await fetch(`/api/nba_player_stats/${playerId}`);
+                if (!response.ok) {
+                    console.error(`Failed to fetch stats for player ${playerId}: ${response.status} ${await response.text()}`);
+                    return null; // Return null to indicate failure for this player
+                }
+                const data = await response.json();
+                if (data.error) { // Check for application-level error from Python
+                    console.error(`Error from API for player ${playerId}: ${data.error}`);
+                    return null;
+                }
+                data.PLAYER_ID = playerId; // Ensure PLAYER_ID is part of the object for later checks
+                return data;
+            } catch (error) {
+                console.error(`Network or parsing error fetching stats for player ${playerId}:`, error);
+                return null;
             }
         }
     };
   
-    // ============ RENDERING ============
     const Renderer = {
-      // Render a player card
       renderPlayerCard: (player, side) => {
         const card = document.createElement('div');
         card.className = 'player-card';
         card.setAttribute('data-player-card-id', player.card_id);
-        
-        // Player object structure: { card_id, nba_id, name, imageUrl, team_id, team, position }
         card.innerHTML = `
-          <div class="player-photo">
-            <img src="${player.imageUrl}" alt="${player.name}" onerror="this.src='https://via.placeholder.com/50x50?text=NBA'; this.onerror=null;">
-          </div>
+          <div class="player-photo"><img src="${player.imageUrl}" alt="${player.name}" onerror="this.src='https://via.placeholder.com/50x50?text=NBA'; this.onerror=null;"></div>
           <div class="player-info">
             <div class="player-name">${player.name}</div>
             <div class="player-team-details">
@@ -66,236 +94,256 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="player-team-position-text">${player.team} - ${player.position}</div>
             </div>
           </div>
-          <button class="remove-player" data-player-card-id="${player.card_id}" data-side="${side}">×</button>
-        `;
-        
+          <button class="remove-player" data-player-card-id="${player.card_id}" data-side="${side}">×</button>`;
         return card;
       },
-      
-      // Update the UI with current players in trade boxes
       updatePlayersList: () => {
         if (!DOM.tradingContainer || !DOM.acquiringContainer) return;
-
         DOM.tradingContainer.innerHTML = '';
         DOM.acquiringContainer.innerHTML = '';
-        
-        STATE.tradingPlayers.forEach(player => {
-          const card = Renderer.renderPlayerCard(player, 'trading');
-          DOM.tradingContainer.appendChild(card);
-        });
-        
-        STATE.acquiringPlayers.forEach(player => {
-          const card = Renderer.renderPlayerCard(player, 'acquiring');
-          DOM.acquiringContainer.appendChild(card);
-        });
-        
-        // Add event listeners to new remove buttons
+        STATE.tradingPlayers.forEach(p => DOM.tradingContainer.appendChild(Renderer.renderPlayerCard(p, 'trading')));
+        STATE.acquiringPlayers.forEach(p => DOM.acquiringContainer.appendChild(Renderer.renderPlayerCard(p, 'acquiring')));
         document.querySelectorAll('.player-card .remove-player').forEach(button => {
-          button.removeEventListener('click', Events.handleRemovePlayer); // Prevent duplicate listeners
+          button.removeEventListener('click', Events.handleRemovePlayer); // Prevent duplicates
           button.addEventListener('click', Events.handleRemovePlayer);
         });
       },
-
-      // Display autocomplete suggestions
       displayAutocompleteSuggestions: (suggestions, inputElement, side) => {
         const dropdownElement = (side === 'trading') ? DOM.tradingPlayerDropdown : DOM.acquiringPlayerDropdown;
         if (!dropdownElement) return;
-
-        dropdownElement.innerHTML = ''; // Clear previous suggestions
-        if (suggestions.length === 0) {
-          dropdownElement.style.display = 'none';
-          return;
-        }
-
-        suggestions.slice(0, 10).forEach(player => { // Show top 10 suggestions
+        dropdownElement.innerHTML = '';
+        if (suggestions.length === 0) { dropdownElement.style.display = 'none'; return; }
+        suggestions.slice(0, 10).forEach(player => {
           const item = document.createElement('div');
-          item.className = 'player-dropdown-item'; // Add a class for potential styling
-          item.textContent = `${player.full_name} (${player.team_abbreviation} - ${player.position})`; // Show team/pos in dropdown
+          item.className = 'player-dropdown-item';
+          item.textContent = `${player.full_name} (${player.team_abbreviation} - ${player.position})`;
           item.addEventListener('click', () => {
             Events.addPlayerToTrade(player, side);
-            inputElement.value = ''; // Clear input
-            dropdownElement.innerHTML = '';
-            dropdownElement.style.display = 'none';
+            inputElement.value = '';
+            dropdownElement.innerHTML = ''; dropdownElement.style.display = 'none';
           });
           dropdownElement.appendChild(item);
         });
         dropdownElement.style.display = 'block';
       },
-      
-      // Show trade evaluation results (placeholder logic remains)
-      showTradeResults: () => {
-        if (!DOM.tradeResults) return;
-        if (STATE.tradingPlayers.length === 0 || STATE.acquiringPlayers.length === 0) {
-          DOM.tradeResults.innerHTML = `
-            <div class="trade-message trade-warning">
-              Please add players to both sides of the trade.
-            </div>
-          `;
-          DOM.tradeResults.style.display = 'block';
-          return;
+      renderTradeAnalysisTable: (aggregatedStats, categoryConfigs, summary) => {
+        if (!DOM.tradeResultsContainer) return;
+        let tableHTML = `<table class="trade-analysis-results"><thead><tr><th>Category</th><th>Trading Away</th><th>Acquiring</th><th>Impact</th></tr></thead><tbody>`;
+        categoryConfigs.forEach(([statId, statName, sortDir]) => {
+            const statMapInfo = STATE.NBA_STAT_MAP[statId];
+            if (!statMapInfo) return;
+            const isPercentage = statMapInfo.type === 'percentage';
+            const precision = statMapInfo.precision;
+            const isLowGood = sortDir === 'low';
+            const tradingVal = aggregatedStats.tradingAway.totals[statId] || 0;
+            const acquiringVal = aggregatedStats.acquiring.totals[statId] || 0;
+            const impactVal = aggregatedStats.impact[statId] || 0;
+            let impactClass = '';
+            if (Math.abs(impactVal) > (isPercentage ? 0.0001 : 0.01)) { // Check for meaningful change
+                if ((isLowGood && impactVal < 0) || (!isLowGood && impactVal > 0)) impactClass = 'team-improves';
+                else impactClass = 'team-declines';
+            }
+            const lowGoodAttr = isLowGood ? 'data-low-is-good="true"' : '';
+            tableHTML += `<tr><td>${statName}</td><td>${Utils.formatStatDisplay(tradingVal, precision, isPercentage)}</td><td>${Utils.formatStatDisplay(acquiringVal, precision, isPercentage)}</td><td class="${impactClass}" ${lowGoodAttr}>${Utils.formatImpactDisplay(impactVal, precision, isPercentage)}</td></tr>`;
+        });
+        tableHTML += `
+            <tr class="status-row"><td colspan="4" class="status-cell">Trade improves ${summary.improvedCount} of ${categoryConfigs.filter(c => STATE.NBA_STAT_MAP[c[0]]).length} categories<button id="showTradeSummaryBtn" class="summary-toggle">View Impact Details</button></td></tr>
+            <tr class="summary-section" style="display:none;"><td colspan="4" class="summary-header">Impact Summary</td></tr>
+            <tr class="summary-row gains" style="display:none;"><td colspan="2" class="category-list">Improving: ${summary.gainingCategories.join(', ') || 'None'}</td><td colspan="2" class="impact-value">+${summary.improvedCount} categories</td></tr>
+            <tr class="summary-row losses" style="display:none;"><td colspan="2" class="category-list">Declining: ${summary.losingCategories.join(', ') || 'None'}</td><td colspan="2" class="impact-value">-${summary.declinedCount} categories</td></tr>
+        </tbody><tfoot><tr><td colspan="4">Based on player per-game averages</td></tr></tfoot></table>`;
+        DOM.tradeResultsContainer.innerHTML = tableHTML;
+        DOM.tradeResultsContainer.style.display = 'block';
+        DOM.tradeResultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const summaryToggleBtn = document.getElementById('showTradeSummaryBtn');
+        if (summaryToggleBtn) {
+            summaryToggleBtn.addEventListener('click', () => {
+                const summaryRows = DOM.tradeResultsContainer.querySelectorAll('.summary-section, .summary-row');
+                const isVisible = summaryRows[0].style.display !== 'none';
+                summaryRows.forEach(row => row.style.display = isVisible ? 'none' : 'table-row');
+                summaryToggleBtn.textContent = isVisible ? 'View Impact Details' : 'Hide Impact Details';
+                summaryToggleBtn.classList.toggle('active', !isVisible);
+            });
         }
-        
-        DOM.tradeResults.innerHTML = `
-          <div class="trade-result-header">
-            <div class="success-badge">
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <circle cx="12" cy="12" r="11" fill="#00C851" stroke="none"></circle>
-                <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="white"></path>
-              </svg>
-              SUCCESS (Placeholder Analysis)
-            </div>
-          </div>
-          <div class="trade-stats-container">
-            <div class="trade-team-column">
-              <div class="team-header">Your Team Loses</div>
-              <div class="player-stat-rows">
-                ${STATE.tradingPlayers.map(p => `
-                  <div class="player-stat-row">
-                    <div class="row-player-photo"><img src="${p.imageUrl}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/36x36?text=NBA'; this.onerror=null;"></div>
-                    <div class="row-player-name">${p.name}</div>
-                  </div>`).join('')}
-              </div>
-            </div>
-            <div class="trade-team-column">
-              <div class="team-header">Your Team Gains</div>
-              <div class="player-stat-rows">
-                ${STATE.acquiringPlayers.map(p => `
-                  <div class="player-stat-row">
-                    <div class="row-player-photo"><img src="${p.imageUrl}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/36x36?text=NBA'; this.onerror=null;"></div>
-                    <div class="row-player-name">${p.name}</div>
-                  </div>`).join('')}
-              </div>
-            </div>
-          </div>
-        `;
-        DOM.tradeResults.style.display = 'block';
-        DOM.tradeResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     };
   
-    // ============ EVENT HANDLERS ============
     const Events = {
-      init: async () => {
-        await DataService.fetchNbaPlayers(); // Load player list
-
+      initTradeAnalyzerLogic: async () => {
+        if (!STATE.allNbaPlayers || STATE.allNbaPlayers.length === 0) {
+            await DataService.fetchNbaPlayers();
+        }
         DOM.tradingSearchInput?.addEventListener('input', (e) => Events.handlePlayerSearch(e, 'trading'));
         DOM.acquiringSearchInput?.addEventListener('input', (e) => Events.handlePlayerSearch(e, 'acquiring'));
-        
-        // Hide dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (DOM.tradingPlayerDropdown && DOM.tradingSearchInput && !DOM.tradingSearchInput.contains(e.target) && !DOM.tradingPlayerDropdown.contains(e.target)) {
-                DOM.tradingPlayerDropdown.style.display = 'none';
-            }
-            if (DOM.acquiringPlayerDropdown && DOM.acquiringSearchInput && !DOM.acquiringSearchInput.contains(e.target) && !DOM.acquiringPlayerDropdown.contains(e.target)) {
-                DOM.acquiringPlayerDropdown.style.display = 'none';
-            }
+            if (DOM.tradingPlayerDropdown && DOM.tradingSearchInput && !DOM.tradingSearchInput.contains(e.target) && !DOM.tradingPlayerDropdown.contains(e.target)) DOM.tradingPlayerDropdown.style.display = 'none';
+            if (DOM.acquiringPlayerDropdown && DOM.acquiringSearchInput && !DOM.acquiringSearchInput.contains(e.target) && !DOM.acquiringPlayerDropdown.contains(e.target)) DOM.acquiringPlayerDropdown.style.display = 'none';
         });
-
-        DOM.evaluateButton?.addEventListener('click', () => {
-          Renderer.showTradeResults();
-        });
-        
+        DOM.evaluateButton?.addEventListener('click', Events.handleEvaluateTrade);
         Renderer.updatePlayersList();
       },
-
       handlePlayerSearch: (event, side) => {
         const searchTerm = event.target.value.toLowerCase();
-        const inputElement = event.target;
-
-        if (searchTerm.length < 2) { 
+        if (searchTerm.length < 2) {
           const dropdown = side === 'trading' ? DOM.tradingPlayerDropdown : DOM.acquiringPlayerDropdown;
-          if (dropdown) {
-            dropdown.innerHTML = '';
-            dropdown.style.display = 'none';
-          }
+          if (dropdown) { dropdown.innerHTML = ''; dropdown.style.display = 'none'; }
           return;
         }
-
-        const filteredPlayers = STATE.allNbaPlayers.filter(player => 
-          player.full_name.toLowerCase().includes(searchTerm)
-        );
-        Renderer.displayAutocompleteSuggestions(filteredPlayers, inputElement, side);
+        const filteredPlayers = STATE.allNbaPlayers.filter(p => p.full_name.toLowerCase().includes(searchTerm));
+        Renderer.displayAutocompleteSuggestions(filteredPlayers, event.target, side);
       },
-
       addPlayerToTrade: (playerDataFromApi, side) => {
-        // playerDataFromApi: {id, full_name, team_id, team_abbreviation, position}
         const targetPlayerList = side === 'trading' ? STATE.tradingPlayers : STATE.acquiringPlayers;
-
-        if (targetPlayerList.length >= STATE.maxPlayers) {
-          alert(`Maximum ${STATE.maxPlayers} players allowed per side.`);
-          return;
+        if (targetPlayerList.length >= STATE.maxPlayers) { alert(`Maximum ${STATE.maxPlayers} players per side.`); return; }
+        if (STATE.tradingPlayers.some(p => p.nba_id === playerDataFromApi.id) || STATE.acquiringPlayers.some(p => p.nba_id === playerDataFromApi.id)) {
+            alert(`${playerDataFromApi.full_name} is already in the trade.`); return;
         }
-
-        // Prevent duplicate player selection across both lists
-        const isAlreadySelected = STATE.tradingPlayers.some(p => p.nba_id === playerDataFromApi.id) ||
-                                 STATE.acquiringPlayers.some(p => p.nba_id === playerDataFromApi.id);
-        
-        if (isAlreadySelected) {
-            alert(`${playerDataFromApi.full_name} is already part of the trade.`);
-            return;
-        }
-
-        const newPlayer = {
-          card_id: Utils.generatePlayerCardId(),
-          nba_id: playerDataFromApi.id,
-          name: playerDataFromApi.full_name,
-          imageUrl: `https://cdn.nba.com/headshots/nba/latest/260x190/${playerDataFromApi.id}.png`, // Smaller photo
-          team_id: playerDataFromApi.team_id,
-          team: playerDataFromApi.team_abbreviation || 'N/A',
-          position: playerDataFromApi.position || 'N/A'
-        };
-
-        targetPlayerList.push(newPlayer);
+        targetPlayerList.push({
+          card_id: Utils.generatePlayerCardId(), nba_id: playerDataFromApi.id, name: playerDataFromApi.full_name,
+          imageUrl: `https://cdn.nba.com/headshots/nba/latest/260x190/${playerDataFromApi.id}.png`,
+          team_id: playerDataFromApi.team_id, team: playerDataFromApi.team_abbreviation || 'N/A', position: playerDataFromApi.position || 'N/A'
+        });
         Renderer.updatePlayersList();
       },
-
       handleRemovePlayer: (e) => {
         const playerCardId = e.target.getAttribute('data-player-card-id');
         const side = e.target.getAttribute('data-side');
-        
-        if (side === 'trading') {
-          STATE.tradingPlayers = STATE.tradingPlayers.filter(p => p.card_id !== playerCardId);
-        } else {
-          STATE.acquiringPlayers = STATE.acquiringPlayers.filter(p => p.card_id !== playerCardId);
-        }
+        if (side === 'trading') STATE.tradingPlayers = STATE.tradingPlayers.filter(p => p.card_id !== playerCardId);
+        else STATE.acquiringPlayers = STATE.acquiringPlayers.filter(p => p.card_id !== playerCardId);
         Renderer.updatePlayersList();
+      },
+      handleEvaluateTrade: async () => {
+        if (!DOM.tradeResultsContainer) return;
+        const tradingPlayerIds = STATE.tradingPlayers.map(p => p.nba_id);
+        const acquiringPlayerIds = STATE.acquiringPlayers.map(p => p.nba_id);
+
+        if (tradingPlayerIds.length === 0 || acquiringPlayerIds.length === 0) {
+             DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">Please add players to both sides.</div>`;
+             DOM.tradeResultsContainer.style.display = 'block'; return;
+        }
+        
+        DOM.tradeResultsContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Loading analysis... <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div>`;
+        DOM.tradeResultsContainer.style.display = 'block';
+
+        try {
+            const tradingStatsRaw = (await Promise.all(tradingPlayerIds.map(id => DataService.fetchNbaPlayerStats(id)))).filter(s => s !== null);
+            const acquiringStatsRaw = (await Promise.all(acquiringPlayerIds.map(id => DataService.fetchNbaPlayerStats(id)))).filter(s => s !== null);
+
+            let missingPlayersMessage = "";
+            if (tradingStatsRaw.length !== tradingPlayerIds.length) {
+                const missing = STATE.tradingPlayers.filter(p => !tradingStatsRaw.find(s => s.PLAYER_ID === p.nba_id)).map(p=>p.name);
+                if(missing.length > 0) missingPlayersMessage += `Could not fetch stats for trading players: ${missing.join(', ')}. `;
+            }
+            if (acquiringStatsRaw.length !== acquiringPlayerIds.length) {
+                const missing = STATE.acquiringPlayers.filter(p => !acquiringStatsRaw.find(s => s.PLAYER_ID === p.nba_id)).map(p=>p.name);
+                 if(missing.length > 0) missingPlayersMessage += `Could not fetch stats for acquiring players: ${missing.join(', ')}. `;
+            }
+            if(missingPlayersMessage) {
+                 DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">${missingPlayersMessage}Analysis may be incomplete.</div>`;
+                 // Optionally, decide if you want to proceed with partial data or stop
+                 // For now, we'll let it proceed if some data was fetched
+                 if (tradingStatsRaw.length === 0 && acquiringStatsRaw.length === 0) return; // Stop if no data at all
+            }
+            
+            const categoryConfigs = window.CONFIG?.COLS || [];
+            if (categoryConfigs.length === 0 || !window.CONFIG) {
+                 DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">League categories not loaded.</div>`; return;
+            }
+
+            const aggregatedStats = {
+                tradingAway: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0 } },
+                acquiring: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0 } },
+                impact: {}
+            };
+
+            const processGroup = (playersStatsArray, groupAgg) => {
+                playersStatsArray.forEach(playerData => {
+                    if (!playerData || playerData.GP === 0) return; // Skip players with 0 GP or no data
+                    categoryConfigs.forEach(([statId, , ]) => {
+                        const statMapInfo = STATE.NBA_STAT_MAP[statId];
+                        if (!statMapInfo) return;
+                        if (statMapInfo.type === 'counting') {
+                            const value = parseFloat(playerData[statMapInfo.nbaKey] || 0);
+                            groupAgg.totals[statId] = (groupAgg.totals[statId] || 0) + value;
+                        } else if (statMapInfo.type === 'percentage' && statMapInfo.components) {
+                            // Add per-game made/attempted for later aggregate % calculation
+                            groupAgg.components[statMapInfo.components.made] += parseFloat(playerData[statMapInfo.components.made] || 0);
+                            groupAgg.components[statMapInfo.components.attempted] += parseFloat(playerData[statMapInfo.components.attempted] || 0);
+                        }
+                    });
+                });
+                categoryConfigs.forEach(([statId, , ]) => {
+                    const statMapInfo = STATE.NBA_STAT_MAP[statId];
+                    if (statMapInfo && statMapInfo.type === 'percentage' && statMapInfo.components) {
+                        const made = groupAgg.components[statMapInfo.components.made];
+                        const attempted = groupAgg.components[statMapInfo.components.attempted];
+                        groupAgg.totals[statId] = attempted > 0 ? (made / attempted) : 0;
+                    }
+                });
+            };
+            
+            processGroup(tradingStatsRaw, aggregatedStats.tradingAway);
+            processGroup(acquiringStatsRaw, aggregatedStats.acquiring);
+
+            let improvedCount = 0, declinedCount = 0;
+            const gainingCategories = [], losingCategories = [];
+
+            categoryConfigs.forEach(([statId, statName, sortDir]) => {
+                const statMapInfo = STATE.NBA_STAT_MAP[statId];
+                if (!statMapInfo) { aggregatedStats.impact[statId] = 0; return; } // Skip unmapped league cats
+
+                const tradingVal = aggregatedStats.tradingAway.totals[statId] || 0;
+                const acquiringVal = aggregatedStats.acquiring.totals[statId] || 0;
+                const diff = acquiringVal - tradingVal;
+                aggregatedStats.impact[statId] = diff;
+
+                const isLowGood = sortDir === 'low';
+                // Check for meaningful change before classifying
+                if (Math.abs(diff) > (statMapInfo.type === 'percentage' ? 0.0001 : 0.01)) {
+                    if ((isLowGood && diff < 0) || (!isLowGood && diff > 0)) {
+                        improvedCount++; gainingCategories.push(statName);
+                    } else {
+                        declinedCount++; losingCategories.push(statName);
+                    }
+                }
+            });
+            
+            Renderer.renderTradeAnalysisTable(aggregatedStats, categoryConfigs, { improvedCount, declinedCount, gainingCategories, losingCategories });
+
+        } catch (error) {
+            console.error("Error evaluating trade:", error);
+            DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">An error occurred: ${error.message}</div>`;
+        }
       }
     };
   
-    // ============ INITIALIZATION ============
     const initTradeAnalyzer = () => {
       if (STATE.initialized) return;
-      
-      if (!DOM.tradingContainer || !DOM.acquiringContainer || !DOM.tradingSearchInput || !DOM.acquiringSearchInput) {
+      DOM.tradingContainer = document.getElementById('tradingPlayersContainer');
+      DOM.acquiringContainer = document.getElementById('acquiringPlayersContainer');
+      DOM.tradingSearchInput = document.getElementById('tradingPlayerSearch');
+      DOM.acquiringSearchInput = document.getElementById('acquiringPlayerSearch');
+      DOM.evaluateButton = document.getElementById('evaluateTradeBtn');
+      DOM.tradeResultsContainer = document.getElementById('tradeResultsContainer');
+
+      if (!DOM.tradingContainer || !DOM.acquiringContainer || !DOM.tradingSearchInput || !DOM.acquiringSearchInput || !DOM.evaluateButton || !DOM.tradeResultsContainer) {
         return; 
       }
       
       DOM.tradingPlayerDropdown = DOM.tradingSearchInput.nextElementSibling;
       DOM.acquiringPlayerDropdown = DOM.acquiringSearchInput.nextElementSibling;
       
-      if (!DOM.tradingPlayerDropdown || !DOM.acquiringPlayerDropdown) {
-         // console.warn('Player dropdown elements not found. Autocomplete might not work.');
+      if (!DOM.tradingPlayerDropdown || !DOM.tradingPlayerDropdown.classList.contains('player-dropdown') || 
+          !DOM.acquiringPlayerDropdown || !DOM.acquiringPlayerDropdown.classList.contains('player-dropdown')) {
+         console.warn('Player dropdown elements not found/incorrect for trade_analyzer. Autocomplete might fail.');
       }
-
-      console.log('Initializing trade analyzer feature...');
       STATE.initialized = true;
-      Events.init(); 
+      Events.initTradeAnalyzerLogic();
     };
   
     const tradeTabButton = document.querySelector('[data-target="tab-trade"]');
     if (tradeTabButton) {
-      tradeTabButton.addEventListener('click', () => {
-        DOM.tradingContainer = document.getElementById('tradingPlayersContainer');
-        DOM.acquiringContainer = document.getElementById('acquiringPlayersContainer');
-        DOM.tradingSearchInput = document.getElementById('tradingPlayerSearch');
-        DOM.acquiringSearchInput = document.getElementById('acquiringPlayerSearch');
-        DOM.evaluateButton = document.getElementById('evaluateTradeBtn');
-        DOM.tradeResults = document.getElementById('tradeResultsContainer');
-        initTradeAnalyzer();
-      });
+      tradeTabButton.addEventListener('click', () => setTimeout(initTradeAnalyzer, 50));
+      if (tradeTabButton.classList.contains('active')) initTradeAnalyzer();
     }
-    
-    if (tradeTabButton && tradeTabButton.classList.contains('active')) {
-      initTradeAnalyzer();
-    }
-  });
+});
