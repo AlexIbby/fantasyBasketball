@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '5':  { type: 'percentage', components: { made: 'FGM', attempted: 'FGA' }, nbaKey: 'FG_PCT', precision: 3 }, // FG%
         '8':  { type: 'percentage', components: { made: 'FTM', attempted: 'FTA' }, nbaKey: 'FT_PCT', precision: 3 }, // FT%
         '11': { type: 'percentage', components: { made: 'FG3M', attempted: 'FG3A'}, nbaKey: 'FG3_PCT',precision: 3 }, // 3PT%
-        '27': { nbaKey: 'DD2', type: 'counting', precision: 1 },    // Double-Doubles
+        '27': { nbaKey: 'DD2', type: 'counting', precision: 1 },    // Double-Doubles (will be calculated as average)
         '28': { nbaKey: 'TD3', type: 'counting', precision: 1 },    // Triple-Doubles
         // GP is used internally but not usually a displayed cat for trade impact
       }
@@ -139,7 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const acquiringVal = aggregatedStats.acquiring.totals[statId] || 0;
             const impactVal = aggregatedStats.impact[statId] || 0;
             let impactClass = '';
-            if (Math.abs(impactVal) > (isPercentage ? 0.0001 : 0.01)) { // Check for meaningful change
+            // For DD2 (statId '27'), it's an average, treat like other counting stats for positive/negative impact determination
+            // For percentages, diff threshold is smaller. For DD2 avg, use similar threshold as other counting stats.
+            const diffThreshold = isPercentage ? 0.0001 : 0.01; 
+            if (Math.abs(impactVal) > diffThreshold) { 
                 if ((isLowGood && impactVal < 0) || (!isLowGood && impactVal > 0)) impactClass = 'team-improves';
                 else impactClass = 'team-declines';
             }
@@ -240,9 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if(missingPlayersMessage) {
                  DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">${missingPlayersMessage}Analysis may be incomplete.</div>`;
-                 // Optionally, decide if you want to proceed with partial data or stop
-                 // For now, we'll let it proceed if some data was fetched
-                 if (tradingStatsRaw.length === 0 && acquiringStatsRaw.length === 0) return; // Stop if no data at all
+                 if (tradingStatsRaw.length === 0 && acquiringStatsRaw.length === 0) return; 
             }
             
             const categoryConfigs = window.CONFIG?.COLS || [];
@@ -250,31 +251,51 @@ document.addEventListener('DOMContentLoaded', () => {
                  DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">League categories not loaded.</div>`; return;
             }
 
+            // MODIFIED: Initialize components for DD2 average calculation
             const aggregatedStats = {
-                tradingAway: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0 } },
-                acquiring: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0 } },
+                tradingAway: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0, DD2_total: 0, GP_for_DD2: 0 } },
+                acquiring: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0, DD2_total: 0, GP_for_DD2: 0 } },
                 impact: {}
             };
 
+            // MODIFIED: processGroup to handle DD2 average
             const processGroup = (playersStatsArray, groupAgg) => {
                 playersStatsArray.forEach(playerData => {
                     if (!playerData || playerData.GP === 0) return; // Skip players with 0 GP or no data
+                    
+                    // Accumulate GP for DD2 average if player has DD2 stats
+                    // The actual DD2 value is playerData.DD2 (mapped by statMapInfo.nbaKey)
+                    if (playerData.DD2 !== undefined) { // Check if DD2 key exists from API
+                        groupAgg.components.GP_for_DD2 += parseFloat(playerData.GP || 0);
+                        groupAgg.components.DD2_total += parseFloat(playerData.DD2 || 0);
+                    }
+
                     categoryConfigs.forEach(([statId, , ]) => {
                         const statMapInfo = STATE.NBA_STAT_MAP[statId];
                         if (!statMapInfo) return;
-                        if (statMapInfo.type === 'counting') {
+                        
+                        if (statId === '27') { // DD2 stat_id
+                            // DD2 total will be calculated from components later
+                            // No direct accumulation into groupAgg.totals[statId] here
+                        } else if (statMapInfo.type === 'counting') {
                             const value = parseFloat(playerData[statMapInfo.nbaKey] || 0);
                             groupAgg.totals[statId] = (groupAgg.totals[statId] || 0) + value;
                         } else if (statMapInfo.type === 'percentage' && statMapInfo.components) {
-                            // Add per-game made/attempted for later aggregate % calculation
                             groupAgg.components[statMapInfo.components.made] += parseFloat(playerData[statMapInfo.components.made] || 0);
                             groupAgg.components[statMapInfo.components.attempted] += parseFloat(playerData[statMapInfo.components.attempted] || 0);
                         }
                     });
                 });
+
+                // After processing all players, calculate aggregate averages
                 categoryConfigs.forEach(([statId, , ]) => {
                     const statMapInfo = STATE.NBA_STAT_MAP[statId];
-                    if (statMapInfo && statMapInfo.type === 'percentage' && statMapInfo.components) {
+                    if (!statMapInfo) return;
+
+                    if (statId === '27') { // Calculate aggregate DD2 average
+                        groupAgg.totals[statId] = groupAgg.components.GP_for_DD2 > 0 ?
+                            (groupAgg.components.DD2_total / groupAgg.components.GP_for_DD2) : 0;
+                    } else if (statMapInfo.type === 'percentage' && statMapInfo.components) {
                         const made = groupAgg.components[statMapInfo.components.made];
                         const attempted = groupAgg.components[statMapInfo.components.attempted];
                         groupAgg.totals[statId] = attempted > 0 ? (made / attempted) : 0;
@@ -290,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             categoryConfigs.forEach(([statId, statName, sortDir]) => {
                 const statMapInfo = STATE.NBA_STAT_MAP[statId];
-                if (!statMapInfo) { aggregatedStats.impact[statId] = 0; return; } // Skip unmapped league cats
+                if (!statMapInfo) { aggregatedStats.impact[statId] = 0; return; }
 
                 const tradingVal = aggregatedStats.tradingAway.totals[statId] || 0;
                 const acquiringVal = aggregatedStats.acquiring.totals[statId] || 0;
@@ -298,8 +319,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 aggregatedStats.impact[statId] = diff;
 
                 const isLowGood = sortDir === 'low';
-                // Check for meaningful change before classifying
-                if (Math.abs(diff) > (statMapInfo.type === 'percentage' ? 0.0001 : 0.01)) {
+                // Use appropriate diffThreshold: smaller for percentages, larger for counting/averages
+                const diffThreshold = (statMapInfo.type === 'percentage') ? 0.0001 : 0.01;
+                if (Math.abs(diff) > diffThreshold) {
                     if ((isLowGood && diff < 0) || (!isLowGood && diff > 0)) {
                         improvedCount++; gainingCategories.push(statName);
                     } else {
