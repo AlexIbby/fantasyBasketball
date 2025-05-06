@@ -5,35 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Select Fantasy League</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script defer src="{{ url_for('static', filename='select.js') }}"></script>
 </head>
 <body>
   <div class="container login-container">
     <div class="login-card select-card">
       <div class="login-header">
-        <h1>Select Your League</h1>
+        <h1>Select Your Team</h1>
       </div>
       <div class="login-content">
         <div class="select-form">
-          <div class="form-group">
-            <label for="year">Season:</label>
-            <select id="year" class="form-select">
-              <option value="" disabled selected>— Choose season —</option>
-              {% for y in seasons %}
-                <option value="{{ y }}">{{ y }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          
           <form id="leagueForm" action="{{ url_for('greet') }}" method="post">
             <div class="form-group">
-              <label for="league">League / Team:</label>
-              <select id="league" name="league_key" class="form-select">
-                <option value="" disabled selected>— Select league —</option>
+              <label for="team">Your Teams:</label>
+              <select id="team" name="league_key" class="form-select">
+                <option value="" disabled selected>— Select your team —</option>
                 {% for l in leagues %}
-                  <option value="{{ l.league_key }}"
-                          data-season="{{ l.season }}"
-                          data-team="{{ l.team_name }}">
+                  <option value="{{ l.league_key }}" data-team="{{ l.team_name }}">
                     {{ l.season }} – {{ l.team_name }}
                   </option>
                 {% endfor %}
@@ -51,5 +38,17 @@
       </div>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const teamSelector = document.getElementById('team');
+      const teamField = document.getElementById('teamField');
+    
+      teamSelector.addEventListener('change', () => {
+        const selectedOption = teamSelector.options[teamSelector.selectedIndex];
+        teamField.value = selectedOption.dataset.team;
+      });
+    });
+  </script>
 </body>
 </html>

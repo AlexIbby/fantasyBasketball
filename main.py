@@ -162,8 +162,10 @@ def select():
                     }
                 )
 
-    seasons = sorted({l["season"] for l in leagues if l.get("season")}, reverse=True)
-    return render_template("select.html", seasons=seasons, leagues=leagues)
+    # Sort leagues by season (descending) and then by team name
+    leagues.sort(key=lambda x: (-int(x["season"]) if x["season"].isdigit() else 0, x["team_name"]))
+    
+    return render_template("select.html", leagues=leagues)
 
 @app.route("/greet", methods=["POST"])
 def greet():
