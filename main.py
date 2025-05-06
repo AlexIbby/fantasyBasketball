@@ -1,6 +1,10 @@
 # main.py
 import os, json, logging, time
+# Import for NBA players API
+from nba_api.stats.static import players as nba_static_players
+
 from typing import Any, Dict, Iterable, Iterator, List
+
 
 import requests
 from authlib.integrations.flask_client import OAuth
@@ -700,6 +704,18 @@ def api_team_logo():
         log.error(f"Error fetching team logo: {e}")
         return jsonify({"error": str(e)}), 500
 
+# ---------- NBA PLAYERS LIST (NEW) ----------
+@app.route("/api/nba_players")
+def api_nba_players():
+    if "token" not in session: # Consistent with other API routes needing session
+        return jsonify({"error": "authentication required"}), 401
+    try:
+        active_players = nba_static_players.get_active_players()
+        # Each player dict in list: {'id': PLAYER_ID, 'full_name': 'FullName', ...}
+        return jsonify(active_players)
+    except Exception as e:
+        log.error(f"Error fetching NBA players list from nba_api: {e}")
+        return jsonify({"error": "Failed to fetch NBA players list"}), 500
 
 # ─────────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":
