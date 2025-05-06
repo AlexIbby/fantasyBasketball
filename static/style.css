@@ -1434,3 +1434,35 @@ sup.rank{
     width: 100%;
   }
 }
+
+/* Make sure tab-trade has consistent padding */
+#tab-trade {
+  padding: 0;
+  background-color: white;
+}
+
+/* Ensure trade columns have consistent width */
+.trade-column {
+  flex: 1;
+  min-width: 300px;
+  max-width: 100%;
+  margin-bottom: 15px;
+}
+
+/* Force container backgrounds to be transparent */
+.trade-analyzer-container, 
+.trade-sides-container, 
+.trade-stats-container {
+  background-color: transparent !important;
+}
+
+/* Improve spacing on mobile */
+@media (max-width: 768px) {
+  .trade-sides-container {
+    gap: 15px;
+  }
+  
+  .trade-column {
+    margin-bottom: 10px;
+  }
+}
