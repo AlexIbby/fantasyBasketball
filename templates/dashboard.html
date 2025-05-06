@@ -10,6 +10,7 @@
   <script defer src="{{ url_for('static', filename='trends.js') }}"></script>
   <script defer src="{{ url_for('static', filename='player_contributions.js') }}"></script>
   <script defer src="{{ url_for('static', filename='navbar.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='team_logo.js') }}"></script>
 </head>
 <body>
   <!-- Navbar -->
@@ -32,8 +33,18 @@
   <div class="container">
     <!-- header -->
     <header class="header">
-      <h1 class="team-title">{{ team_name }}</h1>
-      <span class="league-id">League ID: {{ league_key }}</span>
+      <div class="header-content">
+        <div class="team-logo-container">
+          <div class="team-logo-placeholder">
+            <div class="team-logo-spinner"></div>
+          </div>
+          <img id="teamLogo" class="team-logo" src="" alt="Team Logo" style="display: none;">
+        </div>
+        <div class="team-info">
+          <h1 class="team-title">{{ team_name }}</h1>
+          <span class="league-id">League ID: {{ league_key }}</span>
+        </div>
+      </div>
     </header>
 
     <!-- nav tabs -->

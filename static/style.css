@@ -991,3 +991,65 @@ sup.rank{
   padding-top: 20px;
   margin-top: 10px;
 }
+
+/* Team logo styles */
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-logo-container {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden; /* Prevents content from spilling outside the container */
+  border: 3px solid #4299e1; /* Blue border matching your app's color scheme */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+}
+
+.team-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Changed from contain to cover */
+  background-color: transparent; /* Remove white background */
+  padding: 0; /* Remove padding that may cause spacing issues */
+}
+
+.team-logo-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-info {
+  flex: 1;
+}
+
+/* Logo loading animation */
+.team-logo-spinner {
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid #fff;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .team-logo-container {
+    width: 48px;
+    height: 48px;
+  }
+}

@@ -627,6 +627,80 @@ def debug_player_stats_season():
     except Exception as e:
         return f"Error: {str(e)}"
 
+# ---------- TEAM LOGO ----------
+@app.route("/api/team_logo")
+def api_team_logo():
+    """Get the team logo URL for the current user's team"""
+    if "league_key" not in session:
+        return jsonify({"error": "no league chosen"}), 400
+    
+    try:
+        # First get the team key for the current user's team
+        league_key = session["league_key"]
+        rel = f"fantasy/v2/league/{league_key}/teams"
+        teams_data = yahoo_api(rel)
+        
+        team_key = None
+        team_logo = None
+        fc = teams_data.get("fantasy_content", {})
+        league = fc.get("league", [{}])
+        teams = league[1].get("teams", {}) if isinstance(league, list) and len(league) > 1 else {}
+        
+        for team_obj in _safe_iter(teams, "team"):
+            if isinstance(team_obj, list) and len(team_obj) > 0:
+                is_current_user = False
+                
+                # Check if this is the current user's team
+                for item in team_obj[0]:
+                    if isinstance(item, dict):
+                        if 'name' in item and item['name'] == session["team_name"]:
+                            is_current_user = True
+                        elif 'is_owned_by_current_login' in item and item['is_owned_by_current_login'] == '1':
+                            is_current_user = True
+                
+                # If this is the current user's team, extract the team key and logo
+                if is_current_user:
+                    team_key = _first(team_obj[0], "team_key")
+                    
+                    # Look for team_logos in the team object
+                    for item in team_obj[0]:
+                        if isinstance(item, dict) and 'team_logos' in item:
+                            logos = item['team_logos']
+                            if isinstance(logos, list) and len(logos) > 0:
+                                logo = logos[0].get('team_logo', {})
+                                team_logo = logo.get('url')
+                            elif isinstance(logos, dict) and 'team_logo' in logos:
+                                logo = logos['team_logo']
+                                team_logo = logo.get('url')
+        
+        if not team_key:
+            return jsonify({"error": "could not find team key"}), 404
+        
+        if not team_logo:
+            # If we couldn't find the logo in the teams list, try fetching it directly
+            rel = f"fantasy/v2/team/{team_key}"
+            team_data = yahoo_api(rel)
+            
+            fc = team_data.get("fantasy_content", {})
+            team = fc.get("team", [])
+            
+            for item in team:
+                if isinstance(item, dict) and 'team_logos' in item:
+                    logos = item['team_logos']
+                    if isinstance(logos, list) and len(logos) > 0:
+                        logo = logos[0].get('team_logo', {})
+                        team_logo = logo.get('url')
+                    elif isinstance(logos, dict) and 'team_logo' in logos:
+                        logo = logos['team_logo']
+                        team_logo = logo.get('url')
+        
+        return jsonify({"logo_url": team_logo})
+        
+    except Exception as e:
+        log.error(f"Error fetching team logo: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 # ─────────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":
     # use `flask run` in production; this is for local dev only
