@@ -11,6 +11,7 @@
   <script defer src="{{ url_for('static', filename='player_contributions.js') }}"></script>
   <script defer src="{{ url_for('static', filename='navbar.js') }}"></script>
   <script defer src="{{ url_for('static', filename='team_logo.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='trade_analyzer.js') }}"></script>
 </head>
 <body>
   <!-- Navbar -->
@@ -52,6 +53,7 @@
       <button class="nav-tab active" data-target="tab-cat">Category Strengths</button>
       <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
       <button class="nav-tab"        data-target="tab-trends">Trends</button>
+      <button class="nav-tab"        data-target="tab-trade">Trade Analyzer</button>
     </nav>
 
     <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
@@ -214,5 +216,46 @@
       </div>
     </section>
   </div>
-</body>
-</html>
+
+<!-- ═══════════ TRADE ANALYZER ═══════════ -->
+<section id="tab-trade" class="tab-pane">
+  <div class="info-box">
+    <p>Analyze potential trades to see how they would impact your team's performance. Add players to both sides of the trade and click <strong>Evaluate Trade</strong>.</p>
+  </div>
+
+  <div class="trade-analyzer-container">
+    <div class="trade-sides-container">
+      <!-- Trading Away Column -->
+      <div class="trade-column">
+        <div class="trade-column-title">TRADING</div>
+        <div class="player-search-container">
+          <input type="text" class="player-search" id="tradingPlayerSearch" placeholder="Player Name">
+          <div class="player-dropdown"></div>
+        </div>
+        <div id="tradingPlayersContainer" class="players-container">
+          <!-- Player cards will be added here by JS -->
+        </div>
+      </div>
+
+      <!-- Acquiring Column -->
+      <div class="trade-column">
+        <div class="trade-column-title">ACQUIRING</div>
+        <div class="player-search-container">
+          <input type="text" class="player-search" id="acquiringPlayerSearch" placeholder="Player Name">
+          <div class="player-dropdown"></div>
+        </div>
+        <div id="acquiringPlayersContainer" class="players-container">
+          <!-- Player cards will be added here by JS -->
+        </div>
+      </div>
+    </div>
+
+    <div class="evaluate-button-container">
+      <button id="evaluateTradeBtn" class="evaluate-button">Evaluate Trade</button>
+    </div>
+
+    <div id="tradeResultsContainer" class="trade-results-container">
+      <!-- Trade results will be displayed here by JS -->
+    </div>
+  </div>
+</section>
