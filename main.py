@@ -2,6 +2,8 @@
 import os, json, logging, time
 # Import for NBA players API
 from nba_api.stats.static import players as nba_static_players
+from nba_api.stats.endpoints import playerindex # Added for richer player data
+from datetime import datetime # Added for dynamic season string
 
 from typing import Any, Dict, Iterable, Iterator, List
 
@@ -645,7 +647,7 @@ def api_team_logo():
         teams_data = yahoo_api(rel)
         
         team_key = None
-        team_logo = None
+        team_logo_url = None # Renamed to avoid conflict
         fc = teams_data.get("fantasy_content", {})
         league = fc.get("league", [{}])
         teams = league[1].get("teams", {}) if isinstance(league, list) and len(league) > 1 else {}
@@ -671,34 +673,34 @@ def api_team_logo():
                         if isinstance(item, dict) and 'team_logos' in item:
                             logos = item['team_logos']
                             if isinstance(logos, list) and len(logos) > 0:
-                                logo = logos[0].get('team_logo', {})
-                                team_logo = logo.get('url')
+                                logo_info = logos[0].get('team_logo', {}) # Renamed to avoid conflict
+                                team_logo_url = logo_info.get('url')
                             elif isinstance(logos, dict) and 'team_logo' in logos:
-                                logo = logos['team_logo']
-                                team_logo = logo.get('url')
+                                logo_info = logos['team_logo'] # Renamed
+                                team_logo_url = logo_info.get('url')
         
         if not team_key:
             return jsonify({"error": "could not find team key"}), 404
         
-        if not team_logo:
+        if not team_logo_url:
             # If we couldn't find the logo in the teams list, try fetching it directly
             rel = f"fantasy/v2/team/{team_key}"
             team_data = yahoo_api(rel)
             
             fc = team_data.get("fantasy_content", {})
-            team = fc.get("team", [])
+            team_list = fc.get("team", []) # Renamed to avoid conflict
             
-            for item in team:
+            for item in team_list:
                 if isinstance(item, dict) and 'team_logos' in item:
                     logos = item['team_logos']
                     if isinstance(logos, list) and len(logos) > 0:
-                        logo = logos[0].get('team_logo', {})
-                        team_logo = logo.get('url')
+                        logo_info = logos[0].get('team_logo', {}) # Renamed
+                        team_logo_url = logo_info.get('url')
                     elif isinstance(logos, dict) and 'team_logo' in logos:
-                        logo = logos['team_logo']
-                        team_logo = logo.get('url')
+                        logo_info = logos['team_logo'] # Renamed
+                        team_logo_url = logo_info.get('url')
         
-        return jsonify({"logo_url": team_logo})
+        return jsonify({"logo_url": team_logo_url})
         
     except Exception as e:
         log.error(f"Error fetching team logo: {e}")
@@ -710,12 +712,54 @@ def api_nba_players():
     if "token" not in session: # Consistent with other API routes needing session
         return jsonify({"error": "authentication required"}), 401
     try:
-        active_players = nba_static_players.get_active_players()
-        # Each player dict in list: {'id': PLAYER_ID, 'full_name': 'FullName', ...}
-        return jsonify(active_players)
+        # Determine current NBA season string (e.g., "2023-24")
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        # NBA season typically starts in October. If before October, it's the season that started previous year.
+        # e.g., August 2024 is part of 2023-24 season's "year". New season 2024-25 starts Oct 2024.
+        if current_month < 10: # Jan-Sep
+            season_start_year = current_year - 1
+        else: # Oct-Dec
+            season_start_year = current_year
+        season_str = f"{season_start_year}-{(season_start_year + 1) % 100:02d}"
+
+        # Fetch player index for the determined season
+        # PlayerIndex gives more details like team and position
+        player_data_df = playerindex.PlayerIndex(season=season_str, league_id="00").get_data_frames()[0]
+        
+        # Convert DataFrame to list of dicts
+        # Relevant columns: PERSON_ID, PLAYER_LAST_NAME, PLAYER_FIRST_NAME, TEAM_ID, TEAM_ABBREVIATION, POSITION
+        players_list = []
+        for _, row in player_data_df.iterrows():
+            players_list.append({
+                'id': row['PERSON_ID'],
+                'full_name': f"{row['PLAYER_FIRST_NAME']} {row['PLAYER_LAST_NAME']}",
+                'team_id': row['TEAM_ID'],
+                'team_abbreviation': row['TEAM_ABBREVIATION'],
+                'position': row['POSITION']
+            })
+        return jsonify(players_list)
     except Exception as e:
-        log.error(f"Error fetching NBA players list from nba_api: {e}")
-        return jsonify({"error": "Failed to fetch NBA players list"}), 500
+        log.error(f"Error fetching NBA players list from PlayerIndex: {e}")
+        # Fallback to basic active players list if PlayerIndex fails (e.g., during offseason transition)
+        try:
+            log.info("Falling back to nba_static_players.get_active_players()")
+            active_players_basic = nba_static_players.get_active_players()
+            # Augment with placeholder data for missing fields
+            players_list_fallback = []
+            for p in active_players_basic:
+                players_list_fallback.append({
+                    'id': p['id'],
+                    'full_name': p['full_name'],
+                    'team_id': None,
+                    'team_abbreviation': 'N/A',
+                    'position': 'N/A'
+                })
+            return jsonify(players_list_fallback)
+        except Exception as fallback_e:
+            log.error(f"Error in fallback NBA players list: {fallback_e}")
+            return jsonify({"error": "Failed to fetch NBA players list via primary and fallback methods"}), 500
+
 
 # ─────────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":

@@ -52,17 +52,19 @@ document.addEventListener('DOMContentLoaded', () => {
       renderPlayerCard: (player, side) => {
         const card = document.createElement('div');
         card.className = 'player-card';
-        card.setAttribute('data-player-card-id', player.card_id); // Use card_id for DOM removal
+        card.setAttribute('data-player-card-id', player.card_id);
         
-        // Player object structure: { card_id, nba_id, name, imageUrl }
-        // Position and team are not available from get_active_players()
+        // Player object structure: { card_id, nba_id, name, imageUrl, team_id, team, position }
         card.innerHTML = `
           <div class="player-photo">
             <img src="${player.imageUrl}" alt="${player.name}" onerror="this.src='https://via.placeholder.com/50x50?text=NBA'; this.onerror=null;">
           </div>
           <div class="player-info">
             <div class="player-name">${player.name}</div>
-            <div class="player-team"></div> <!-- team/position empty or N/A -->
+            <div class="player-team-details">
+              ${player.team_id ? `<img src="https://cdn.nba.com/logos/nba/${player.team_id}/primary/L/logo.svg" class="player-card-team-logo" alt="${player.team}" onerror="this.style.display='none';">` : '<div class="player-card-team-logo-placeholder"></div>'}
+              <div class="player-team-position-text">${player.team} - ${player.position}</div>
+            </div>
           </div>
           <button class="remove-player" data-player-card-id="${player.card_id}" data-side="${side}">×</button>
         `;
@@ -108,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestions.slice(0, 10).forEach(player => { // Show top 10 suggestions
           const item = document.createElement('div');
           item.className = 'player-dropdown-item'; // Add a class for potential styling
-          item.textContent = player.full_name;
+          item.textContent = `${player.full_name} (${player.team_abbreviation} - ${player.position})`; // Show team/pos in dropdown
           item.addEventListener('click', () => {
             Events.addPlayerToTrade(player, side);
             inputElement.value = ''; // Clear input
@@ -181,10 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Hide dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (DOM.tradingPlayerDropdown && !DOM.tradingSearchInput.contains(e.target) && !DOM.tradingPlayerDropdown.contains(e.target)) {
+            if (DOM.tradingPlayerDropdown && DOM.tradingSearchInput && !DOM.tradingSearchInput.contains(e.target) && !DOM.tradingPlayerDropdown.contains(e.target)) {
                 DOM.tradingPlayerDropdown.style.display = 'none';
             }
-            if (DOM.acquiringPlayerDropdown && !DOM.acquiringSearchInput.contains(e.target) && !DOM.acquiringPlayerDropdown.contains(e.target)) {
+            if (DOM.acquiringPlayerDropdown && DOM.acquiringSearchInput && !DOM.acquiringSearchInput.contains(e.target) && !DOM.acquiringPlayerDropdown.contains(e.target)) {
                 DOM.acquiringPlayerDropdown.style.display = 'none';
             }
         });
@@ -193,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
           Renderer.showTradeResults();
         });
         
-        // Initial render if any players were pre-loaded (e.g. from session, though not implemented here)
         Renderer.updatePlayersList();
       },
 
@@ -201,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = event.target.value.toLowerCase();
         const inputElement = event.target;
 
-        if (searchTerm.length < 2) { // Minimum characters to trigger search
+        if (searchTerm.length < 2) { 
           const dropdown = side === 'trading' ? DOM.tradingPlayerDropdown : DOM.acquiringPlayerDropdown;
           if (dropdown) {
             dropdown.innerHTML = '';
@@ -217,24 +218,31 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       addPlayerToTrade: (playerDataFromApi, side) => {
-        // playerDataFromApi is like {id: NBA_PLAYER_ID, full_name: "Player Name", ...}
+        // playerDataFromApi: {id, full_name, team_id, team_abbreviation, position}
         const targetPlayerList = side === 'trading' ? STATE.tradingPlayers : STATE.acquiringPlayers;
 
         if (targetPlayerList.length >= STATE.maxPlayers) {
           alert(`Maximum ${STATE.maxPlayers} players allowed per side.`);
           return;
         }
-        // Check if player already added to that side
-        if (targetPlayerList.some(p => p.nba_id === playerDataFromApi.id)) {
-            alert(`${playerDataFromApi.full_name} is already on the ${side} list.`);
+
+        // Prevent duplicate player selection across both lists
+        const isAlreadySelected = STATE.tradingPlayers.some(p => p.nba_id === playerDataFromApi.id) ||
+                                 STATE.acquiringPlayers.some(p => p.nba_id === playerDataFromApi.id);
+        
+        if (isAlreadySelected) {
+            alert(`${playerDataFromApi.full_name} is already part of the trade.`);
             return;
         }
 
         const newPlayer = {
-          card_id: Utils.generatePlayerCardId(), // Unique ID for the DOM card
-          nba_id: playerDataFromApi.id,          // Actual NBA player ID
+          card_id: Utils.generatePlayerCardId(),
+          nba_id: playerDataFromApi.id,
           name: playerDataFromApi.full_name,
-          imageUrl: `https://cdn.nba.com/headshots/nba/latest/1040x760/${playerDataFromApi.id}.png`
+          imageUrl: `https://cdn.nba.com/headshots/nba/latest/260x190/${playerDataFromApi.id}.png`, // Smaller photo
+          team_id: playerDataFromApi.team_id,
+          team: playerDataFromApi.team_abbreviation || 'N/A',
+          position: playerDataFromApi.position || 'N/A'
         };
 
         targetPlayerList.push(newPlayer);
@@ -258,31 +266,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const initTradeAnalyzer = () => {
       if (STATE.initialized) return;
       
-      // Verify essential DOM elements for this tab are present
       if (!DOM.tradingContainer || !DOM.acquiringContainer || !DOM.tradingSearchInput || !DOM.acquiringSearchInput) {
-        // console.warn('Trade analyzer critical DOM elements not found, tab may not be fully rendered or active.');
-        return; // Don't initialize if elements are missing
+        return; 
       }
       
-      // Update DOM references that might depend on elements being present
       DOM.tradingPlayerDropdown = DOM.tradingSearchInput.nextElementSibling;
       DOM.acquiringPlayerDropdown = DOM.acquiringSearchInput.nextElementSibling;
       
       if (!DOM.tradingPlayerDropdown || !DOM.acquiringPlayerDropdown) {
-          // console.warn('Player dropdown elements not found. Autocomplete might not work.');
+         // console.warn('Player dropdown elements not found. Autocomplete might not work.');
       }
 
       console.log('Initializing trade analyzer feature...');
       STATE.initialized = true;
-      Events.init(); // Initialize event handlers and fetch data
+      Events.init(); 
     };
   
-    // Initialize when tab is clicked
-    // Ensure this event listener is correctly targeting your tab button
     const tradeTabButton = document.querySelector('[data-target="tab-trade"]');
     if (tradeTabButton) {
       tradeTabButton.addEventListener('click', () => {
-        // Re-check DOM elements and initialize if needed, as tab might be dynamically loaded
         DOM.tradingContainer = document.getElementById('tradingPlayersContainer');
         DOM.acquiringContainer = document.getElementById('acquiringPlayersContainer');
         DOM.tradingSearchInput = document.getElementById('tradingPlayerSearch');
@@ -293,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     
-    // Also run initialization on page load if the tab is already active
     if (tradeTabButton && tradeTabButton.classList.contains('active')) {
       initTradeAnalyzer();
     }

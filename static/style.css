@@ -1154,6 +1154,17 @@ sup.rank{
   display: none;
 }
 
+/* Player dropdown item styling (added for completeness) */
+.player-dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.player-dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+
 /* Player cards container */
 .players-container {
   min-height: 200px;
@@ -1194,23 +1205,54 @@ sup.rank{
 /* Player info */
 .player-info {
   flex-grow: 1;
+  /* overflow: hidden; */ /* Can help if text is too long, but use with caution */
 }
 
 .player-name {
   font-weight: 600;
   font-size: 16px;
+  /* white-space: nowrap; */ /* Optional: if names should not wrap */
+  /* text-overflow: ellipsis; */ /* Optional: if names should truncate */
+  /* overflow: hidden; */ /* Required for text-overflow */
 }
 
-.player-position {
-  color: #4a5568;
-  font-weight: normal;
-  margin-left: 4px;
-}
-
-.player-team {
+.player-team { /* This class was originally for team/position text, now superseded by player-team-details */
   font-size: 14px;
   color: #718096;
 }
+
+/* Player card team/position display - NEW STYLES */
+.player-team-details {
+  display: flex;
+  flex-direction: column; /* Stack icon and text vertically */
+  align-items: flex-start; /* Align to the start (left) */
+  margin-top: 4px; /* Space from player name */
+}
+
+.player-card-team-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  margin-bottom: 2px; /* Space between logo and text */
+}
+
+.player-card-team-logo-placeholder { /* If no logo/team_id */
+  width: 24px; 
+  height: 24px;
+  margin-bottom: 2px;
+  /* Example placeholder styling:
+  background-color: #f0f0f0;
+  border: 1px dashed #ccc; 
+  */
+}
+
+.player-team-position-text {
+  font-size: 12px; 
+  color: #718096; 
+  line-height: 1.2;
+}
+/* END OF NEW STYLES for player card team/position */
+
 
 /* Remove player button */
 .remove-player {
