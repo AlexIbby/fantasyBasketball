@@ -1167,10 +1167,14 @@ sup.rank{
 
 /* Player cards container */
 .players-container {
-  min-height: 200px;
+  min-height: 80px; /* MODIFIED: Reduced from 200px */
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 10px; /* ADDED: Padding for empty state */
+  border: 1px dashed #e2e8f0; /* Optional: visual cue */
+  background-color: #fdfdfd; /* Optional: visual cue */
+  border-radius: 6px; /* ADDED: Consistent rounding */
 }
 
 /* Player card */
@@ -1205,45 +1209,36 @@ sup.rank{
 /* Player info */
 .player-info {
   flex-grow: 1;
-  /* overflow: hidden; */ /* Can help if text is too long, but use with caution */
 }
 
 .player-name {
   font-weight: 600;
   font-size: 16px;
-  /* white-space: nowrap; */ /* Optional: if names should not wrap */
-  /* text-overflow: ellipsis; */ /* Optional: if names should truncate */
-  /* overflow: hidden; */ /* Required for text-overflow */
 }
 
-.player-team { /* This class was originally for team/position text, now superseded by player-team-details */
+.player-team { 
   font-size: 14px;
   color: #718096;
 }
 
-/* Player card team/position display - NEW STYLES */
 .player-team-details {
   display: flex;
-  flex-direction: column; /* Stack icon and text vertically */
-  align-items: flex-start; /* Align to the start (left) */
-  margin-top: 4px; /* Space from player name */
+  flex-direction: column; 
+  align-items: flex-start; 
+  margin-top: 4px;
 }
 
 .player-card-team-logo {
   width: 24px;
   height: 24px;
   object-fit: contain;
-  margin-bottom: 2px; /* Space between logo and text */
+  margin-bottom: 2px;
 }
 
-.player-card-team-logo-placeholder { /* If no logo/team_id */
+.player-card-team-logo-placeholder { 
   width: 24px; 
   height: 24px;
   margin-bottom: 2px;
-  /* Example placeholder styling:
-  background-color: #f0f0f0;
-  border: 1px dashed #ccc; 
-  */
 }
 
 .player-team-position-text {
@@ -1251,8 +1246,6 @@ sup.rank{
   color: #718096; 
   line-height: 1.2;
 }
-/* END OF NEW STYLES for player card team/position */
-
 
 /* Remove player button */
 .remove-player {
@@ -1581,7 +1574,6 @@ sup.rank{
 }
 
 /* Highlight the impact values */
-/* Renamed from positive-change / negative-change to reflect team impact */
 .trade-analysis-results .team-improves {
   color: #2f855a; /* Green for improvement */
   font-weight: 600;
@@ -1610,11 +1602,9 @@ sup.rank{
 }
 
 /* Arrows for 'low is good' stats (e.g., Turnovers) */
-/* If team improves (value decreased), show down arrow */
 .trade-analysis-results td[data-low-is-good="true"].team-improves::before {
   content: "▼ ";
 }
-/* If team declines (value increased), show up arrow */
 .trade-analysis-results td[data-low-is-good="true"].team-declines::before {
   content: "▲ ";
 }
@@ -1638,15 +1628,16 @@ sup.rank{
 /* Summary toggle button */
 .summary-toggle {
   margin-left: 12px;
-  padding: 6px 12px;
+  padding: 8px 14px; /* MODIFIED: Increased padding */
   background-color: #4299e1; /* Blue button */
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 14px; /* MODIFIED: Increased font size */
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent; /* ADDED: Improve tap feedback */
 }
 
 .summary-toggle:hover {
@@ -1741,62 +1732,17 @@ sup.rank{
 }
 
 /* Container for horizontal scroll on ultra-mobile */
-/* This should wrap the table if needed, but the main .trade-results-container might already be in a scrollable area */
-/* .trade-analysis-table-scroll-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-} */
-
 @media screen and (max-width: 480px) {
-  /* If the table itself needs to be scrollable within its container */
-   .trade-results-container { /* The div where the table is injected */
+   /* MODIFIED: Applied to .trade-results-container which holds the analysis table */
+   .trade-results-container { 
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
    }
   .trade-analysis-results {
-    min-width: 420px; /* Ensure table has a min width to make sense when scrolling */
+    min-width: 600px; /* MODIFIED: Ensure table has a min width to make sense when scrolling */
   }
 }
 
 /* Ensure lds-roller is available for trade eval loading */
-.lds-roller {
-  display: inline-block;
-  position: relative;
-  width: 80px; /* Or smaller if needed in context */
-  height: 80px; /* Or smaller */
-  color: #4299e1; /* Match app theme */
-}
-.lds-roller div {
-  animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  transform-origin: 40px 40px; /* Adjust if size changed */
-}
-.lds-roller div:after {
-  content: " ";
-  display: block;
-  position: absolute;
-  width: 7.2px; /* Adjust if size changed */
-  height: 7.2px; /* Adjust if size changed */
-  border-radius: 50%;
-  background: currentColor;
-  margin: -3.6px 0 0 -3.6px; /* Adjust if size changed */
-}
-.lds-roller div:nth-child(1) { animation-delay: -0.036s; }
-.lds-roller div:nth-child(1):after { top: 62.62742px; left: 62.62742px; } /* Adjust if size changed */
-.lds-roller div:nth-child(2) { animation-delay: -0.072s; }
-.lds-roller div:nth-child(2):after { top: 67.71281px; left: 56px; } /* Adjust if size changed */
-.lds-roller div:nth-child(3) { animation-delay: -0.108s; }
-.lds-roller div:nth-child(3):after { top: 70.90963px; left: 48.28221px; } /* Adjust if size changed */
-.lds-roller div:nth-child(4) { animation-delay: -0.144s; }
-.lds-roller div:nth-child(4):after { top: 72px; left: 40px; } /* Adjust if size changed */
-.lds-roller div:nth-child(5) { animation-delay: -0.18s; }
-.lds-roller div:nth-child(5):after { top: 70.90963px; left: 31.71779px; } /* Adjust if size changed */
-.lds-roller div:nth-child(6) { animation-delay: -0.216s; }
-.lds-roller div:nth-child(6):after { top: 67.71281px; left: 24px; } /* Adjust if size changed */
-.lds-roller div:nth-child(7) { animation-delay: -0.252s; }
-.lds-roller div:nth-child(7):after { top: 62.62742px; left: 17.37258px; } /* Adjust if size changed */
-.lds-roller div:nth-child(8) { animation-delay: -0.288s; }
-.lds-roller div:nth-child(8):after { top: 56px; left: 12.28719px; } /* Adjust if size changed */
-
-@keyframes lds-roller { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+/* (lds-roller styles are already defined earlier, no need to repeat if globally available) */
