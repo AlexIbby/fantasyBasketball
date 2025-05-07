@@ -439,5 +439,41 @@ def debug_scoreboard():
     data = yahoo_api(f"fantasy/v2/league/{session['league_key']}/scoreboard;week={week}")
     return f"<pre>{json.dumps(data, indent=2)}</pre>"
 
+@app.route("/api/bulk_matchups")
+def api_bulk_matchups():
+    if "token" not in session:
+        return jsonify({"error": "User not authenticated or session expired."}), 401
+
+    league_key = session.get("league_key")
+    if not league_key:
+        return jsonify({"error": "No league selected. Please select a league first."}), 400
+
+    # Get 'weeks' from query param, default to "1-5" if not provided
+    weeks = request.args.get("weeks", "1-5") 
+
+    try:
+        # Construct the path for the Yahoo API call
+        # Example: /fantasy/v2/league/{leagueKey}/teams;out=matchups;weeks=1-5
+        # Example: /fantasy/v2/league/{leagueKey}/teams;out=matchups;weeks=13,14,15
+        yahoo_path = f"fantasy/v2/league/{league_key}/teams;out=matchups;weeks={weeks}"
+        
+        log.info(f"Proxying to Yahoo API: {yahoo_path} using session league_key: {league_key} and weeks: {weeks}")
+        data = yahoo_api(yahoo_path)
+        return jsonify(data)
+    except requests.exceptions.HTTPError as e:
+        log.error(f"HTTPError fetching bulk matchups for league {league_key}, weeks {weeks}: {e.response.status_code} - {e.response.text}")
+        error_detail = "Failed to fetch data from Yahoo API."
+        try:
+            # Try to parse Yahoo's error message if it's JSON
+            yahoo_error = e.response.json()
+            if isinstance(yahoo_error, dict) and 'error' in yahoo_error and 'description' in yahoo_error['error']:
+                error_detail = yahoo_error['error']['description']
+        except json.JSONDecodeError:
+            pass # Keep generic error if Yahoo's response isn't JSON
+        return jsonify({"error": error_detail, "yahoo_status_code": e.response.status_code}), e.response.status_code
+    except Exception as e:
+        log.error(f"Error fetching bulk matchups for league {league_key}, weeks {weeks}: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000, host='0.0.0.0')
