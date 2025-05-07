@@ -1584,36 +1584,34 @@ sup.rank{
 @media screen and (max-width: 768px) {
   .trade-analysis-results {
     font-size: 13px; /* MODIFIED: Slightly smaller font for better fit */
+    min-width: 0; /* ADDED: Override general table min-width to allow shrinking */
   }
-  
-  .trade-analysis-results th, 
+
+  /* Apply common styles AND width to all th and td */
+  .trade-analysis-results th,
   .trade-analysis-results td {
+    width: 25%; /* Set width for all columns */
     padding: 8px 4px; /* MODIFIED: Reduced padding */
-    word-break: break-word; /* ADDED: Allow wrapping for long content in narrow cells, esp. headers */
+    word-break: break-word; /* Allow wrapping for long content in narrow cells, esp. headers */
   }
-  
+
+  /* Override padding-left for the first column if necessary */
   .trade-analysis-results th:first-child,
   .trade-analysis-results td:first-child {
-    width: 38%; /* MODIFIED: Define column width for category name */
-    padding-left: 8px; /* MODIFIED: Adjusted padding-left */
-    /* Other padding (top, right, bottom) comes from the general rule above */
+    padding-left: 8px; /* Specific left padding for the first column */
+    /* width: 25%; is inherited from the general rule above */
   }
-  
-  .trade-analysis-results th:not(:first-child),
-  .trade-analysis-results td:not(:first-child) {
-    width: 20.6%; /* MODIFIED: Define column width for the other 3 columns (100-38)/3 */
-  }
-  
+
   .summary-row .category-list {
     padding-left: 8px; /* MODIFIED: Adjusted padding to match td:first-child */
   }
 
   /* ADDED: Explicitly set background for summary row cells on mobile to ensure colors */
   .trade-analysis-results .summary-row.gains td {
-    background-color: #f0fff4 !important; 
+    background-color: #f0fff4 !important;
   }
   .trade-analysis-results .summary-row.losses td {
-    background-color: #fff5f5 !important; 
+    background-color: #fff5f5 !important;
   }
 
   /* ADDED: Adjust summary toggle button for mobile */
@@ -1622,6 +1620,7 @@ sup.rank{
     padding: 6px 10px; /* Slightly smaller padding */
     white-space: normal; /* Allow button text to wrap if necessary */
     line-height: 1.3; /* Improve readability if wrapped */
+    margin-left: 8px; /* Add a bit of space for the button */
   }
 }
 
