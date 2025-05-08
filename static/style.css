@@ -1,3 +1,7 @@
+---
+File: /static/style.css
+---
+
 /* ───── /static/style.css (FULL FILE) ───── */
 *{box-sizing:border-box}
 body{
@@ -1619,6 +1623,7 @@ sup.rank{
 
   .summary-row .category-list {
     padding-left: 8px; /* MODIFIED: Adjusted padding to match td:first-child */
+    white-space: normal; /* ADDED: Allow text to wrap */
   }
 
   /* ADDED: Explicitly set background for summary row cells on mobile to ensure colors */
