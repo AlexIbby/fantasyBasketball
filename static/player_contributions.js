@@ -1,4 +1,4 @@
-/* ───── player_contributions.js - Fantasy Basketball Player Stat Contributions ───── */
+/* ───── player_contributions.js - Fantasy Basketball Player Stat Contributions (Optimized Initial Load) ───── */
 document.addEventListener('DOMContentLoaded', () => {
   // ============ CONFIG ============
   // Local config that will be populated from dashboard.js if possible
@@ -53,33 +53,19 @@ document.addEventListener('DOMContentLoaded', () => {
     PERCENTAGE_STATS: ['5', '8', '11'],
     // Chart colors for player contributions
     PLAYER_COLORS: [
-      '#FFB6C1', // Light Pink
-      '#B0E0E6', // Powder Blue
-      '#FFEFD5', // Papaya Whip
-      '#CCCCFF', // Periwinkle
-      '#FFE4B5', // Moccasin
-      '#E6FFE0', // Mint Cream
-      '#FFD1DC', // Pastel Pink
-      '#F0FFF0', // Honeydew
-      '#FFDAB9', // Peach Puff
-      '#E0FFFF', // Light Cyan
-      '#FFE4E1', // Misty Rose
-      '#D8BFD8', // Thistle
-      '#FFFACD', // Lemon Chiffon
-      '#F0E68C'  // Khaki (extra color just in case)
+      '#FFB6C1', '#B0E0E6', '#FFEFD5', '#CCCCFF', '#FFE4B5', '#E6FFE0',
+      '#FFD1DC', '#F0FFF0', '#FFDAB9', '#E0FFFF', '#FFE4E1', '#D8BFD8',
+      '#FFFACD', '#F0E68C'
     ]
   };
 
-  // Try to access the global CONFIG from dashboard.js
   if (window.CONFIG) {
-    // If dashboard.js has loaded its CONFIG to the window, use it
     Object.assign(CONFIG, window.CONFIG);
-    console.log('Using global CONFIG from dashboard.js');
+    console.log('Player Contributions: Using global CONFIG from dashboard.js');
   } else {
-    console.log('Using local CONFIG defaults in player_contributions.js');
+    console.log('Player Contributions: Using local CONFIG defaults.');
   }
 
-  // ============ DOM REFERENCES ============
   const DOM = {
     loadButton: document.getElementById('loadContributionsBtn'),
     container: document.getElementById('contributionsContainer'),
@@ -95,837 +81,424 @@ document.addEventListener('DOMContentLoaded', () => {
       weeklyBtn: document.getElementById('contributionWeeklyView'),
       seasonBtn: document.getElementById('contributionSeasonView')
     },
-    chart: null // Will hold the Chart.js instance
+    chart: null
   };
 
-  // ============ STATE ============
   const STATE = {
     currentWeek: 0,
     weeklyPlayerStats: {},
     seasonPlayerStats: null,
-    statCategories: [], // Will be populated from CONFIG.COLS
-    selectedStat: null, // Currently selected stat ID
-    viewMode: 'weekly', // 'weekly' or 'season'
-    selectedWeek: 1,    // Currently selected week
-    initialized: false, // Track if we've initialized this component
-    dataLoaded: false,  // Track if data has been loaded
+    statCategories: [],
+    selectedStat: null,
+    viewMode: 'weekly',
+    selectedWeek: 1,
+    initialized: false,
+    dataLoaded: false,
     loadingMessages: [
-      "Initializing player contributions system...",
-      "Getting league settings...",
-      "Connecting to Yahoo API...",
-      "Analyzing player statistics...",
-      "Synchronizing data...",
-      "Reading performance metrics...",
-      "Preparing visualization...",
-      "Almost there!"
+      "Initializing player contributions...", "Fetching league settings...", "Connecting to Yahoo API...",
+      "Analyzing player statistics...", "Synchronizing data...", "Reading performance metrics...",
+      "Preparing visualization...", "Almost there!"
     ]
   };
 
-  // ============ UTILITIES ============
   const Utils = {
-    // Convert boolean-ish values that Yahoo API uses
     yes: v => v === 1 || v === '1',
-    
-    // Format percentage values for display
     formatStatValue: (id, value) => {
       if (value === null || value === undefined || value === '') return null;
-      
-      // Parse the value
       const numVal = parseFloat(value);
       if (isNaN(numVal)) return null;
-      
-      // Handle percentage stats specially
-      if (CONFIG.PERCENTAGE_STATS.includes(id)) {
-        return numVal.toFixed(3).replace(/^0\./, '.');
-      }
-      
-      return numVal;
+      return CONFIG.PERCENTAGE_STATS.includes(id) ? numVal.toFixed(3).replace(/^0\./, '.') : numVal;
     },
-    
-    // Update loading message and progress
     updateLoadingMessage: (message, weekNum = null, totalWeeks = null) => {
-      if (DOM.loadingText) {
-        DOM.loadingText.textContent = message;
-      }
-      
+      if (DOM.loadingText) DOM.loadingText.textContent = message;
       if (weekNum !== null && totalWeeks !== null && DOM.loadingProgress && DOM.loadingCurrentWeek) {
         const progressPercent = Math.round((weekNum / totalWeeks) * 100);
         DOM.loadingProgress.style.width = `${progressPercent}%`;
-        DOM.loadingCurrentWeek.textContent = `Week ${weekNum} of ${totalWeeks}`;
-        
-        // Show the progress UI elements
+        DOM.loadingCurrentWeek.textContent = `Fetching: Week ${weekNum} of ${totalWeeks}`;
         if (DOM.loadingProgressBar) DOM.loadingProgressBar.style.display = 'block';
         if (DOM.loadingCurrentWeek) DOM.loadingCurrentWeek.style.display = 'block';
       }
     },
-    
-    // Cycle through loading messages
     cycleLoadingMessages: () => {
       let index = 0;
       return setInterval(() => {
-        if (!DOM.loadingText) return;
-        
-        // Don't change if we've started displaying week-specific messages
-        if (DOM.loadingText.textContent.includes('Week ')) return;
-        
+        if (!DOM.loadingText || DOM.loadingText.textContent.includes('Fetching: Week')) return;
         DOM.loadingText.textContent = STATE.loadingMessages[index];
         index = (index + 1) % STATE.loadingMessages.length;
-      }, 2000); // Change message every 2 seconds
+      }, 2000);
     },
-    
-    // Show loading indicator
     showLoading: () => {
-      if (DOM.loadingWrapper) {
-        DOM.loadingWrapper.style.display = 'flex';
-      }
-      
-      // Initialize with first message
-      if (DOM.loadingText) {
-        DOM.loadingText.textContent = STATE.loadingMessages[0];
-      }
-      
-      // Hide progress indicators initially
+      if (DOM.loadingWrapper) DOM.loadingWrapper.style.display = 'flex';
+      if (DOM.loadingText) DOM.loadingText.textContent = STATE.loadingMessages[0];
       if (DOM.loadingProgressBar) DOM.loadingProgressBar.style.display = 'none';
       if (DOM.loadingCurrentWeek) DOM.loadingCurrentWeek.style.display = 'none';
-      
-      // Start cycling through messages
       return Utils.cycleLoadingMessages();
     },
-    
-    // Hide loading indicator
     hideLoading: () => {
-      if (DOM.loadingWrapper) {
-        DOM.loadingWrapper.style.display = 'none';
-      }
+      if (DOM.loadingWrapper) DOM.loadingWrapper.style.display = 'none';
     },
-
-    // Extract player name from the player object
-    getPlayerName: (playerObj) => {
+    getPlayerName: playerObj => {
       if (!playerObj) return 'Unknown Player';
-      
-      // Try to extract from the first element which usually contains metadata
       if (Array.isArray(playerObj) && playerObj.length > 0) {
         const metadata = playerObj[0];
-        
-        // Check various possible structures
         if (Array.isArray(metadata)) {
-          for (const item of metadata) {
-            if (item && typeof item === 'object' && item.name) {
-              return item.name.full || item.name;
-            }
-          }
-        } else if (metadata && typeof metadata === 'object') {
-          if (metadata.name) {
-            return metadata.name.full || metadata.name;
-          }
-        }
+          for (const item of metadata) if (item?.name) return item.name.full || item.name;
+        } else if (metadata?.name) return metadata.name.full || metadata.name;
       }
-      
       return 'Unknown Player';
     },
-    
-    // Extract stat value for a specific stat ID from the player's stats
     getStatValue: (playerObj, statId) => {
       if (!playerObj || !Array.isArray(playerObj)) return 0;
-      
-      // Player stats are usually in the second element of the player array
-      const playerStats = playerObj[1];
-      if (!playerStats || !playerStats.player_stats) return 0;
-      
-      const stats = playerStats.player_stats.stats;
-      if (!Array.isArray(stats)) return 0;
-      
-      // Find the stat with the matching ID
-      for (const stat of stats) {
-        if (stat.stat && stat.stat.stat_id === statId.toString()) {
+      const playerStats = playerObj[1]?.player_stats?.stats;
+      if (!Array.isArray(playerStats)) return 0;
+      for (const stat of playerStats) {
+        if (stat.stat?.stat_id === statId.toString()) {
           return Utils.formatStatValue(statId, stat.stat.value) || 0;
         }
       }
-      
       return 0;
     },
-    
-    // Calculate the total stat value across all players
     calculateTotal: (players, statId) => {
-      let total = 0;
-      
-      // Handle percentage stats differently
       if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
-        // For percentage stats, we need a weighted average
-        let weightedSum = 0;
-        let totalWeight = 0;
-        
+        let weightedSum = 0, totalWeight = 0;
         players.forEach(player => {
-          // For 3PT%, use 3PTA as weight
-          if (statId === '11') {
-            const attempts = Utils.getStatValue(player, '9');
-            const percentage = Utils.getStatValue(player, statId);
-            if (attempts > 0) {
-              weightedSum += percentage * attempts;
-              totalWeight += attempts;
-            }
-          }
-          // For FG%, use FGA as weight
-          else if (statId === '5') {
-            const attempts = Utils.getStatValue(player, '3');
-            const percentage = Utils.getStatValue(player, statId);
-            if (attempts > 0) {
-              weightedSum += percentage * attempts;
-              totalWeight += attempts;
-            }
-          }
-          // For FT%, use FTA as weight
-          else if (statId === '8') {
-            const attempts = Utils.getStatValue(player, '6');
-            const percentage = Utils.getStatValue(player, statId);
-            if (attempts > 0) {
-              weightedSum += percentage * attempts;
-              totalWeight += attempts;
-            }
+          let attemptsKey;
+          if (statId === '11') attemptsKey = '9';      // 3PTA for 3PT%
+          else if (statId === '5') attemptsKey = '3'; // FGA for FG%
+          else if (statId === '8') attemptsKey = '6'; // FTA for FT%
+          else return;
+          const attempts = Utils.getStatValue(player, attemptsKey);
+          const percentage = Utils.getStatValue(player, statId);
+          if (attempts > 0 && typeof percentage === 'number') {
+            weightedSum += percentage * attempts;
+            totalWeight += attempts;
           }
         });
-        
         return totalWeight > 0 ? weightedSum / totalWeight : 0;
-      } else {
-        // For counting stats, just sum the values
-        players.forEach(player => {
-          total += Utils.getStatValue(player, statId);
-        });
       }
-      
-      return total;
+      return players.reduce((sum, p) => sum + Utils.getStatValue(p, statId), 0);
     }
   };
 
-  // ============ DATA HANDLING ============
   const DataService = {
-    // Try to fetch and parse the league settings directly
+    // Modified to fetch once and return data for currentWeek extraction
     tryGetLeagueSettings: async () => {
       try {
         const r = await fetch('/api/league_settings');
-        if (!r.ok) throw new Error(`API returned ${r.status}`);
+        if (!r.ok) throw new Error(`API returned ${r.status} for league settings`);
+        const leagueData = await r.json();
         
-        const data = await r.json();
-        
-        // Access the stat_categories directly
-        const settings = data.fantasy_content.league[1]?.settings?.[0];
-        if (!settings || !settings.stat_categories || !settings.stat_categories.stats) {
-          console.warn('No stat_categories found in expected structure');
-          return false;
+        const settings = leagueData.fantasy_content.league[1]?.settings?.[0];
+        if (!settings?.stat_categories?.stats) {
+          console.warn('No stat_categories found in league settings');
+          return { success: false, leagueData: leagueData, categoriesFound: false };
         }
         
         const statCats = settings.stat_categories.stats;
-        console.log('Found stat categories:', statCats.length);
-        
         const categories = [];
-        
-        // Process each stat category
         statCats.forEach(catObj => {
           const stat = catObj.stat;
           if (!stat || stat.enabled !== '1') return;
-          
           const id = stat.stat_id.toString();
-          const meta = CONFIG.STAT_METADATA[id] || {
-            name: stat.name,
-            display_name: stat.display_name,
-            sort_order: stat.sort_order
-          };
-          
-          // Use the abbreviation (display_name from API) instead of the full name
-          categories.push([
-            id, 
-            stat.display_name || stat.abbr || meta.name, 
-            meta.sort_order === '1' ? 'high' : 'low'
-          ]);
-          
-          // Update percentage stats if needed
-          if (stat.display_name && stat.display_name.includes('%') && !CONFIG.PERCENTAGE_STATS.includes(id)) {
-            CONFIG.PERCENTAGE_STATS.push(id);
-          }
+          const meta = CONFIG.STAT_METADATA[id] || { name: stat.name, display_name: stat.display_name, sort_order: stat.sort_order };
+          categories.push([id, stat.display_name || stat.abbr || meta.name, meta.sort_order === '1' ? 'high' : 'low']);
+          if (stat.display_name?.includes('%') && !CONFIG.PERCENTAGE_STATS.includes(id)) CONFIG.PERCENTAGE_STATS.push(id);
         });
         
         if (categories.length > 0) {
-          console.log('Successfully loaded league categories:', categories);
-          CONFIG.COLS = categories;
-          return true;
-        } else {
-          console.warn('No enabled categories found in league settings');
-          return false;
+          CONFIG.COLS = categories; // Update global CONFIG
+          console.log('Player Contributions: Successfully updated CONFIG.COLS from league settings.');
+          return { success: true, leagueData: leagueData, categoriesFound: true };
         }
+        console.warn('Player Contributions: No enabled categories found in league settings.');
+        return { success: true, leagueData: leagueData, categoriesFound: false }; // Success in fetching, but no cats
       } catch (e) {
-        console.error('Error loading league settings:', e);
-        return false;
+        console.error('Player Contributions: Error loading league settings:', e);
+        return { success: false, leagueData: null, categoriesFound: false };
       }
     },
     
-    // Fetch player stats for all weeks
     fetchAllWeeksPlayerStats: async () => {
+      let messageCycleInterval;
       try {
-        // Start the loading message cycle
-        const messageCycleInterval = Utils.showLoading();
+        messageCycleInterval = Utils.showLoading();
         
-        // First try to load league settings to get the proper categories
-        Utils.updateLoadingMessage('Loading league settings...');
-        await DataService.tryGetLeagueSettings();
+        Utils.updateLoadingMessage('Fetching league settings...');
+        const settingsResult = await DataService.tryGetLeagueSettings();
+
+        if (!settingsResult.success) {
+            throw new Error("Failed to fetch initial league settings.");
+        }
+        // Even if categories weren't found/updated, we might still have leagueData to get currentWeek
+        if (!settingsResult.leagueData) {
+             throw new Error("League data is missing after settings fetch.");
+        }
+
+        STATE.statCategories = CONFIG.COLS; // Ensure STATE uses the (potentially updated) CONFIG.COLS
         
-        // Ensure state has the latest categories
-        STATE.statCategories = CONFIG.COLS;
-        
-        // Get the current week from the league
-        Utils.updateLoadingMessage('Determining current week...');
-        const leagueResponse = await fetch('/api/league_settings');
-        if (!leagueResponse.ok) throw new Error(`API returned ${leagueResponse.status}`);
-        
-        const leagueData = await leagueResponse.json();
+        const leagueData = settingsResult.leagueData;
         const currentWeek = parseInt(leagueData.fantasy_content.league[0]?.current_week || "1", 10);
         STATE.currentWeek = currentWeek;
         
-        console.log(`Current week is: ${currentWeek}`);
+        console.log(`Player Contributions: Fetching player data up to week: ${currentWeek}`);
         
-        // Initialize object to hold weekly player stats
-        const weeklyPlayerStats = {};
-        
-        // Add progress bar to loading UI
-        Utils.updateLoadingMessage('Preparing to gather player data...', 0, currentWeek);
-        
-        // Fetch data for each week sequentially
+        const weeklyPlayerStatsPromises = [];
+        let fetchesCompleted = 0;
+        Utils.updateLoadingMessage('Preparing to gather player data...', 0, currentWeek); // Show progress bar at 0%
+
         for (let week = 1; week <= currentWeek; week++) {
-          // Update loading message to show which week is being processed
-          Utils.updateLoadingMessage(`Loading Week ${week} player data...`, week, currentWeek);
-          
-          try {
-            const weekResponse = await fetch(`/api/player_stats_week/${week}`);
-            if (!weekResponse.ok) {
-              console.warn(`Could not load player data for week ${week}`);
-              weeklyPlayerStats[week] = null;
-              continue;
-            }
-            
-            const weekData = await weekResponse.json();
-            
-            // Extract players from the data
-            const players = DataService.extractPlayers(weekData);
-            
-            weeklyPlayerStats[week] = players;
-            
-          } catch (weekError) {
-            console.error(`Error loading week ${week} player data:`, weekError);
-            weeklyPlayerStats[week] = null;
-          }
+          const promise = fetch(`/api/player_stats_week/${week}`)
+            .then(response => {
+              if (!response.ok) {
+                console.warn(`Could not load player data for week ${week}. Status: ${response.status}`);
+                return null; 
+              }
+              return response.json();
+            })
+            .then(weekData => ({ week, players: weekData ? DataService.extractPlayers(weekData) : null }))
+            .catch(error => {
+              console.error(`Error processing week ${week} player data:`, error);
+              return { week, players: null, error: true };
+            })
+            .finally(() => {
+              fetchesCompleted++;
+              Utils.updateLoadingMessage(`Fetching player data...`, fetchesCompleted, currentWeek);
+            });
+          weeklyPlayerStatsPromises.push(promise);
         }
         
-        // Final loading message
-        Utils.updateLoadingMessage('Preparing player visualization...', currentWeek, currentWeek);
+        const settledResults = await Promise.allSettled(weeklyPlayerStatsPromises);
+        const populatedWeeklyStats = {};
+        settledResults.forEach(result => {
+          if (result.status === 'fulfilled' && result.value) {
+            const { week, players, error } = result.value;
+            populatedWeeklyStats[week] = error ? null : players;
+          } else if (result.status === 'rejected') {
+            console.error('A weekly player stats promise was rejected:', result.reason);
+          }
+        });
         
-        // Clear the message cycle interval
-        clearInterval(messageCycleInterval);
+        // This message will be very brief if season data loads fast
+        Utils.updateLoadingMessage('Finalizing data...', currentWeek, currentWeek);
+        clearInterval(messageCycleInterval); 
         
-        return weeklyPlayerStats;
+        return populatedWeeklyStats;
+
       } catch (error) {
-        console.error('Error fetching weekly player data:', error);
+        console.error('Player Contributions: Error in fetchAllWeeksPlayerStats:', error);
+        if (messageCycleInterval) clearInterval(messageCycleInterval);
         Utils.hideLoading();
-        return {};
+        throw error; // Re-throw to be caught by loadPlayerData
       }
     },
     
-    // Fetch season total player stats
     fetchSeasonPlayerStats: async () => {
       try {
+        // This is part of the overall loading, so a specific message here is good.
         Utils.updateLoadingMessage('Loading season player data...');
-        
         const response = await fetch(`/api/player_stats_season`);
         if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
+          throw new Error(`API returned ${response.status} for season player stats`);
         }
-        
         const data = await response.json();
-        
-        // Extract players from the data
-        const players = DataService.extractPlayers(data);
-        
-        return players;
+        return DataService.extractPlayers(data);
       } catch (error) {
-        console.error('Error fetching season player data:', error);
-        return null;
+        console.error('Player Contributions: Error fetching season player data:', error);
+        return null; // Or re-throw if preferred
       }
     },
     
-    // Extract players from API response
     extractPlayers: (data) => {
       const players = [];
-      
       try {
-        const fc = data.fantasy_content;
-        if (!fc || !fc.team) return players;
-        
-        // Navigate to the players array
-        const teamRoster = fc.team[1]?.players;
+        const teamRoster = data.fantasy_content?.team?.[1]?.players;
         if (!teamRoster) return players;
-        
-        // Loop through players
         Object.keys(teamRoster).forEach(key => {
           if (key === 'count') return;
-          
-          const playerObj = teamRoster[key]?.player;
-          if (!playerObj) return;
-          
-          players.push(playerObj);
+          if (teamRoster[key]?.player) players.push(teamRoster[key].player);
         });
-        
-        return players;
       } catch (error) {
-        console.error('Error extracting players:', error);
-        return [];
+        console.error('Player Contributions: Error extracting players:', error);
       }
+      return players;
     },
     
-    // Process player data for chart visualization
     processPlayerData: (players, statId) => {
       if (!players || players.length === 0) return { labels: [], data: [] };
-      
-      // Calculate total for the selected stat
       const total = Utils.calculateTotal(players, statId);
-      
-      // If total is 0, return empty data to avoid division by zero
       if (total === 0) return { labels: [], data: [] };
       
-      // Prepare data for chart
-      const playerStats = [];
+      const playerStats = players.map(player => ({
+        name: Utils.getPlayerName(player),
+        value: Utils.getStatValue(player, statId),
+        percentage: (Utils.getStatValue(player, statId) / total) * 100
+      })).filter(p => p.value > 0).sort((a, b) => b.value - a.value);
       
-      players.forEach(player => {
-        const name = Utils.getPlayerName(player);
-        const statValue = Utils.getStatValue(player, statId);
-        
-        // Only include players with non-zero contributions
-        if (statValue > 0) {
-          playerStats.push({
-            name: name,
-            value: statValue,
-            percentage: (statValue / total) * 100
-          });
-        }
-      });
-      
-      // Sort by contribution (descending)
-      playerStats.sort((a, b) => b.value - a.value);
-      
-      // Limit to top 12 players and group the rest as "Others"
-      let chartData = [];
-      let chartLabels = [];
-      
+      let chartLabels = [], chartData = [];
       if (playerStats.length > 12) {
-        // Take top 11 players
         const topPlayers = playerStats.slice(0, 11);
-        
-        // Group remaining players as "Others"
-        const otherPlayers = playerStats.slice(11);
-        let othersValue = 0;
-        let othersPercentage = 0;
-        
-        otherPlayers.forEach(player => {
-          othersValue += player.value;
-          othersPercentage += player.percentage;
-        });
-        
-        // Add top players to chart data
-        topPlayers.forEach(player => {
-          chartLabels.push(player.name);
-          chartData.push(player.percentage);
-        });
-        
-        // Add "Others" to chart data
-        if (othersValue > 0) {
+        const othersPercentage = playerStats.slice(11).reduce((sum, p) => sum + p.percentage, 0);
+        chartLabels = topPlayers.map(p => p.name);
+        chartData = topPlayers.map(p => p.percentage);
+        if (othersPercentage > 0) {
           chartLabels.push('Others');
           chartData.push(othersPercentage);
         }
       } else {
-        // All players fit in the chart
-        playerStats.forEach(player => {
-          chartLabels.push(player.name);
-          chartData.push(player.percentage);
-        });
+        chartLabels = playerStats.map(p => p.name);
+        chartData = playerStats.map(p => p.percentage);
       }
-      
       return { labels: chartLabels, data: chartData };
     }
   };
 
-  // ============ CHART RENDERING ============
   const ChartRenderer = {
-    // Initialize the stat selector dropdown
     initStatSelector: () => {
       if (!DOM.statSelector) return;
-      
       DOM.statSelector.innerHTML = '';
-      
-      // Add options for each stat category
-      STATE.statCategories.forEach(([id, name, dir]) => {
-        // Only show categories that make sense for player contributions
-        // Skip percentage stats that are derived (not direct contributions)
-        if (CONFIG.PERCENTAGE_STATS.includes(id)) return;
-        
+      STATE.statCategories.forEach(([id, name]) => {
         const option = document.createElement('option');
-        option.value = id;
-        option.textContent = name;
+        option.value = id; option.textContent = name;
         DOM.statSelector.appendChild(option);
       });
       
-      // Set default selection to Points if available, otherwise first stat
-      const pointsStatId = STATE.statCategories.find(cat => cat[1] === 'PTS' || cat[1] === 'Points' || cat[0] === '12');
-      if (pointsStatId) {
-        STATE.selectedStat = pointsStatId[0];
-      } else if (STATE.statCategories.length > 0) {
-        STATE.selectedStat = STATE.statCategories[0][0];
-      }
+      const pointsStat = STATE.statCategories.find(cat => cat[0] === '12'); // PTS ID
+      STATE.selectedStat = pointsStat ? pointsStat[0] : (DOM.statSelector.options.length > 0 ? DOM.statSelector.options[0].value : null);
+      if (STATE.selectedStat) DOM.statSelector.value = STATE.selectedStat;
       
-      if (DOM.statSelector.options.length > 0) {
-        DOM.statSelector.value = STATE.selectedStat;
-      }
-      
-      // Add change event listener
       DOM.statSelector.addEventListener('change', () => {
         STATE.selectedStat = DOM.statSelector.value;
         ChartRenderer.renderChart();
       });
     },
-    
-    // Initialize the week selector dropdown
     initWeekSelector: () => {
       if (!DOM.weekSelector) return;
-      
       DOM.weekSelector.innerHTML = '';
-      
-      // Add options for each week
       for (let week = 1; week <= STATE.currentWeek; week++) {
         const option = document.createElement('option');
-        option.value = week;
-        option.textContent = `Week ${week}`;
+        option.value = week; option.textContent = `Week ${week}`;
         DOM.weekSelector.appendChild(option);
       }
+      DOM.weekSelector.value = STATE.selectedWeek; 
       
-      // Set default selection to current week
-      DOM.weekSelector.value = STATE.selectedWeek;
-      
-      // Add change event listener
       DOM.weekSelector.addEventListener('change', () => {
         STATE.selectedWeek = parseInt(DOM.weekSelector.value, 10);
         ChartRenderer.renderChart();
       });
       
-      // Initialize view toggle buttons
       if (DOM.viewToggle.weeklyBtn && DOM.viewToggle.seasonBtn) {
         DOM.viewToggle.weeklyBtn.classList.add('active');
         DOM.viewToggle.seasonBtn.classList.remove('active');
+        if (DOM.weekSelector.parentElement) DOM.weekSelector.parentElement.style.display = 'flex';
       
-        // Add event listeners for view toggle
         DOM.viewToggle.weeklyBtn.addEventListener('click', () => {
-          if (STATE.viewMode !== 'weekly') {
-            STATE.viewMode = 'weekly';
-            DOM.viewToggle.weeklyBtn.classList.add('active');
-            DOM.viewToggle.seasonBtn.classList.remove('active');
-            // Show week selector when in weekly mode
-            if (DOM.weekSelector.parentElement) {
-              DOM.weekSelector.parentElement.style.display = 'flex';
-            }
-            ChartRenderer.renderChart();
-          }
+          if (STATE.viewMode === 'weekly') return;
+          STATE.viewMode = 'weekly';
+          DOM.viewToggle.weeklyBtn.classList.add('active');
+          DOM.viewToggle.seasonBtn.classList.remove('active');
+          if (DOM.weekSelector.parentElement) DOM.weekSelector.parentElement.style.display = 'flex';
+          ChartRenderer.renderChart();
         });
-        
         DOM.viewToggle.seasonBtn.addEventListener('click', () => {
-          if (STATE.viewMode !== 'season') {
-            STATE.viewMode = 'season';
-            DOM.viewToggle.seasonBtn.classList.add('active');
-            DOM.viewToggle.weeklyBtn.classList.remove('active');
-            // Hide week selector when in season mode
-            if (DOM.weekSelector.parentElement) {
-              DOM.weekSelector.parentElement.style.display = 'none';
-            }
-            ChartRenderer.renderChart();
-          }
+          if (STATE.viewMode === 'season') return;
+          STATE.viewMode = 'season';
+          DOM.viewToggle.seasonBtn.classList.add('active');
+          DOM.viewToggle.weeklyBtn.classList.remove('active');
+          if (DOM.weekSelector.parentElement) DOM.viewToggle.parentElement.style.display = 'none';
+          ChartRenderer.renderChart();
         });
       }
     },
-    
-    // Render the Chart.js pie chart
     renderChart: () => {
-      // Get the canvas element
       const canvas = document.getElementById('contributionsChart');
-      if (!canvas) {
-        console.warn('Contributions chart canvas not found');
-        return;
-      }
-      
+      if (!canvas) return console.warn('Contributions chart canvas not found');
       const ctx = canvas.getContext('2d');
+      if (DOM.chart) DOM.chart.destroy();
+      if (!STATE.selectedStat) return console.warn('No stat selected for chart');
       
-      // If a chart already exists, destroy it
-      if (DOM.chart) {
-        DOM.chart.destroy();
-      }
-      
-      if (!STATE.selectedStat) {
-        console.warn('No stat selected');
-        return;
-      }
-      
-      let players;
-      
-      // Get player data based on view mode
-      if (STATE.viewMode === 'weekly') {
-        players = STATE.weeklyPlayerStats[STATE.selectedWeek] || [];
-      } else {
-        players = STATE.seasonPlayerStats || [];
-      }
-      
-      if (!players || players.length === 0) {
-        console.warn('No player data available');
-        
-        // Show a message on the chart area
-        DOM.chart = new Chart(ctx, {
-          type: 'pie',
-          data: {
-            labels: ['No Data'],
-            datasets: [{
-              data: [1],
-              backgroundColor: ['#e0e0e0'],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false
-              },
-              title: {
-                display: true,
-                text: 'No data available for this selection',
-                font: {
-                  size: 16,
-                  weight: 'bold'
-                },
-                padding: {
-                  top: 10,
-                  bottom: 20
-                }
-              }
-            }
-          }
-        });
-        
-        return;
-      }
-      
-      // Process data for chart
-      const { labels, data } = DataService.processPlayerData(players, STATE.selectedStat);
-      
-      if (labels.length === 0) {
-        console.warn('No data to display');
-        
-        // Show a message on the chart area
-        DOM.chart = new Chart(ctx, {
-          type: 'pie',
-          data: {
-            labels: ['No Data'],
-            datasets: [{
-              data: [1],
-              backgroundColor: ['#e0e0e0'],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false
-              },
-              title: {
-                display: true,
-                text: 'No data available for this selection',
-                font: {
-                  size: 16,
-                  weight: 'bold'
-                },
-                padding: {
-                  top: 10,
-                  bottom: 20
-                }
-              }
-            }
-          }
-        });
-        
-        return;
-      }
-      
-      // Find the stat name
+      const players = STATE.viewMode === 'weekly' ? (STATE.weeklyPlayerStats[STATE.selectedWeek] || []) : (STATE.seasonPlayerStats || []);
       const statInfo = STATE.statCategories.find(cat => cat[0] === STATE.selectedStat);
       const statName = statInfo ? statInfo[1] : 'Stat';
+      let chartTitle = `${statName} Contributions ${STATE.viewMode === 'weekly' ? `- Week ${STATE.selectedWeek}` : '- Season Totals'}`;
+
+      const noDataOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'No data for selection', font: { size: 16 }, padding: { top: 10, bottom: 20 }}}};
       
-      // Generate colors for the chart (use CONFIG.PLAYER_COLORS)
-      const colors = [];
-      for (let i = 0; i < labels.length; i++) {
-        colors.push(CONFIG.PLAYER_COLORS[i % CONFIG.PLAYER_COLORS.length]);
+      if (!players.length) {
+        DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Players'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
+        return;
+      }
+      const { labels, data } = DataService.processPlayerData(players, STATE.selectedStat);
+      if (!labels.length) {
+        DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Contributions'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
+        return;
       }
       
-      // Create the chart
+      const colors = labels.map((_, i) => CONFIG.PLAYER_COLORS[i % CONFIG.PLAYER_COLORS.length]);
       DOM.chart = new Chart(ctx, {
         type: 'pie',
         data: {
           labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: colors,
-            borderColor: colors.map(color => Chart.helpers.color(color).darken(0.1).rgbString()),
-            borderWidth: 1
-          }]
+          datasets: [{ data: data, backgroundColor: colors, borderColor: colors.map(c => Chart.helpers.color(c).darken(0.1).rgbString()), borderWidth: 1 }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           plugins: {
-            title: {
-              display: true,
-              text: `${statName} Contributions by Player` + (STATE.viewMode === 'weekly' ? ` - Week ${STATE.selectedWeek}` : ' - Season Totals'),
-              font: {
-                size: 16,
-                weight: 'bold'
-              },
-              padding: {
-                top: 10,
-                bottom: 20
-              }
-            },
-                            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  const value = context.parsed;
-                  return `${context.label}: ${value.toFixed(1)}%`;
-                }
-              }
-            },
-            legend: {
-              position: 'right',
-              labels: {
-                boxWidth: 15,
-                padding: 10,
-                font: {
-                  size: 12
-                }
-              }
-            }
+            title: { display: true, text: chartTitle, font: { size: 16, weight: 'bold' }, padding: { top: 10, bottom: 20 }},
+            tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed.toFixed(1)}%` }},
+            legend: { position: 'right', labels: { boxWidth: 15, padding: 10, font: { size: 12 }}}
           }
         }
       });
     }
   };
   
-  // ============ INITIALIZATION ============
   const initPlayerContributions = async () => {
-    // Check if we have the container
-    if (!DOM.container) {
-      console.error('Player contributions container not found');
-      return;
-    }
-    
-    // Check if we've already initialized
+    if (!DOM.container) return console.error('Player contributions container not found');
     if (STATE.initialized) {
-      // If it's already initialized but the button is showing, reshow the button
-      if (DOM.loadButton && DOM.loadButton.style.display === 'none' && !STATE.dataLoaded) {
-        DOM.loadButton.style.display = 'block';
-      }
+      if (DOM.loadButton?.style.display === 'none' && !STATE.dataLoaded) DOM.loadButton.style.display = 'block';
       return;
     }
-    
-    // Mark as initialized
     STATE.initialized = true;
+    STATE.statCategories = CONFIG.COLS; // Initial set from defaults or dashboard.js
+    if (!DOM.loadButton) return console.error('Load contributions button not found');
+    DOM.loadButton.addEventListener('click', loadPlayerData);
     
-    // Save stat categories from CONFIG
-    STATE.statCategories = CONFIG.COLS;
-    console.log('Using stat categories:', STATE.statCategories);
-    
-    // Make sure we have the load button
-    if (!DOM.loadButton) {
-      console.error('Load button not found');
-      return;
-    }
-    
-    // Setup load button click handler
-    DOM.loadButton.addEventListener('click', () => {
-      loadPlayerData();
-    });
-    
-    // Auto-load data when tab is active - this is the key change!
-    const trendsTab = document.querySelector('[data-target="tab-trends"]');
-    if (trendsTab && trendsTab.classList.contains('active')) {
+    const trendsTabPane = document.getElementById('tab-trends');
+    if (trendsTabPane?.classList.contains('active') && DOM.loadButton?.style.display !== 'none') {
       loadPlayerData();
     }
   };
   
-  // Function to load player data - separated from init to allow auto-loading
   const loadPlayerData = async () => {
-    // Hide the button and show loading
-    if (DOM.loadButton) {
-      DOM.loadButton.style.display = 'none';
-    }
-    
+    if (DOM.loadButton) DOM.loadButton.style.display = 'none';
     try {
-      // Fetch weekly player data
       STATE.weeklyPlayerStats = await DataService.fetchAllWeeksPlayerStats();
-      
-      // Fetch season player data
-      STATE.seasonPlayerStats = await DataService.fetchSeasonPlayerStats();
+      STATE.seasonPlayerStats = await DataService.fetchSeasonPlayerStats(); // Fetches after weekly
       
       if (Object.keys(STATE.weeklyPlayerStats).length === 0 && !STATE.seasonPlayerStats) {
-        throw new Error('No data loaded');
+        throw new Error('No player data could be loaded.');
       }
       
-      // Mark data as loaded
       STATE.dataLoaded = true;
+      Utils.hideLoading(); 
+      if (DOM.chartContainer) DOM.chartContainer.style.display = 'block';
       
-      // Hide loading and show chart container
-      Utils.hideLoading();
-      if (DOM.chartContainer) {
-        DOM.chartContainer.style.display = 'block';
-      }
-      
-      // Initialize selectors
       ChartRenderer.initStatSelector();
       ChartRenderer.initWeekSelector();
-      
-      // Render the initial chart
       ChartRenderer.renderChart();
       
     } catch (error) {
-      console.error('Error initializing player contributions:', error);
+      console.error('Player Contributions: Error during loadPlayerData:', error);
       Utils.hideLoading();
-      
-      // Show error and reset button
-      if (DOM.loadButton) {
-        DOM.loadButton.style.display = 'block';
-      }
-      
-      // Show error message
-      const errorMsg = document.createElement('div');
-      errorMsg.textContent = 'Error loading player data. Please try again.';
-      errorMsg.className = 'error-message';
-      if (DOM.container) {
-        DOM.container.appendChild(errorMsg);
-      }
-      
-      setTimeout(() => {
-        if (errorMsg.parentNode) {
-          errorMsg.remove();
-        }
-      }, 5000);
+      if (DOM.loadButton) DOM.loadButton.style.display = 'block';
+      const errorMsgElement = DOM.container?.querySelector('.error-message') || document.createElement('div');
+      errorMsgElement.textContent = `Error loading player data: ${error.message || 'Please try again.'}`;
+      errorMsgElement.className = 'error-message';
+      if (!errorMsgElement.parentElement && DOM.container) DOM.container.appendChild(errorMsgElement);
+      setTimeout(() => errorMsgElement.remove(), 7000);
     }
   };
   
-  // Make initPlayerContributions globally available so it can be called from trends.js
   window.initPlayerContributions = initPlayerContributions;
-  
-  // Run initPlayerContributions on DOM content loaded
-  // This will set up handlers but won't load data until the tab is clicked
   initPlayerContributions();
 });
