@@ -1499,6 +1499,21 @@ sup.rank{
   color: #2b6cb0; 
 }
 
+/* Styles for the status row content wrapper */
+.trade-analysis-results .status-cell .status-content-wrapper {
+  display: flex;
+  justify-content: center; /* Default alignment for larger screens */
+  align-items: center;     /* Default alignment for larger screens */
+  flex-wrap: wrap;         /* Allow wrapping if content is too long */
+  gap: 8px;                /* Gap between text and button if they wrap */
+}
+
+.trade-analysis-results .status-cell .status-text {
+  /* Default styles for the text part */
+  text-align: center; /* Center text by default */
+}
+
+
 .summary-toggle {
   margin-left: 12px;
   padding: 8px 14px; 
@@ -1614,17 +1629,17 @@ sup.rank{
     background-color: #fff5f5 !important;
   }
 
-  /* ADDED: Adjust summary toggle button for mobile */
+  /* Adjust summary toggle button for general mobile */
   .trade-analysis-results .summary-toggle {
-    font-size: 13px; /* Match table font-size */
-    padding: 6px 10px; /* Slightly smaller padding */
-    white-space: normal; /* Allow button text to wrap if necessary */
-    line-height: 1.3; /* Improve readability if wrapped */
-    margin-left: 8px; /* Add a bit of space for the button */
+    font-size: 13px; 
+    padding: 6px 10px; 
+    white-space: normal; 
+    line-height: 1.3; 
+    margin-left: 8px; /* Default mobile margin */
   }
 }
 
-/* Container for horizontal scroll on ultra-mobile */
+/* Container for horizontal scroll on ultra-mobile & specific status row adjustments */
 @media screen and (max-width: 480px) {
    .trade-results-container { /* This is the direct parent of .trade-analysis-results */
         width: 100%;
@@ -1633,5 +1648,20 @@ sup.rank{
    }
   .trade-analysis-results {
     min-width: 340px; /* MODIFIED: Reduced min-width for very small screens, allows scrolling if content still overflows */
+  }
+
+  /* Specific mobile adjustments for the status row content */
+  .trade-analysis-results .status-cell .status-content-wrapper {
+    flex-direction: column; /* Stack items vertically */
+    align-items: center;    /* Center items horizontally in the column */
+  }
+
+  .trade-analysis-results .status-cell .status-text {
+    margin-bottom: 8px; /* Space between text and button when stacked */
+  }
+
+  .trade-analysis-results .status-cell .summary-toggle { /* Target button specifically within status-cell on small screens */
+    margin-left: 0; /* Remove left margin when stacked */
+    /* General mobile styles for .summary-toggle for font-size, padding etc. from 768px breakpoint will apply */
   }
 }

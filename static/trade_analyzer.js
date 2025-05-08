@@ -150,7 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
             tableHTML += `<tr><td>${statName}</td><td>${Utils.formatStatDisplay(tradingVal, precision, isPercentage)}</td><td>${Utils.formatStatDisplay(acquiringVal, precision, isPercentage)}</td><td class="${impactClass}" ${lowGoodAttr}>${Utils.formatImpactDisplay(impactVal, precision, isPercentage)}</td></tr>`;
         });
         tableHTML += `
-            <tr class="status-row"><td colspan="4" class="status-cell">Trade improves ${summary.improvedCount} of ${categoryConfigs.filter(c => STATE.NBA_STAT_MAP[c[0]]).length} categories<button id="showTradeSummaryBtn" class="summary-toggle">View Impact Details</button></td></tr>
+            <tr class="status-row">
+                <td colspan="4" class="status-cell">
+                    <div class="status-content-wrapper">
+                        <span class="status-text">Trade improves ${summary.improvedCount} of ${categoryConfigs.filter(c => STATE.NBA_STAT_MAP[c[0]]).length} categories</span>
+                        <button id="showTradeSummaryBtn" class="summary-toggle">View Impact Details</button>
+                    </div>
+                </td>
+            </tr>
             <tr class="summary-section" style="display:none;"><td colspan="4" class="summary-header">Impact Summary</td></tr>
             <tr class="summary-row gains" style="display:none;"><td colspan="2" class="category-list">Improving: ${summary.gainingCategories.join(', ') || 'None'}</td><td colspan="2" class="impact-value">+${summary.improvedCount} categories</td></tr>
             <tr class="summary-row losses" style="display:none;"><td colspan="2" class="category-list">Declining: ${summary.losingCategories.join(', ') || 'None'}</td><td colspan="2" class="impact-value">-${summary.declinedCount} categories</td></tr>
