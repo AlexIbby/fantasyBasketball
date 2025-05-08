@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     seasonPlayerStats: null,
     statCategories: [],
     selectedStat: null,
-    viewMode: 'weekly',
+    viewMode: 'weekly', // Default view mode
     selectedWeek: 1,
     initialized: false,
     dataLoaded: false,
@@ -153,7 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!Array.isArray(playerStats)) return 0;
       for (const stat of playerStats) {
         if (stat.stat?.stat_id === statId.toString()) {
-          return Utils.formatStatValue(statId, stat.stat.value) || 0;
+          // Use parseFloat for all values, formatStatValue is more for display string
+          const rawValue = stat.stat.value;
+          if (rawValue === null || rawValue === undefined || rawValue === '') return 0;
+          const numVal = parseFloat(rawValue);
+          return isNaN(numVal) ? 0 : numVal;
         }
       }
       return 0;
@@ -162,26 +166,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
         let weightedSum = 0, totalWeight = 0;
         players.forEach(player => {
-          let attemptsKey;
-          if (statId === '11') attemptsKey = '9';      // 3PTA for 3PT%
-          else if (statId === '5') attemptsKey = '3'; // FGA for FG%
-          else if (statId === '8') attemptsKey = '6'; // FTA for FT%
+          let attemptsKey, madeKey;
+          if (statId === '11') { attemptsKey = '9'; madeKey = '10'; } // 3PTA for 3PT%, 3PTM
+          else if (statId === '5') { attemptsKey = '3'; madeKey = '4'; } // FGA for FG%, FGM
+          else if (statId === '8') { attemptsKey = '6'; madeKey = '7'; } // FTA for FT%, FTM
           else return;
+
           const attempts = Utils.getStatValue(player, attemptsKey);
-          const percentage = Utils.getStatValue(player, statId);
-          if (attempts > 0 && typeof percentage === 'number') {
-            weightedSum += percentage * attempts;
-            totalWeight += attempts;
+          const made = Utils.getStatValue(player, madeKey);
+
+          if (typeof attempts === 'number' && attempts > 0 && typeof made === 'number') {
+            weightedSum += made; // sum of made shots
+            totalWeight += attempts; // sum of attempted shots
           }
         });
-        return totalWeight > 0 ? weightedSum / totalWeight : 0;
+        return totalWeight > 0 ? (weightedSum / totalWeight) : 0;
       }
+      // For counting stats, sum them up directly
       return players.reduce((sum, p) => sum + Utils.getStatValue(p, statId), 0);
     }
   };
 
   const DataService = {
-    // Modified to fetch once and return data for currentWeek extraction
     tryGetLeagueSettings: async () => {
       try {
         const r = await fetch('/api/league_settings');
@@ -206,12 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if (categories.length > 0) {
-          CONFIG.COLS = categories; // Update global CONFIG
+          CONFIG.COLS = categories; 
           console.log('Player Contributions: Successfully updated CONFIG.COLS from league settings.');
           return { success: true, leagueData: leagueData, categoriesFound: true };
         }
         console.warn('Player Contributions: No enabled categories found in league settings.');
-        return { success: true, leagueData: leagueData, categoriesFound: false }; // Success in fetching, but no cats
+        return { success: true, leagueData: leagueData, categoriesFound: false };
       } catch (e) {
         console.error('Player Contributions: Error loading league settings:', e);
         return { success: false, leagueData: null, categoriesFound: false };
@@ -229,12 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!settingsResult.success) {
             throw new Error("Failed to fetch initial league settings.");
         }
-        // Even if categories weren't found/updated, we might still have leagueData to get currentWeek
         if (!settingsResult.leagueData) {
              throw new Error("League data is missing after settings fetch.");
         }
 
-        STATE.statCategories = CONFIG.COLS; // Ensure STATE uses the (potentially updated) CONFIG.COLS
+        STATE.statCategories = CONFIG.COLS; 
         
         const leagueData = settingsResult.leagueData;
         const currentWeek = parseInt(leagueData.fantasy_content.league[0]?.current_week || "1", 10);
@@ -244,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const weeklyPlayerStatsPromises = [];
         let fetchesCompleted = 0;
-        Utils.updateLoadingMessage('Preparing to gather player data...', 0, currentWeek); // Show progress bar at 0%
+        Utils.updateLoadingMessage('Preparing to gather player data...', 0, currentWeek);
 
         for (let week = 1; week <= currentWeek; week++) {
           const promise = fetch(`/api/player_stats_week/${week}`)
@@ -278,7 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         
-        // This message will be very brief if season data loads fast
         Utils.updateLoadingMessage('Finalizing data...', currentWeek, currentWeek);
         clearInterval(messageCycleInterval); 
         
@@ -288,13 +292,12 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Player Contributions: Error in fetchAllWeeksPlayerStats:', error);
         if (messageCycleInterval) clearInterval(messageCycleInterval);
         Utils.hideLoading();
-        throw error; // Re-throw to be caught by loadPlayerData
+        throw error;
       }
     },
     
     fetchSeasonPlayerStats: async () => {
       try {
-        // This is part of the overall loading, so a specific message here is good.
         Utils.updateLoadingMessage('Loading season player data...');
         const response = await fetch(`/api/player_stats_season`);
         if (!response.ok) {
@@ -304,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return DataService.extractPlayers(data);
       } catch (error) {
         console.error('Player Contributions: Error fetching season player data:', error);
-        return null; // Or re-throw if preferred
+        return null;
       }
     },
     
@@ -325,14 +328,81 @@ document.addEventListener('DOMContentLoaded', () => {
     
     processPlayerData: (players, statId) => {
       if (!players || players.length === 0) return { labels: [], data: [] };
-      const total = Utils.calculateTotal(players, statId);
-      if (total === 0) return { labels: [], data: [] };
       
-      const playerStats = players.map(player => ({
-        name: Utils.getPlayerName(player),
-        value: Utils.getStatValue(player, statId),
-        percentage: (Utils.getStatValue(player, statId) / total) * 100
-      })).filter(p => p.value > 0).sort((a, b) => b.value - a.value);
+      const totalStatValue = Utils.calculateTotal(players, statId);
+      if (totalStatValue === 0 && !CONFIG.PERCENTAGE_STATS.includes(statId)) {
+          return { labels: [], data: [] };
+      }
+      // For percentage stats, totalStatValue is the calculated team percentage.
+      // We still want to show individual player contributions if they have attempts,
+      // even if the team total is 0 (e.g. 0/5 FT makes FT% 0, but player still contributed 5 attempts)
+
+      const playerStats = players.map(player => {
+        const value = Utils.getStatValue(player, statId);
+        let percentage = 0;
+        if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
+            // For percentages, "contribution" is more about volume of attempts if we're summing to 100%
+            // Or, we show their actual percentage and the pie chart represents something else (e.g. share of attempts)
+            // For this implementation, let's assume the pie chart shows share of the *counting* stat component
+            // (e.g., for FT%, it's share of FTM if total is FTM, or share of FTA if total is FTA)
+            // The current Utils.calculateTotal for percentages returns the team's aggregate percentage.
+            // The pie chart needs to sum to 100%. So, each slice should be player_value / sum_of_all_player_values.
+            // For counting stats, this is fine: player_stat / team_total_stat
+            // For percentages, this interpretation is tricky. What does it mean to contribute X% to team's FT%?
+            // A common approach is to show contribution to the *components* of the percentage.
+            // E.g. for FG%, players contribute FGM and FGA. The pie could show distribution of FGM.
+            // Given the current structure, it uses the statId directly.
+            // Let's keep it simple: if it's a counting stat, it's player_value / total.
+            // If it's a percentage stat, the 'value' is their individual percentage.
+            // The pie chart will then show these individual percentages directly. This means the pie won't sum to 100% of team total necessarily.
+            // This might need further clarification, but for now, we'll use the direct value for percentages.
+            // To make the pie chart sum to 100% and represent contribution to the category:
+            // For counting stats: (player_value / totalStatValue) * 100
+            // For percentage stats: this is more complex. If totalStatValue is the team average,
+            // then (player_individual_percentage / sum_of_all_player_individual_percentages) * 100 is not meaningful.
+            // A better approach for percentages in a pie chart is to show distribution of a *related counting stat*.
+            // E.g. for 3PT%, show distribution of 3PTM.
+            // However, the current code uses `statId` for both getting value and total.
+
+            // Sticking to player_value / total for now, knowing it's imperfect for percentages in a pie.
+            // The current Utils.calculateTotal for percentages gives an *average*, not a sum.
+            // So, for percentages, we'll calculate contribution based on attempts, similar to how the total is weighted.
+            
+            let contributionValue = 0;
+            if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
+                 let attemptsKey;
+                 if (statId === '11') attemptsKey = '9';      // 3PTA for 3PT%
+                 else if (statId === '5') attemptsKey = '3'; // FGA for FG%
+                 else if (statId === '8') attemptsKey = '6'; // FTA for FT%
+                 contributionValue = Utils.getStatValue(player, attemptsKey); // Use attempts as the basis for contribution weight
+            } else {
+                contributionValue = value;
+            }
+            // Calculate overall total attempts for percentage stats if that's the denominator
+            let denominatorTotal = totalStatValue;
+            if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
+                denominatorTotal = players.reduce((sum, p) => {
+                    let attemptsKey;
+                    if (statId === '11') attemptsKey = '9';
+                    else if (statId === '5') attemptsKey = '3';
+                    else if (statId === '8') attemptsKey = '6';
+                    else return sum;
+                    return sum + Utils.getStatValue(p, attemptsKey);
+                }, 0);
+            }
+            percentage = denominatorTotal > 0 ? (contributionValue / denominatorTotal) * 100 : 0;
+
+        } else if (totalStatValue > 0) {
+            percentage = (value / totalStatValue) * 100;
+        }
+        
+        return {
+          name: Utils.getPlayerName(player),
+          value: value, // Store raw value for display or sorting if needed
+          percentage: percentage
+        };
+      }).filter(p => p.percentage > 0 || (CONFIG.PERCENTAGE_STATS.includes(statId) && p.value !== null) ) // For percentages, show if they have a value even if percentage contribution (via attempts) is 0.
+        .sort((a, b) => b.percentage - a.percentage); // Sort by percentage contribution
       
       let chartLabels = [], chartData = [];
       if (playerStats.length > 12) {
@@ -340,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const othersPercentage = playerStats.slice(11).reduce((sum, p) => sum + p.percentage, 0);
         chartLabels = topPlayers.map(p => p.name);
         chartData = topPlayers.map(p => p.percentage);
-        if (othersPercentage > 0) {
+        if (othersPercentage > 0.01) { // Only add "Others" if it's significant
           chartLabels.push('Others');
           chartData.push(othersPercentage);
         }
@@ -379,6 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
         option.value = week; option.textContent = `Week ${week}`;
         DOM.weekSelector.appendChild(option);
       }
+      // Set default selected week, ensure it's valid if currentWeek is 0 initially
+      STATE.selectedWeek = Math.min(STATE.selectedWeek, STATE.currentWeek > 0 ? STATE.currentWeek : 1);
+      STATE.selectedWeek = Math.max(1, STATE.selectedWeek);
       DOM.weekSelector.value = STATE.selectedWeek; 
       
       DOM.weekSelector.addEventListener('change', () => {
@@ -387,9 +460,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       if (DOM.viewToggle.weeklyBtn && DOM.viewToggle.seasonBtn) {
-        DOM.viewToggle.weeklyBtn.classList.add('active');
-        DOM.viewToggle.seasonBtn.classList.remove('active');
-        if (DOM.weekSelector.parentElement) DOM.weekSelector.parentElement.style.display = 'flex';
+        // Initial state based on STATE.viewMode
+        if (STATE.viewMode === 'weekly') {
+            DOM.viewToggle.weeklyBtn.classList.add('active');
+            DOM.viewToggle.seasonBtn.classList.remove('active');
+            if (DOM.weekSelector.parentElement) DOM.weekSelector.parentElement.style.display = 'flex';
+        } else {
+            DOM.viewToggle.seasonBtn.classList.add('active');
+            DOM.viewToggle.weeklyBtn.classList.remove('active');
+            if (DOM.weekSelector.parentElement) DOM.weekSelector.parentElement.style.display = 'none';
+        }
       
         DOM.viewToggle.weeklyBtn.addEventListener('click', () => {
           if (STATE.viewMode === 'weekly') return;
@@ -404,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
           STATE.viewMode = 'season';
           DOM.viewToggle.seasonBtn.classList.add('active');
           DOM.viewToggle.weeklyBtn.classList.remove('active');
-          if (DOM.weekSelector.parentElement) DOM.viewToggle.parentElement.style.display = 'none';
+          if (DOM.weekSelector.parentElement) DOM.weekSelector.parentElement.style.display = 'none';
           ChartRenderer.renderChart();
         });
       }
@@ -416,19 +496,30 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.chart) DOM.chart.destroy();
       if (!STATE.selectedStat) return console.warn('No stat selected for chart');
       
-      const players = STATE.viewMode === 'weekly' ? (STATE.weeklyPlayerStats[STATE.selectedWeek] || []) : (STATE.seasonPlayerStats || []);
+      const players = STATE.viewMode === 'weekly' 
+                      ? (STATE.weeklyPlayerStats[STATE.selectedWeek] || []) 
+                      : (STATE.seasonPlayerStats || []);
+                      
       const statInfo = STATE.statCategories.find(cat => cat[0] === STATE.selectedStat);
       const statName = statInfo ? statInfo[1] : 'Stat';
       let chartTitle = `${statName} Contributions ${STATE.viewMode === 'weekly' ? `- Week ${STATE.selectedWeek}` : '- Season Totals'}`;
 
-      const noDataOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'No data for selection', font: { size: 16 }, padding: { top: 10, bottom: 20 }}}};
+      const noDataOptions = { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { 
+          legend: { display: false }, 
+          title: { display: true, text: chartTitle + '\n(No data for selection)', font: { size: 16 }, padding: { top: 10, bottom: 20 }}
+        }
+      };
       
-      if (!players.length) {
+      if (!players || players.length === 0) {
         DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Players'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
         return;
       }
       const { labels, data } = DataService.processPlayerData(players, STATE.selectedStat);
-      if (!labels.length) {
+      
+      if (!labels.length || data.every(d => d === 0)) { // Check if all data points are zero
         DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Contributions'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
         return;
       }
@@ -438,7 +529,22 @@ document.addEventListener('DOMContentLoaded', () => {
         type: 'pie',
         data: {
           labels: labels,
-          datasets: [{ data: data, backgroundColor: colors, borderColor: colors.map(c => Chart.helpers.color(c).darken(0.1).rgbString()), borderWidth: 1 }]
+          datasets: [{ 
+            data: data, 
+            backgroundColor: colors, 
+            borderColor: colors.map(c => {
+                // Chart.js v4+ uses `Chart.helpers.color(c).darken(0.1).rgbString()`
+                // For v3 or if Chart.helpers is not available as expected:
+                try {
+                    return Chart.helpers.color(c).darken(0.1).rgbString();
+                } catch (e) { // Fallback for older Chart.js or if helpers structure changed
+                    let r = parseInt(c.slice(1,3),16), g = parseInt(c.slice(3,5),16), b = parseInt(c.slice(5,7),16);
+                    r = Math.max(0, r - 25); g = Math.max(0, g - 25); b = Math.max(0, b - 25);
+                    return `rgb(${r},${g},${b})`;
+                }
+            }), 
+            borderWidth: 1 
+          }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
@@ -459,46 +565,80 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     STATE.initialized = true;
-    STATE.statCategories = CONFIG.COLS; // Initial set from defaults or dashboard.js
+    STATE.statCategories = CONFIG.COLS; 
     if (!DOM.loadButton) return console.error('Load contributions button not found');
     DOM.loadButton.addEventListener('click', loadPlayerData);
     
     const trendsTabPane = document.getElementById('tab-trends');
     if (trendsTabPane?.classList.contains('active') && DOM.loadButton?.style.display !== 'none') {
-      loadPlayerData();
+      // If the tab is already active (e.g. page load directly to it or after refresh)
+      // and data hasn't been loaded (button is visible), then load data.
+      // This logic is mainly from trends.js to auto-load.
+      // If we want to ensure player contributions also auto-loads if its tab is active:
+      const playerContribTabBtn = document.querySelector('[data-target="tab-trends"]'); // Assuming it's on trends tab
+      if (playerContribTabBtn?.classList.contains('active')) {
+          loadPlayerData();
+      }
     }
   };
   
   const loadPlayerData = async () => {
     if (DOM.loadButton) DOM.loadButton.style.display = 'none';
+    let loadingInterval;
     try {
+      loadingInterval = Utils.showLoading(); // Start cycling messages
       STATE.weeklyPlayerStats = await DataService.fetchAllWeeksPlayerStats();
-      STATE.seasonPlayerStats = await DataService.fetchSeasonPlayerStats(); // Fetches after weekly
+      // fetchSeasonPlayerStats will show its own message briefly if fetchAllWeeksPlayerStats was quick
+      STATE.seasonPlayerStats = await DataService.fetchSeasonPlayerStats(); 
       
       if (Object.keys(STATE.weeklyPlayerStats).length === 0 && !STATE.seasonPlayerStats) {
         throw new Error('No player data could be loaded.');
       }
       
       STATE.dataLoaded = true;
+      clearInterval(loadingInterval); // Stop cycling generic messages
       Utils.hideLoading(); 
       if (DOM.chartContainer) DOM.chartContainer.style.display = 'block';
       
-      ChartRenderer.initStatSelector();
-      ChartRenderer.initWeekSelector();
+      ChartRenderer.initStatSelector(); // Depends on STATE.statCategories, potentially updated by fetchAllWeeks
+      ChartRenderer.initWeekSelector(); // Depends on STATE.currentWeek, updated by fetchAllWeeks
       ChartRenderer.renderChart();
       
     } catch (error) {
       console.error('Player Contributions: Error during loadPlayerData:', error);
+      if (loadingInterval) clearInterval(loadingInterval);
       Utils.hideLoading();
       if (DOM.loadButton) DOM.loadButton.style.display = 'block';
       const errorMsgElement = DOM.container?.querySelector('.error-message') || document.createElement('div');
       errorMsgElement.textContent = `Error loading player data: ${error.message || 'Please try again.'}`;
-      errorMsgElement.className = 'error-message';
-      if (!errorMsgElement.parentElement && DOM.container) DOM.container.appendChild(errorMsgElement);
+      errorMsgElement.className = 'error-message'; // Ensure it has class for styling
+      if (!errorMsgElement.parentElement && DOM.container && DOM.loadButton) {
+        // Insert error message before the load button if it exists
+         DOM.loadButton.parentElement.insertBefore(errorMsgElement, DOM.loadButton);
+      } else if (!errorMsgElement.parentElement && DOM.container) {
+         DOM.container.appendChild(errorMsgElement);
+      }
       setTimeout(() => errorMsgElement.remove(), 7000);
     }
   };
   
-  window.initPlayerContributions = initPlayerContributions;
-  initPlayerContributions();
+  // Expose init function to be called from trends.js or if tab is directly activated
+  window.initPlayerContributions = initPlayerContributions; 
+
+  // Initialize if this script is loaded standalone or if its tab is active early
+  // Check if the parent tab 'tab-trends' is active to decide if to auto-init/load.
+  // This is usually handled by the main dashboard.js tab click logic,
+  // but trends.js also has a specific call to window.initPlayerContributions.
+  const trendsTabButton = document.querySelector('[data-target="tab-trends"]');
+  if (trendsTabButton && trendsTabButton.classList.contains('active')) {
+      initPlayerContributions(); // Initialize event listeners
+      // If the button is still visible, means data hasn't been loaded yet.
+      if (DOM.loadButton && DOM.loadButton.style.display !== 'none') {
+          // loadPlayerData(); // Auto-load if tab is active and button visible
+          // Deferred to trends.js which calls loadPlayerData via button click or directly
+      }
+  } else {
+      initPlayerContributions(); // Still initialize for event listeners even if tab not active
+  }
+
 });
