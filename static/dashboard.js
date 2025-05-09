@@ -163,17 +163,33 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Responsive view based on window width
     initResponsiveView: () => {
-      const setViewsByScreenWidth = () => {
-        const isMobile = window.innerWidth <= 768;
-        Utils.switchView(isMobile ? 'cards' : 'table', DOM.weekly);
-        Utils.switchView(isMobile ? 'cards' : 'table', DOM.compare);
+      // Store the current breakpoint state (true if mobile, false if desktop)
+      let currentBreakpointIsMobile = window.innerWidth <= 768;
+
+      // Function to set the initial views based on the current breakpoint
+      const setInitialViews = () => {
+        Utils.switchView(currentBreakpointIsMobile ? 'cards' : 'table', DOM.weekly);
+        Utils.switchView(currentBreakpointIsMobile ? 'cards' : 'table', DOM.compare);
       };
       
-      // Set initial view
-      setViewsByScreenWidth();
+      // Function to handle resize events
+      const handleResize = () => {
+        const newBreakpointIsMobile = window.innerWidth <= 768;
+        // Only switch the view if the breakpoint (mobile/desktop) has changed
+        if (newBreakpointIsMobile !== currentBreakpointIsMobile) {
+          Utils.switchView(newBreakpointIsMobile ? 'cards' : 'table', DOM.weekly);
+          Utils.switchView(newBreakpointIsMobile ? 'cards' : 'table', DOM.compare);
+          currentBreakpointIsMobile = newBreakpointIsMobile; // Update the stored breakpoint state
+        }
+        // If the breakpoint hasn't changed (e.g., mobile stays mobile),
+        // do nothing, thereby respecting the user's explicit view selection.
+      };
       
-      // Update on resize
-      window.addEventListener('resize', setViewsByScreenWidth);
+      // Set initial view on load
+      setInitialViews();
+      
+      // Update on resize, but only if the breakpoint status changes
+      window.addEventListener('resize', handleResize);
     },
     
     // Format stat value based on type
