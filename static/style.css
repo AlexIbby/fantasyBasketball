@@ -428,17 +428,8 @@ sup.rank{
   margin-left: 2px;
 }
 
-/* Add a shadow to indicate there's more content to scroll to (for main dashboard tables) */
-.table-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: 100%;
-  width: 15px;
-  background: linear-gradient(to right, transparent, rgba(0,0,0,0.05));
-  pointer-events: none; /* Allow scrolling underneath */
-}
+/* FIXED: Removed the shadow effect causing issues */
+/* The previous code adding a shadow to indicate more content has been removed */
 
 /* Navbar styles */
 .navbar {
