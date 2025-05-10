@@ -384,7 +384,6 @@ def api_nba_player_stats(player_id):
         season = current_nba_season()
         log.info(f"Fetching NBA stats for player_id: {player_id}, season: {season}.")
         
-        # FIX: Removed `season_type_all_star` argument as it caused the error
         dashboard = PlayerDashboardByGeneralSplits(
             player_id=player_id,
             season=season,
@@ -403,15 +402,15 @@ def api_nba_player_stats(player_id):
 
         stats_series = player_stats_df.iloc[0]
         
+        # Added 'MIN' to fetch Minutes Per Game
         stat_keys_float = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG3M',
                            'FGM', 'FGA', 'FTM', 'FTA', 'FG3A', 'FG_PCT', 'FT_PCT', 
-                           'FG3_PCT', 'DD2', 'TD3']
+                           'FG3_PCT', 'DD2', 'TD3', 'MIN'] 
         
         required_stats = {'GP': int(stats_series.get('GP', 0) or 0)}
         for key in stat_keys_float:
             required_stats[key] = float(stats_series.get(key, 0.0) or 0.0)
         
-        # ADDED LOGGING
         log.info(f"--- NBA PLAYER STATS API RESPONSE FOR PLAYER ID: {player_id} ---")
         log.info(json.dumps(required_stats, indent=2))
         log.info(f"--- END NBA PLAYER STATS API RESPONSE ---")

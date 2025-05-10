@@ -1223,6 +1223,12 @@ sup.rank{
   line-height: 1.2;
 }
 
+.player-mpg { /* Style for MPG */
+  font-size: 12px;
+  color: #555555;
+  margin-top: 2px;
+}
+
 /* Remove player button */
 .remove-player {
   position: absolute;

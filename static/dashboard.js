@@ -713,7 +713,7 @@ statCats.forEach(catObj => {
       if (!STATE.compare.seasonPayload) {
         API.loadSeasonStats();
       }
-    });
+    });   
     
     // Set up view selector for season data
     DOM.compare.viewSel?.addEventListener('change', () => {

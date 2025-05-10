@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.createElement('div');
         card.className = 'player-card';
         card.setAttribute('data-player-card-id', player.card_id);
+        const mpgText = player.mpg !== null && player.mpg !== undefined ? Utils.formatStatDisplay(player.mpg, 1) : 'N/A';
         card.innerHTML = `
           <div class="player-photo"><img src="${player.imageUrl}" alt="${player.name}" onerror="this.src='https://via.placeholder.com/50x50?text=NBA'; this.onerror=null;"></div>
           <div class="player-info">
@@ -92,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="player-team-details">
               ${player.team_id ? `<img src="https://cdn.nba.com/logos/nba/${player.team_id}/primary/L/logo.svg" class="player-card-team-logo" alt="${player.team}" onerror="this.style.display='none';">` : '<div class="player-card-team-logo-placeholder"></div>'}
               <div class="player-team-position-text">${player.team} - ${player.position}</div>
+              <div class="player-mpg">Minutes Per Game: ${mpgText}</div>
             </div>
           </div>
           <button class="remove-player" data-player-card-id="${player.card_id}" data-side="${side}">×</button>`;
@@ -118,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
           item.className = 'player-dropdown-item';
           item.textContent = `${player.full_name} (${player.team_abbreviation} - ${player.position})`;
           item.addEventListener('click', () => {
-            Events.addPlayerToTrade(player, side);
+            Events.addPlayerToTrade(player, side); // This is now async
             inputElement.value = '';
             dropdownElement.innerHTML = ''; dropdownElement.style.display = 'none';
           });
@@ -202,16 +204,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const filteredPlayers = STATE.allNbaPlayers.filter(p => p.full_name.toLowerCase().includes(searchTerm));
         Renderer.displayAutocompleteSuggestions(filteredPlayers, event.target, side);
       },
-      addPlayerToTrade: (playerDataFromApi, side) => {
+      addPlayerToTrade: async (playerDataFromApi, side) => {
         const targetPlayerList = side === 'trading' ? STATE.tradingPlayers : STATE.acquiringPlayers;
         if (targetPlayerList.length >= STATE.maxPlayers) { alert(`Maximum ${STATE.maxPlayers} players per side.`); return; }
         if (STATE.tradingPlayers.some(p => p.nba_id === playerDataFromApi.id) || STATE.acquiringPlayers.some(p => p.nba_id === playerDataFromApi.id)) {
             alert(`${playerDataFromApi.full_name} is already in the trade.`); return;
         }
+
+        // Fetch stats for MPG
+        const playerStats = await DataService.fetchNbaPlayerStats(playerDataFromApi.id);
+        const mpg = playerStats ? (playerStats.MIN !== undefined ? playerStats.MIN : null) : null;
+
         targetPlayerList.push({
-          card_id: Utils.generatePlayerCardId(), nba_id: playerDataFromApi.id, name: playerDataFromApi.full_name,
+          card_id: Utils.generatePlayerCardId(), 
+          nba_id: playerDataFromApi.id, 
+          name: playerDataFromApi.full_name,
           imageUrl: `https://cdn.nba.com/headshots/nba/latest/260x190/${playerDataFromApi.id}.png`,
-          team_id: playerDataFromApi.team_id, team: playerDataFromApi.team_abbreviation || 'N/A', position: playerDataFromApi.position || 'N/A'
+          team_id: playerDataFromApi.team_id, 
+          team: playerDataFromApi.team_abbreviation || 'N/A', 
+          position: playerDataFromApi.position || 'N/A',
+          mpg: mpg // Store fetched MPG
         });
         Renderer.updatePlayersList();
       },
@@ -236,6 +248,11 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.tradeResultsContainer.style.display = 'block';
 
         try {
+            // Player stats (including MPG as 'MIN') are already fetched when players were added if we want to reuse.
+            // However, the current logic re-fetches here. We can optimize later if needed by storing full stats on add.
+            // For now, let's stick to the existing evaluate trade flow which re-fetches.
+            // Note: The player objects in STATE.tradingPlayers/acquiringPlayers now have an 'mpg' field
+            // from the addPlayerToTrade fetch, but this evaluate function fetches fresh full stats.
             const tradingStatsRaw = (await Promise.all(tradingPlayerIds.map(id => DataService.fetchNbaPlayerStats(id)))).filter(s => s !== null);
             const acquiringStatsRaw = (await Promise.all(acquiringPlayerIds.map(id => DataService.fetchNbaPlayerStats(id)))).filter(s => s !== null);
 
@@ -258,21 +275,17 @@ document.addEventListener('DOMContentLoaded', () => {
                  DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">League categories not loaded.</div>`; return;
             }
 
-            // MODIFIED: Initialize components for DD2 average calculation
             const aggregatedStats = {
                 tradingAway: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0, DD2_total: 0, GP_for_DD2: 0 } },
                 acquiring: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0, DD2_total: 0, GP_for_DD2: 0 } },
                 impact: {}
             };
 
-            // MODIFIED: processGroup to handle DD2 average
             const processGroup = (playersStatsArray, groupAgg) => {
                 playersStatsArray.forEach(playerData => {
-                    if (!playerData || playerData.GP === 0) return; // Skip players with 0 GP or no data
+                    if (!playerData || playerData.GP === 0) return; 
                     
-                    // Accumulate GP for DD2 average if player has DD2 stats
-                    // The actual DD2 value is playerData.DD2 (mapped by statMapInfo.nbaKey)
-                    if (playerData.DD2 !== undefined) { // Check if DD2 key exists from API
+                    if (playerData.DD2 !== undefined) { 
                         groupAgg.components.GP_for_DD2 += parseFloat(playerData.GP || 0);
                         groupAgg.components.DD2_total += parseFloat(playerData.DD2 || 0);
                     }
@@ -281,9 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const statMapInfo = STATE.NBA_STAT_MAP[statId];
                         if (!statMapInfo) return;
                         
-                        if (statId === '27') { // DD2 stat_id
+                        if (statId === '27') { 
                             // DD2 total will be calculated from components later
-                            // No direct accumulation into groupAgg.totals[statId] here
                         } else if (statMapInfo.type === 'counting') {
                             const value = parseFloat(playerData[statMapInfo.nbaKey] || 0);
                             groupAgg.totals[statId] = (groupAgg.totals[statId] || 0) + value;
@@ -294,12 +306,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
 
-                // After processing all players, calculate aggregate averages
                 categoryConfigs.forEach(([statId, , ]) => {
                     const statMapInfo = STATE.NBA_STAT_MAP[statId];
                     if (!statMapInfo) return;
 
-                    if (statId === '27') { // Calculate aggregate DD2 average
+                    if (statId === '27') { 
                         groupAgg.totals[statId] = groupAgg.components.GP_for_DD2 > 0 ?
                             (groupAgg.components.DD2_total / groupAgg.components.GP_for_DD2) : 0;
                     } else if (statMapInfo.type === 'percentage' && statMapInfo.components) {
@@ -326,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 aggregatedStats.impact[statId] = diff;
 
                 const isLowGood = sortDir === 'low';
-                // Use appropriate diffThreshold: smaller for percentages, larger for counting/averages
                 const diffThreshold = (statMapInfo.type === 'percentage') ? 0.0001 : 0.01;
                 if (Math.abs(diff) > diffThreshold) {
                     if ((isLowGood && diff < 0) || (!isLowGood && diff > 0)) {
