@@ -148,14 +148,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return 'Unknown Player';
     },
     getStatValue: (playerObj, statId) => {
-      if (!playerObj || !Array.isArray(playerObj)) return 0;
+      if (!playerObj || !Array.isArray(playerObj)) return 0; // Return 0 for consistency, will be parsed to float
       const playerStats = playerObj[1]?.player_stats?.stats;
       if (!Array.isArray(playerStats)) return 0;
       for (const stat of playerStats) {
         if (stat.stat?.stat_id === statId.toString()) {
-          // Use parseFloat for all values, formatStatValue is more for display string
           const rawValue = stat.stat.value;
-          if (rawValue === null || rawValue === undefined || rawValue === '') return 0;
+          if (rawValue === null || rawValue === undefined || rawValue === '' || rawValue === '-') return 0; // Treat '-' as 0 for calculations
           const numVal = parseFloat(rawValue);
           return isNaN(numVal) ? 0 : numVal;
         }
@@ -176,13 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const made = Utils.getStatValue(player, madeKey);
 
           if (typeof attempts === 'number' && attempts > 0 && typeof made === 'number') {
-            weightedSum += made; // sum of made shots
-            totalWeight += attempts; // sum of attempted shots
+            weightedSum += made; 
+            totalWeight += attempts;
           }
         });
         return totalWeight > 0 ? (weightedSum / totalWeight) : 0;
       }
-      // For counting stats, sum them up directly
       return players.reduce((sum, p) => sum + Utils.getStatValue(p, statId), 0);
     }
   };
@@ -326,99 +324,87 @@ document.addEventListener('DOMContentLoaded', () => {
       return players;
     },
     
-    processPlayerData: (players, statId) => {
-      if (!players || players.length === 0) return { labels: [], data: [] };
+    processPlayerData: (players, statId) => { // `players` are full API player objects
+      if (!players || players.length === 0) return { labels: [], data: [], rawValues: [] };
       
-      const totalStatValue = Utils.calculateTotal(players, statId);
-      if (totalStatValue === 0 && !CONFIG.PERCENTAGE_STATS.includes(statId)) {
-          return { labels: [], data: [] };
+      const overallTeamStatTotal = Utils.calculateTotal(players, statId);
+      if (overallTeamStatTotal === 0 && !CONFIG.PERCENTAGE_STATS.includes(statId)) {
+          return { labels: [], data: [], rawValues: [] };
       }
-      // For percentage stats, totalStatValue is the calculated team percentage.
-      // We still want to show individual player contributions if they have attempts,
-      // even if the team total is 0 (e.g. 0/5 FT makes FT% 0, but player still contributed 5 attempts)
 
       const playerStats = players.map(player => {
-        const value = Utils.getStatValue(player, statId);
-        let percentage = 0;
+        const rawPlayerStatValue = Utils.getStatValue(player, statId);
+        let contributionPercentage = 0;
+        
         if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
-            // For percentages, "contribution" is more about volume of attempts if we're summing to 100%
-            // Or, we show their actual percentage and the pie chart represents something else (e.g. share of attempts)
-            // For this implementation, let's assume the pie chart shows share of the *counting* stat component
-            // (e.g., for FT%, it's share of FTM if total is FTM, or share of FTA if total is FTA)
-            // The current Utils.calculateTotal for percentages returns the team's aggregate percentage.
-            // The pie chart needs to sum to 100%. So, each slice should be player_value / sum_of_all_player_values.
-            // For counting stats, this is fine: player_stat / team_total_stat
-            // For percentages, this interpretation is tricky. What does it mean to contribute X% to team's FT%?
-            // A common approach is to show contribution to the *components* of the percentage.
-            // E.g. for FG%, players contribute FGM and FGA. The pie could show distribution of FGM.
-            // Given the current structure, it uses the statId directly.
-            // Let's keep it simple: if it's a counting stat, it's player_value / total.
-            // If it's a percentage stat, the 'value' is their individual percentage.
-            // The pie chart will then show these individual percentages directly. This means the pie won't sum to 100% of team total necessarily.
-            // This might need further clarification, but for now, we'll use the direct value for percentages.
-            // To make the pie chart sum to 100% and represent contribution to the category:
-            // For counting stats: (player_value / totalStatValue) * 100
-            // For percentage stats: this is more complex. If totalStatValue is the team average,
-            // then (player_individual_percentage / sum_of_all_player_individual_percentages) * 100 is not meaningful.
-            // A better approach for percentages in a pie chart is to show distribution of a *related counting stat*.
-            // E.g. for 3PT%, show distribution of 3PTM.
-            // However, the current code uses `statId` for both getting value and total.
-
-            // Sticking to player_value / total for now, knowing it's imperfect for percentages in a pie.
-            // The current Utils.calculateTotal for percentages gives an *average*, not a sum.
-            // So, for percentages, we'll calculate contribution based on attempts, similar to how the total is weighted.
+            let attemptsKey;
+            if (statId === '11') { attemptsKey = '9'; } // 3PTA for 3PT%
+            else if (statId === '5') { attemptsKey = '3'; } // FGA for FG%
+            else if (statId === '8') { attemptsKey = '6'; } // FTA for FT%
             
-            let contributionValue = 0;
-            if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
-                 let attemptsKey;
-                 if (statId === '11') attemptsKey = '9';      // 3PTA for 3PT%
-                 else if (statId === '5') attemptsKey = '3'; // FGA for FG%
-                 else if (statId === '8') attemptsKey = '6'; // FTA for FT%
-                 contributionValue = Utils.getStatValue(player, attemptsKey); // Use attempts as the basis for contribution weight
-            } else {
-                contributionValue = value;
-            }
-            // Calculate overall total attempts for percentage stats if that's the denominator
-            let denominatorTotal = totalStatValue;
-            if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
-                denominatorTotal = players.reduce((sum, p) => {
-                    let attemptsKey;
-                    if (statId === '11') attemptsKey = '9';
-                    else if (statId === '5') attemptsKey = '3';
-                    else if (statId === '8') attemptsKey = '6';
-                    else return sum;
-                    return sum + Utils.getStatValue(p, attemptsKey);
+            const playerAttempts = attemptsKey ? Utils.getStatValue(player, attemptsKey) : 0;
+            
+            let totalAttemptsDenominator = 0;
+            if (attemptsKey) {
+                 totalAttemptsDenominator = players.reduce((sum, p_inner) => {
+                    return sum + Utils.getStatValue(p_inner, attemptsKey);
                 }, 0);
             }
-            percentage = denominatorTotal > 0 ? (contributionValue / denominatorTotal) * 100 : 0;
-
-        } else if (totalStatValue > 0) {
-            percentage = (value / totalStatValue) * 100;
+            contributionPercentage = totalAttemptsDenominator > 0 ? (playerAttempts / totalAttemptsDenominator) * 100 : 0;
+        } else if (overallTeamStatTotal > 0) { // Counting stat
+            contributionPercentage = (rawPlayerStatValue / overallTeamStatTotal) * 100;
         }
         
         return {
           name: Utils.getPlayerName(player),
-          value: value, // Store raw value for display or sorting if needed
-          percentage: percentage
+          value: rawPlayerStatValue, // Actual stat value for the player (for tooltip)
+          percentage: contributionPercentage // Contribution percentage (for pie slice)
         };
-      }).filter(p => p.percentage > 0 || (CONFIG.PERCENTAGE_STATS.includes(statId) && p.value !== null) ) // For percentages, show if they have a value even if percentage contribution (via attempts) is 0.
-        .sort((a, b) => b.percentage - a.percentage); // Sort by percentage contribution
+      }).filter(p => p.percentage > 0 || (CONFIG.PERCENTAGE_STATS.includes(statId) && p.value !== null) ) 
+        .sort((a, b) => b.percentage - a.percentage); 
       
-      let chartLabels = [], chartData = [];
+      let chartLabels = [];
+      let chartData = []; 
+      let chartRawValues = [];
+
       if (playerStats.length > 12) {
-        const topPlayers = playerStats.slice(0, 11);
-        const othersPercentage = playerStats.slice(11).reduce((sum, p) => sum + p.percentage, 0);
-        chartLabels = topPlayers.map(p => p.name);
-        chartData = topPlayers.map(p => p.percentage);
-        if (othersPercentage > 0.01) { // Only add "Others" if it's significant
-          chartLabels.push('Others');
-          chartData.push(othersPercentage);
+        const topPlayersStats = playerStats.slice(0, 11);
+        const otherPlayersProcessedStats = playerStats.slice(11); 
+
+        chartLabels = topPlayersStats.map(p => p.name);
+        chartData = topPlayersStats.map(p => p.percentage);
+        chartRawValues = topPlayersStats.map(p => p.value);
+
+        if (otherPlayersProcessedStats.length > 0) {
+          const othersPercentageSum = otherPlayersProcessedStats.reduce((sum, p) => sum + p.percentage, 0);
+          if (othersPercentageSum > 0.01) { 
+            chartLabels.push('Others');
+            chartData.push(othersPercentageSum);
+
+            let othersAggregatedRawValue;
+            const originalApiObjectsForOthers = players.filter(api_p => {
+                const playerName = Utils.getPlayerName(api_p);
+                return otherPlayersProcessedStats.some(op_stat => op_stat.name === playerName);
+            });
+
+            if (originalApiObjectsForOthers.length > 0) {
+                if (CONFIG.PERCENTAGE_STATS.includes(statId)) {
+                    othersAggregatedRawValue = Utils.calculateTotal(originalApiObjectsForOthers, statId);
+                } else { 
+                    othersAggregatedRawValue = otherPlayersProcessedStats.reduce((sum, p) => sum + (p.value || 0), 0);
+                }
+            } else {
+                othersAggregatedRawValue = null; 
+            }
+            chartRawValues.push(othersAggregatedRawValue);
+          }
         }
-      } else {
+      } else { 
         chartLabels = playerStats.map(p => p.name);
         chartData = playerStats.map(p => p.percentage);
+        chartRawValues = playerStats.map(p => p.value);
       }
-      return { labels: chartLabels, data: chartData };
+      return { labels: chartLabels, data: chartData, rawValues: chartRawValues };
     }
   };
 
@@ -432,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.statSelector.appendChild(option);
       });
       
-      const pointsStat = STATE.statCategories.find(cat => cat[0] === '12'); // PTS ID
+      const pointsStat = STATE.statCategories.find(cat => cat[0] === '12'); 
       STATE.selectedStat = pointsStat ? pointsStat[0] : (DOM.statSelector.options.length > 0 ? DOM.statSelector.options[0].value : null);
       if (STATE.selectedStat) DOM.statSelector.value = STATE.selectedStat;
       
@@ -449,7 +435,6 @@ document.addEventListener('DOMContentLoaded', () => {
         option.value = week; option.textContent = `Week ${week}`;
         DOM.weekSelector.appendChild(option);
       }
-      // Set default selected week, ensure it's valid if currentWeek is 0 initially
       STATE.selectedWeek = Math.min(STATE.selectedWeek, STATE.currentWeek > 0 ? STATE.currentWeek : 1);
       STATE.selectedWeek = Math.max(1, STATE.selectedWeek);
       DOM.weekSelector.value = STATE.selectedWeek; 
@@ -460,7 +445,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       if (DOM.viewToggle.weeklyBtn && DOM.viewToggle.seasonBtn) {
-        // Initial state based on STATE.viewMode
         if (STATE.viewMode === 'weekly') {
             DOM.viewToggle.weeklyBtn.classList.add('active');
             DOM.viewToggle.seasonBtn.classList.remove('active');
@@ -514,13 +498,13 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       
       if (!players || players.length === 0) {
-        DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Players'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
+        DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Players'], datasets: [{ data: [1], rawValues: [null], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
         return;
       }
-      const { labels, data } = DataService.processPlayerData(players, STATE.selectedStat);
+      const { labels, data, rawValues } = DataService.processPlayerData(players, STATE.selectedStat);
       
-      if (!labels.length || data.every(d => d === 0)) { // Check if all data points are zero
-        DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Contributions'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
+      if (!labels.length || data.every(d => d === 0)) { 
+        DOM.chart = new Chart(ctx, { type: 'pie', data: { labels: ['No Contributions'], datasets: [{ data: [1], rawValues: [null], backgroundColor: ['#e0e0e0'] }]}, options: noDataOptions });
         return;
       }
       
@@ -530,14 +514,13 @@ document.addEventListener('DOMContentLoaded', () => {
         data: {
           labels: labels,
           datasets: [{ 
-            data: data, 
+            data: data,
+            rawValues: rawValues, // Store rawValues here
             backgroundColor: colors, 
             borderColor: colors.map(c => {
-                // Chart.js v4+ uses `Chart.helpers.color(c).darken(0.1).rgbString()`
-                // For v3 or if Chart.helpers is not available as expected:
                 try {
                     return Chart.helpers.color(c).darken(0.1).rgbString();
-                } catch (e) { // Fallback for older Chart.js or if helpers structure changed
+                } catch (e) { 
                     let r = parseInt(c.slice(1,3),16), g = parseInt(c.slice(3,5),16), b = parseInt(c.slice(5,7),16);
                     r = Math.max(0, r - 25); g = Math.max(0, g - 25); b = Math.max(0, b - 25);
                     return `rgb(${r},${g},${b})`;
@@ -550,7 +533,34 @@ document.addEventListener('DOMContentLoaded', () => {
           responsive: true, maintainAspectRatio: false,
           plugins: {
             title: { display: true, text: chartTitle, font: { size: 16, weight: 'bold' }, padding: { top: 10, bottom: 20 }},
-            tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed.toFixed(1)}%` }},
+            tooltip: { 
+              callbacks: { 
+                label: function(context) {
+                  const label = context.label || ''; // Player name or 'Others'
+                  const percentageContribution = context.parsed; // Value from `data` array (percentage)
+                  
+                  let lines = [];
+                  lines.push(`${label}: ${percentageContribution.toFixed(1)}%`);
+
+                  if (context.dataset.rawValues && context.dataset.rawValues[context.dataIndex] !== undefined) {
+                    const rawPlayerStat = context.dataset.rawValues[context.dataIndex];
+                    let formattedRawValue = Utils.formatStatValue(STATE.selectedStat, rawPlayerStat);
+
+                    if (formattedRawValue === null || formattedRawValue === undefined) {
+                      formattedRawValue = "N/A";
+                    } else {
+                      if (!CONFIG.PERCENTAGE_STATS.includes(STATE.selectedStat)) {
+                        const currentStatInfo = STATE.statCategories.find(cat => cat[0] === STATE.selectedStat);
+                        const statDisplayName = currentStatInfo ? currentStatInfo[1] : ''; 
+                        formattedRawValue = `${formattedRawValue} ${statDisplayName}`;
+                      }
+                    }
+                    lines.push(`Stat Value: ${formattedRawValue}`);
+                  }
+                  return lines;
+                }
+              }
+            },
             legend: { position: 'right', labels: { boxWidth: 15, padding: 10, font: { size: 12 }}}
           }
         }
@@ -571,13 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const trendsTabPane = document.getElementById('tab-trends');
     if (trendsTabPane?.classList.contains('active') && DOM.loadButton?.style.display !== 'none') {
-      // If the tab is already active (e.g. page load directly to it or after refresh)
-      // and data hasn't been loaded (button is visible), then load data.
-      // This logic is mainly from trends.js to auto-load.
-      // If we want to ensure player contributions also auto-loads if its tab is active:
-      const playerContribTabBtn = document.querySelector('[data-target="tab-trends"]'); // Assuming it's on trends tab
+      const playerContribTabBtn = document.querySelector('[data-target="tab-trends"]'); 
       if (playerContribTabBtn?.classList.contains('active')) {
-          loadPlayerData();
+          // loadPlayerData(); // Auto-load is handled by trends.js calling button.click()
       }
     }
   };
@@ -586,9 +592,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (DOM.loadButton) DOM.loadButton.style.display = 'none';
     let loadingInterval;
     try {
-      loadingInterval = Utils.showLoading(); // Start cycling messages
+      loadingInterval = Utils.showLoading(); 
       STATE.weeklyPlayerStats = await DataService.fetchAllWeeksPlayerStats();
-      // fetchSeasonPlayerStats will show its own message briefly if fetchAllWeeksPlayerStats was quick
       STATE.seasonPlayerStats = await DataService.fetchSeasonPlayerStats(); 
       
       if (Object.keys(STATE.weeklyPlayerStats).length === 0 && !STATE.seasonPlayerStats) {
@@ -596,12 +601,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       STATE.dataLoaded = true;
-      clearInterval(loadingInterval); // Stop cycling generic messages
+      clearInterval(loadingInterval); 
       Utils.hideLoading(); 
       if (DOM.chartContainer) DOM.chartContainer.style.display = 'block';
       
-      ChartRenderer.initStatSelector(); // Depends on STATE.statCategories, potentially updated by fetchAllWeeks
-      ChartRenderer.initWeekSelector(); // Depends on STATE.currentWeek, updated by fetchAllWeeks
+      ChartRenderer.initStatSelector(); 
+      ChartRenderer.initWeekSelector(); 
       ChartRenderer.renderChart();
       
     } catch (error) {
@@ -611,9 +616,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.loadButton) DOM.loadButton.style.display = 'block';
       const errorMsgElement = DOM.container?.querySelector('.error-message') || document.createElement('div');
       errorMsgElement.textContent = `Error loading player data: ${error.message || 'Please try again.'}`;
-      errorMsgElement.className = 'error-message'; // Ensure it has class for styling
+      errorMsgElement.className = 'error-message'; 
       if (!errorMsgElement.parentElement && DOM.container && DOM.loadButton) {
-        // Insert error message before the load button if it exists
          DOM.loadButton.parentElement.insertBefore(errorMsgElement, DOM.loadButton);
       } else if (!errorMsgElement.parentElement && DOM.container) {
          DOM.container.appendChild(errorMsgElement);
@@ -622,23 +626,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   
-  // Expose init function to be called from trends.js or if tab is directly activated
   window.initPlayerContributions = initPlayerContributions; 
 
-  // Initialize if this script is loaded standalone or if its tab is active early
-  // Check if the parent tab 'tab-trends' is active to decide if to auto-init/load.
-  // This is usually handled by the main dashboard.js tab click logic,
-  // but trends.js also has a specific call to window.initPlayerContributions.
   const trendsTabButton = document.querySelector('[data-target="tab-trends"]');
   if (trendsTabButton && trendsTabButton.classList.contains('active')) {
-      initPlayerContributions(); // Initialize event listeners
-      // If the button is still visible, means data hasn't been loaded yet.
-      if (DOM.loadButton && DOM.loadButton.style.display !== 'none') {
-          // loadPlayerData(); // Auto-load if tab is active and button visible
-          // Deferred to trends.js which calls loadPlayerData via button click or directly
-      }
+      initPlayerContributions(); 
   } else {
-      initPlayerContributions(); // Still initialize for event listeners even if tab not active
+      initPlayerContributions(); 
   }
 
 });
