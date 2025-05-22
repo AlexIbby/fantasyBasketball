@@ -459,7 +459,7 @@ def api_bulk_matchups():
         log.info(f"Proxying to Yahoo API: {yahoo_path} using session league_key: {league_key} and weeks: {weeks}")
         data = yahoo_api(yahoo_path)
         return jsonify(data)
-    except requests.exceptions.HTTPError as e:
+    except requests.exceptions   .HTTPError as e:
         log.error(f"HTTPError fetching bulk matchups for league {league_key}, weeks {weeks}: {e.response.status_code} - {e.response.text}")
         error_detail = "Failed to fetch data from Yahoo API."
         try:
