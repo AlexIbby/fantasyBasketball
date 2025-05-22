@@ -1603,7 +1603,7 @@ sup.rank{
   .trade-analysis-results th,
   .trade-analysis-results td {
     width: 25%; /* Set width for all columns */
-    padding: 8px 4px; /* MODIFIED: Reduced padding */
+    padding: 6px 2px; /* MODIFIED: Reduced padding */
     word-break: break-word; /* Allow wrapping for long content in narrow cells, esp. headers */
   }
 
@@ -1661,5 +1661,39 @@ sup.rank{
   .trade-analysis-results .status-cell .summary-toggle { /* Target button specifically within status-cell on small screens */
     margin-left: 0; /* Remove left margin when stacked */
     /* General mobile styles for .summary-toggle for font-size, padding etc. from 768px breakpoint will apply */
+  }
+}
+
+/* Additional mobile optimizations for very tight screens */
+@media screen and (max-width: 768px) {
+  /* Reduce font size in table cells for specific elements */
+  .trade-analysis-results .stat-value,
+  .trade-analysis-results .impact-value {
+    font-size: 12px;
+  }
+
+  /* Make the category names wrap if needed */
+  .trade-analysis-results td:first-child {
+    word-break: break-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+
+  /* Tighten up the status cell */
+  .trade-analysis-results .status-cell {
+    padding: 12px 4px;
+  }
+
+  /* Reduce header padding */
+  .trade-analysis-results th {
+    padding: 10px 2px;
+    font-size: 12px;
+  }
+
+  /* Specifically target the percentage values to prevent overflow */
+  .trade-analysis-results td[data-low-is-good="true"],
+  .trade-analysis-results .team-improves,
+  .trade-analysis-results .team-declines {
+    font-size: 12px;
   }
 }
