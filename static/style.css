@@ -1364,6 +1364,57 @@ sup.rank{
   }
 }
 
+/* Additional responsive fixes for very small screens */
+@media (max-width: 400px) {
+  .trade-analysis-results {
+    font-size: 13px; /* Reduce font size for better fit */
+    margin: 15px 0;
+  }
+
+  .trade-analysis-results th,
+  .trade-analysis-results td {
+    padding: 8px 4px; /* Reduce padding */
+  }
+
+  .trade-analysis-results th:first-child,
+  .trade-analysis-results td:first-child {
+    padding-left: 8px; /* Reduce left padding on first column */
+    width: 22%; /* Optimize category column width */
+  }
+
+  .trade-analysis-results th:nth-child(2),
+  .trade-analysis-results td:nth-child(2) {
+    width: 18%; /* Optimize rank column width */
+  }
+
+  .trade-analysis-results th:nth-child(3),
+  .trade-analysis-results td:nth-child(3),
+  .trade-analysis-results th:nth-child(4),
+  .trade-analysis-results td:nth-child(4) {
+    width: 20%; /* Optimize trading/acquiring columns width */
+  }
+
+  .trade-analysis-results th:last-child,
+  .trade-analysis-results td:last-child {
+    width: 20%; /* Optimize impact column width */
+  }
+
+  /* Ensure table doesn't overflow container */
+  .trade-analyzer-container {
+    padding: 0 12px 20px; /* Reduce container padding */
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Prevent text overflow in table cells */
+  .trade-analysis-results td,
+  .trade-analysis-results th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 /* Make sure tab-trade has consistent padding */
 #tab-trade {
   padding: 0; /* Reset padding if any from general .tab-pane */
@@ -1541,7 +1592,7 @@ sup.rank{
 
 .summary-header {
   background-color: #1a202c; 
-  color: white;
+  color: black;
   padding: 14px 16px 14px 20px; /* Consistent padding */
   font-weight: 700;
   text-align: left;
