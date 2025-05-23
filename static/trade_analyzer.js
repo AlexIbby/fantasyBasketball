@@ -1,4 +1,4 @@
-/* ───── trade_analyzer.js - Fantasy Basketball Trade Analyzer ───── */
+/* ───── Enhanced trade_analyzer.js - Fantasy Basketball Trade Analyzer with Ranking Context ───── */
 document.addEventListener('DOMContentLoaded', () => {
   const DOM = {
     tradingContainer: null, acquiringContainer: null,
@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const STATE = {
     tradingPlayers: [], acquiringPlayers: [],
     allNbaPlayers: [], maxPlayers: 5, initialized: false,
+    currentSeasonData: null, // Store current season data for ranking analysis
     NBA_STAT_MAP: { // Ensure nbaKey matches keys from Python's `required_stats`
       '12': { nbaKey: 'PTS', type: 'counting', precision: 1 },    // Points
       '15': { nbaKey: 'REB', type: 'counting', precision: 1 },    // Rebounds
@@ -45,10 +46,45 @@ document.addEventListener('DOMContentLoaded', () => {
           return sign + fixedStr.replace(/^0\./, '.').replace(/^-0\./, '-.');
       }
       return sign + fixedStr;
+    },
+    // Helper to get ordinal rankings (1st, 2nd, 3rd, etc.)
+    ordinal: n => {
+      const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    },
+    // Compute team rankings (borrowed from dashboard.js logic)
+    computeRanks: teams => {
+      if (!window.CONFIG?.COLS) return [];
+      const ranks = Array.from({ length: teams.length }, () => ({}));
+      
+      window.CONFIG.COLS.forEach(([id, , dir]) => {
+        const vals = teams.map((t, i) => ({ num: parseFloat(t.statMap[id]), i }));
+        vals.sort((a, b) => {
+          if (isNaN(a.num)) return 1;
+          if (isNaN(b.num)) return -1;
+          return dir === 'high' ? b.num - a.num : a.num - b.num;
+        });
+        
+        let curr = 0, prev = null;
+        vals.forEach(({ num, i }, idx) => {
+          if (isNaN(num)) { 
+            ranks[i][id] = '-'; 
+            return;
+          }
+          if (prev === null || num !== prev) { 
+            curr = idx + 1; 
+            prev = num; 
+          }
+          ranks[i][id] = curr;
+        });
+      });
+      
+      return ranks;
     }
   };
 
   const DataService = {
+      // Existing methods...
       fetchNbaPlayers: async () => {
           try {
               const response = await fetch('/api/nba_players');
@@ -64,17 +100,61 @@ document.addEventListener('DOMContentLoaded', () => {
               const response = await fetch(`/api/nba_player_stats/${playerId}`);
               if (!response.ok) {
                   console.error(`Failed to fetch stats for player ${playerId}: ${response.status} ${await response.text()}`);
-                  return null; // Return null to indicate failure for this player
+                  return null;
               }
               const data = await response.json();
-              if (data.error) { // Check for application-level error from Python
+              if (data.error) {
                   console.error(`Error from API for player ${playerId}: ${data.error}`);
                   return null;
               }
-              data.PLAYER_ID = playerId; // Ensure PLAYER_ID is part of the object for later checks
+              data.PLAYER_ID = playerId;
               return data;
           } catch (error) {
               console.error(`Network or parsing error fetching stats for player ${playerId}:`, error);
+              return null;
+          }
+      },
+      
+      // NEW: Fetch current season team data for ranking analysis
+      fetchCurrentSeasonData: async () => {
+          try {
+              const response = await fetch('/api/season_avg');
+              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+              const rawData = await response.json();
+              
+              // Transform the data similar to dashboard.js logic
+              const blocks = rawData.fantasy_content.league || [];
+              const teamsO = (blocks.find(b => b.teams) || {}).teams || {};
+              const teams = [];
+              
+              Object.values(teamsO).forEach(tw => {
+                if (!tw?.team) return;
+                const t = tw.team;
+                
+                let name = '—', isMine = false;
+                (t[0] || []).forEach(it => {
+                  if (it?.name) name = it.name;
+                  if ((it?.is_owned_by_current_login == 1) || (it?.is_current_login == 1)) isMine = true;
+                  if (it?.managers) {
+                    it.managers.forEach(mw => {
+                      if (mw.manager?.is_current_login == 1) isMine = true;
+                    });
+                  }
+                });
+                
+                const statMap = {};
+                (t[1]?.team_stats?.stats || []).forEach(s => {
+                  statMap[s.stat.stat_id] = s.stat.value;
+                });
+                
+                teams.push({ name, isMine, statMap });
+              });
+              
+              teams.sort((a, b) => Number(b.isMine) - Number(a.isMine));
+              STATE.currentSeasonData = teams;
+              return teams;
+          } catch (error) {
+              console.error("Error fetching current season data for ranking analysis:", error);
               return null;
           }
       }
@@ -86,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'player-card';
       card.setAttribute('data-player-card-id', player.card_id);
       
-      // Show loading state for MPG initially
       const mpgText = player.mpg !== null && player.mpg !== undefined ? Utils.formatStatDisplay(player.mpg, 1) : 'Loading...';
       
       card.innerHTML = `
@@ -103,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return card;
     },
     updatePlayerMPG: (playerId, mpg) => {
-      // Update all MPG elements for this player
       const mpgElements = document.querySelectorAll(`.player-mpg[data-player-id="${playerId}"]`);
       mpgElements.forEach(element => {
         const mpgText = mpg !== null && mpg !== undefined ? Utils.formatStatDisplay(mpg, 1) : 'N/A';
@@ -117,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
       STATE.tradingPlayers.forEach(p => DOM.tradingContainer.appendChild(Renderer.renderPlayerCard(p, 'trading')));
       STATE.acquiringPlayers.forEach(p => DOM.acquiringContainer.appendChild(Renderer.renderPlayerCard(p, 'acquiring')));
       document.querySelectorAll('.player-card .remove-player').forEach(button => {
-        button.removeEventListener('click', Events.handleRemovePlayer); // Prevent duplicates
+        button.removeEventListener('click', Events.handleRemovePlayer);
         button.addEventListener('click', Events.handleRemovePlayer);
       });
     },
@@ -131,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         item.className = 'player-dropdown-item';
         item.textContent = `${player.full_name} (${player.team_abbreviation} - ${player.position})`;
         item.addEventListener('click', () => {
-          Events.addPlayerToTrade(player, side); // This is now async
+          Events.addPlayerToTrade(player, side);
           inputElement.value = '';
           dropdownElement.innerHTML = ''; dropdownElement.style.display = 'none';
         });
@@ -139,9 +217,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       dropdownElement.style.display = 'block';
     },
-    renderTradeAnalysisTable: (aggregatedStats, categoryConfigs, summary) => {
+    
+    // ENHANCED: Render trade analysis table with ranking context
+    renderTradeAnalysisTable: (aggregatedStats, categoryConfigs, summary, rankingAnalysis) => {
       if (!DOM.tradeResultsContainer) return;
-      let tableHTML = `<table class="trade-analysis-results"><thead><tr><th>Category</th><th>Trading Away</th><th>Acquiring</th><th>Impact</th></tr></thead><tbody>`;
+      
+      // Create the main analysis table
+      let tableHTML = `<table class="trade-analysis-results"><thead><tr><th>Category</th><th>Current Rank</th><th>Trading Away</th><th>Acquiring</th><th>Impact</th></tr></thead><tbody>`;
+      
       categoryConfigs.forEach(([statId, statName, sortDir]) => {
           const statMapInfo = STATE.NBA_STAT_MAP[statId];
           if (!statMapInfo) return;
@@ -151,43 +234,144 @@ document.addEventListener('DOMContentLoaded', () => {
           const tradingVal = aggregatedStats.tradingAway.totals[statId] || 0;
           const acquiringVal = aggregatedStats.acquiring.totals[statId] || 0;
           const impactVal = aggregatedStats.impact[statId] || 0;
+          
+          // Get current ranking for this category
+          const currentRank = rankingAnalysis.currentRanks[statId];
+          const rankDisplay = currentRank && currentRank !== '-' ? Utils.ordinal(currentRank) : 'N/A';
+          
           let impactClass = '';
-          // For DD2 (statId '27'), it's an average, treat like other counting stats for positive/negative impact determination
-          // For percentages, diff threshold is smaller. For DD2 avg, use similar threshold as other counting stats.
           const diffThreshold = isPercentage ? 0.0001 : 0.01; 
           if (Math.abs(impactVal) > diffThreshold) { 
               if ((isLowGood && impactVal < 0) || (!isLowGood && impactVal > 0)) impactClass = 'team-improves';
               else impactClass = 'team-declines';
           }
           const lowGoodAttr = isLowGood ? 'data-low-is-good="true"' : '';
-          tableHTML += `<tr><td>${statName}</td><td>${Utils.formatStatDisplay(tradingVal, precision, isPercentage)}</td><td>${Utils.formatStatDisplay(acquiringVal, precision, isPercentage)}</td><td class="${impactClass}" ${lowGoodAttr}>${Utils.formatImpactDisplay(impactVal, precision, isPercentage)}</td></tr>`;
+          
+          tableHTML += `<tr>
+            <td>${statName}</td>
+            <td style="text-align: center; font-weight: 600;">${rankDisplay}</td>
+            <td>${Utils.formatStatDisplay(tradingVal, precision, isPercentage)}</td>
+            <td>${Utils.formatStatDisplay(acquiringVal, precision, isPercentage)}</td>
+            <td class="${impactClass}" ${lowGoodAttr}>${Utils.formatImpactDisplay(impactVal, precision, isPercentage)}</td>
+          </tr>`;
       });
+      
+      // Enhanced summary with ranking context
+      const contextualSummary = Renderer.generateContextualSummary(summary, rankingAnalysis);
+      
       tableHTML += `
           <tr class="status-row">
-              <td colspan="4" class="status-cell">
+              <td colspan="5" class="status-cell">
                   <div class="status-content-wrapper">
-                      <span class="status-text">Trade improves ${summary.improvedCount} of ${categoryConfigs.filter(c => STATE.NBA_STAT_MAP[c[0]]).length} categories</span>
-                      <button id="showTradeSummaryBtn" class="summary-toggle">View Impact Details</button>
+                      <span class="status-text">${contextualSummary.mainMessage}</span>
+                      <button id="showTradeSummaryBtn" class="summary-toggle">View Detailed Analysis</button>
                   </div>
               </td>
           </tr>
-          <tr class="summary-section" style="display:none;"><td colspan="4" class="summary-header">Impact Summary</td></tr>
-          <tr class="summary-row gains" style="display:none;"><td colspan="2" class="category-list">Improving: ${summary.gainingCategories.join(', ') || 'None'}</td><td colspan="2" class="impact-value">+${summary.improvedCount} categories</td></tr>
-          <tr class="summary-row losses" style="display:none;"><td colspan="2" class="category-list">Declining: ${summary.losingCategories.join(', ') || 'None'}</td><td colspan="2" class="impact-value">-${summary.declinedCount} categories</td></tr>
-      </tbody><tfoot><tr><td colspan="4">Based on player per-game averages</td></tr></tfoot></table>`;
+          <tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Trade Impact Analysis</td></tr>
+          <tr class="summary-row gains" style="display:none;">
+            <td colspan="3" class="category-list"><strong>Improving Categories:</strong><br>${contextualSummary.improvingDetails}</td>
+            <td colspan="2" class="impact-value">+${summary.improvedCount} categories</td>
+          </tr>
+          <tr class="summary-row losses" style="display:none;">
+            <td colspan="3" class="category-list"><strong>Declining Categories:</strong><br>${contextualSummary.decliningDetails}</td>
+            <td colspan="2" class="impact-value">-${summary.declinedCount} categories</td>
+          </tr>
+          <tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Strategic Insights</td></tr>
+          <tr class="summary-row" style="display:none; background-color: #f0f9ff !important;">
+            <td colspan="5" class="category-list">${contextualSummary.strategicInsights}</td>
+          </tr>
+      </tbody><tfoot><tr><td colspan="5">Analysis based on current season totals and player per-game averages</td></tr></tfoot></table>`;
+      
       DOM.tradeResultsContainer.innerHTML = tableHTML;
       DOM.tradeResultsContainer.style.display = 'block';
       DOM.tradeResultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      
+      // Set up summary toggle
       const summaryToggleBtn = document.getElementById('showTradeSummaryBtn');
       if (summaryToggleBtn) {
           summaryToggleBtn.addEventListener('click', () => {
               const summaryRows = DOM.tradeResultsContainer.querySelectorAll('.summary-section, .summary-row');
               const isVisible = summaryRows[0].style.display !== 'none';
               summaryRows.forEach(row => row.style.display = isVisible ? 'none' : 'table-row');
-              summaryToggleBtn.textContent = isVisible ? 'View Impact Details' : 'Hide Impact Details';
+              summaryToggleBtn.textContent = isVisible ? 'View Detailed Analysis' : 'Hide Detailed Analysis';
               summaryToggleBtn.classList.toggle('active', !isVisible);
           });
       }
+    },
+    
+    // NEW: Generate contextual summary based on rankings
+    generateContextualSummary: (summary, rankingAnalysis) => {
+      const { weakCategories, strongCategories, currentRanks } = rankingAnalysis;
+      const { gainingCategories, losingCategories, improvedCount, declinedCount } = summary;
+      
+      // Analyze which improvements help with weak areas
+      const helpingWeakAreas = gainingCategories.filter(cat => 
+        weakCategories.some(weak => weak.name === cat)
+      );
+      
+      // Analyze which declines hurt strong areas
+      const hurtingStrongAreas = losingCategories.filter(cat => 
+        strongCategories.some(strong => strong.name === cat)
+      );
+      
+      // Generate main message
+      let mainMessage;
+      if (helpingWeakAreas.length > 0) {
+        mainMessage = `Trade improves ${improvedCount} categories, including ${helpingWeakAreas.length} weak area${helpingWeakAreas.length > 1 ? 's' : ''}`;
+      } else if (improvedCount > declinedCount) {
+        mainMessage = `Trade improves ${improvedCount} categories but doesn't target your weakest areas`;
+      } else {
+        mainMessage = `Trade improves ${improvedCount} categories but may not be optimal for your team needs`;
+      }
+      
+      // Generate detailed breakdowns
+      const improvingDetails = gainingCategories.map(cat => {
+        const rank = currentRanks[Object.keys(currentRanks).find(id => 
+          window.CONFIG?.COLS?.find(([, name]) => name === cat)?.[0] === id
+        )];
+        const isWeak = weakCategories.some(weak => weak.name === cat);
+        const rankStr = rank && rank !== '-' ? ` (currently ${Utils.ordinal(rank)})` : '';
+        return `${cat}${rankStr}${isWeak ? ' 🎯' : ''}`;
+      }).join(', ') || 'None';
+      
+      const decliningDetails = losingCategories.map(cat => {
+        const rank = currentRanks[Object.keys(currentRanks).find(id => 
+          window.CONFIG?.COLS?.find(([, name]) => name === cat)?.[0] === id
+        )];
+        const isStrong = strongCategories.some(strong => strong.name === cat);
+        const rankStr = rank && rank !== '-' ? ` (currently ${Utils.ordinal(rank)})` : '';
+        return `${cat}${rankStr}${isStrong ? ' ⚠️' : ''}`;
+      }).join(', ') || 'None';
+      
+      // Generate strategic insights
+      let strategicInsights = [];
+      
+      if (helpingWeakAreas.length > 0) {
+        strategicInsights.push(`✅ <strong>Addresses Weaknesses:</strong> This trade helps improve ${helpingWeakAreas.join(', ')}, which ${helpingWeakAreas.length > 1 ? 'are' : 'is'} currently among your worst categories.`);
+      }
+      
+      if (hurtingStrongAreas.length > 0) {
+        strategicInsights.push(`⚠️ <strong>Weakens Strengths:</strong> Be cautious - this trade hurts ${hurtingStrongAreas.join(', ')}, which ${hurtingStrongAreas.length > 1 ? 'are' : 'is'} currently among your best categories.`);
+      }
+      
+      const unaddressedWeakCategories = weakCategories.filter(weak => 
+        !gainingCategories.includes(weak.name)
+      );
+      if (unaddressedWeakCategories.length > 0 && unaddressedWeakCategories.length === weakCategories.length) {
+        strategicInsights.push(`💡 <strong>Consider:</strong> This trade doesn't address your weakest categories: ${unaddressedWeakCategories.map(w => `${w.name} (${Utils.ordinal(w.rank)})`).join(', ')}. You might want to target players who excel in these areas.`);
+      }
+      
+      if (strategicInsights.length === 0) {
+        strategicInsights.push("📊 This trade provides a balanced statistical adjustment without significantly impacting your strongest or weakest categories.");
+      }
+      
+      return {
+        mainMessage,
+        improvingDetails,
+        decliningDetails,
+        strategicInsights: strategicInsights.join('<br><br>')
+      };
     }
   };
 
@@ -222,7 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
           alert(`${playerDataFromApi.full_name} is already in the trade.`); return;
       }
 
-      // Create player object without MPG first
       const newPlayer = {
         card_id: Utils.generatePlayerCardId(), 
         nba_id: playerDataFromApi.id, 
@@ -231,28 +414,21 @@ document.addEventListener('DOMContentLoaded', () => {
         team_id: playerDataFromApi.team_id, 
         team: playerDataFromApi.team_abbreviation || 'N/A', 
         position: playerDataFromApi.position || 'N/A',
-        mpg: null // Start with null MPG
+        mpg: null
       };
 
-      // Add player to list and render immediately
       targetPlayerList.push(newPlayer);
       Renderer.updatePlayersList();
 
-      // Fetch MPG asynchronously after the card is displayed
       DataService.fetchNbaPlayerStats(playerDataFromApi.id).then(playerStats => {
         if (playerStats && playerStats.MIN !== undefined) {
-          // Update the player object's MPG
           newPlayer.mpg = playerStats.MIN;
-          
-          // Update the MPG display in the already-rendered card
           Renderer.updatePlayerMPG(playerDataFromApi.id, playerStats.MIN);
         } else {
-          // If fetch failed, update display to show N/A
           Renderer.updatePlayerMPG(playerDataFromApi.id, null);
         }
       }).catch(error => {
         console.error(`Error fetching MPG for player ${playerDataFromApi.id}:`, error);
-        // Update display to show N/A on error
         Renderer.updatePlayerMPG(playerDataFromApi.id, null);
       });
     },
@@ -263,6 +439,8 @@ document.addEventListener('DOMContentLoaded', () => {
       else STATE.acquiringPlayers = STATE.acquiringPlayers.filter(p => p.card_id !== playerCardId);
       Renderer.updatePlayersList();
     },
+    
+    // ENHANCED: Handle trade evaluation with ranking context
     handleEvaluateTrade: async () => {
       if (!DOM.tradeResultsContainer) return;
       const tradingPlayerIds = STATE.tradingPlayers.map(p => p.nba_id);
@@ -277,11 +455,12 @@ document.addEventListener('DOMContentLoaded', () => {
       DOM.tradeResultsContainer.style.display = 'block';
 
       try {
-          // Player stats (including MPG as 'MIN') are already fetched when players were added if we want to reuse.
-          // However, the current logic re-fetches here. We can optimize later if needed by storing full stats on add.
-          // For now, let's stick to the existing evaluate trade flow which re-fetches.
-          // Note: The player objects in STATE.tradingPlayers/acquiringPlayers now have an 'mpg' field
-          // from the addPlayerToTrade fetch, but this evaluate function fetches fresh full stats.
+          // Fetch current season data for ranking analysis if not already loaded
+          if (!STATE.currentSeasonData) {
+              await DataService.fetchCurrentSeasonData();
+          }
+          
+          // Fetch player stats
           const tradingStatsRaw = (await Promise.all(tradingPlayerIds.map(id => DataService.fetchNbaPlayerStats(id)))).filter(s => s !== null);
           const acquiringStatsRaw = (await Promise.all(acquiringPlayerIds.map(id => DataService.fetchNbaPlayerStats(id)))).filter(s => s !== null);
 
@@ -304,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">League categories not loaded.</div>`; return;
           }
 
+          // Calculate aggregated stats (existing logic)
           const aggregatedStats = {
               tradingAway: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0, DD2_total: 0, GP_for_DD2: 0 } },
               acquiring: { totals: {}, components: { FGM: 0, FGA: 0, FTM: 0, FTA: 0, FG3M: 0, FG3A: 0, DD2_total: 0, GP_for_DD2: 0 } },
@@ -324,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       if (!statMapInfo) return;
                       
                       if (statId === '27') { 
-                          // DD2 total will be calculated from components later
+                          // DD2 calculated from components
                       } else if (statMapInfo.type === 'counting') {
                           const value = parseFloat(playerData[statMapInfo.nbaKey] || 0);
                           groupAgg.totals[statId] = (groupAgg.totals[statId] || 0) + value;
@@ -376,12 +556,63 @@ document.addEventListener('DOMContentLoaded', () => {
               }
           });
           
-          Renderer.renderTradeAnalysisTable(aggregatedStats, categoryConfigs, { improvedCount, declinedCount, gainingCategories, losingCategories });
+          // NEW: Calculate ranking analysis
+          const rankingAnalysis = Events.calculateRankingAnalysis(categoryConfigs);
+          
+          const summary = { improvedCount, declinedCount, gainingCategories, losingCategories };
+          Renderer.renderTradeAnalysisTable(aggregatedStats, categoryConfigs, summary, rankingAnalysis);
 
       } catch (error) {
           console.error("Error evaluating trade:", error);
           DOM.tradeResultsContainer.innerHTML = `<div class="trade-message trade-warning">An error occurred: ${error.message}</div>`;
       }
+    },
+    
+    // NEW: Calculate ranking analysis for contextual insights
+    calculateRankingAnalysis: (categoryConfigs) => {
+      if (!STATE.currentSeasonData || STATE.currentSeasonData.length === 0) {
+        return {
+          currentRanks: {},
+          weakCategories: [],
+          strongCategories: []
+        };
+      }
+      
+      // Compute current rankings
+      const allRanks = Utils.computeRanks(STATE.currentSeasonData);
+      const myTeamIndex = STATE.currentSeasonData.findIndex(team => team.isMine);
+      const currentRanks = myTeamIndex >= 0 ? allRanks[myTeamIndex] : {};
+      
+      // Identify weak and strong categories
+      const totalTeams = STATE.currentSeasonData.length;
+      const weakCategories = [];
+      const strongCategories = [];
+      
+      categoryConfigs.forEach(([statId, statName, sortDir]) => {
+        const rank = currentRanks[statId];
+        if (rank && rank !== '-' && typeof rank === 'number') {
+          // Consider bottom 30% as weak, top 30% as strong
+          const weakThreshold = Math.ceil(totalTeams * 0.7);
+          const strongThreshold = Math.ceil(totalTeams * 0.3);
+          
+          if (rank >= weakThreshold) {
+            weakCategories.push({ name: statName, rank, statId });
+          } else if (rank <= strongThreshold) {
+            strongCategories.push({ name: statName, rank, statId });
+          }
+        }
+      });
+      
+      // Sort by rank (worst first for weak, best first for strong)
+      weakCategories.sort((a, b) => b.rank - a.rank);
+      strongCategories.sort((a, b) => a.rank - b.rank);
+      
+      return {
+        currentRanks,
+        weakCategories,
+        strongCategories,
+        totalTeams
+      };
     }
   };
 
