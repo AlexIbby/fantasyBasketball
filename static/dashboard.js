@@ -65,8 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
       cardsViewBtn: document.getElementById('cardsView'),
       tableViewBtn: document.getElementById('tableView'),
       tableWrapper: document.querySelector('#tab-cat .table-container'),
-      // Get the showRanks checkbox in the Category Strengths tab
-      showRanksChk: document.querySelector('#tab-cat .checkbox-container input[type="checkbox"]')
+      showRanksChk: document.querySelector('#tab-cat .checkbox-container input[type="checkbox"]'),
+      // Add weekly analysis summary reference
+      analysisSummary: document.getElementById('weeklyAnalysisSummary')
     },
     // Compare view elements
     compare: {
@@ -76,8 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
       tableViewBtn: document.getElementById('compareTableView'),
       tableWrapper: document.querySelector('#tab-compare .table-container'),
       viewSel: document.getElementById('viewSel'),
-      // Get the showRanks checkbox in the Compare Teams tab
-      showRanksChk: document.querySelector('#tab-compare .checkbox-container input[type="checkbox"]')
+      showRanksChk: document.querySelector('#tab-compare .checkbox-container input[type="checkbox"]'),
+      // Add season analysis summary reference
+      analysisSummary: document.getElementById('seasonAnalysisSummary')
     }
   };
 
@@ -207,6 +209,69 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       return value;
+    },
+
+    // Generate category strength analysis
+    generateCategoryAnalysis: (teams, ranks, userIndex = 0) => {
+      if (!teams.length || !ranks.length) return null;
+
+      const totalTeams = teams.length;
+      const weakCategories = [];
+      const strongCategories = [];
+      const myRanks = ranks[userIndex];
+
+      CONFIG.COLS.forEach(([id, name, sortDir]) => {
+        const rank = myRanks[id];
+        if (rank && rank !== '-' && typeof rank === 'number') {
+          const weakThreshold = Math.ceil(totalTeams * 0.7);
+          const strongThreshold = Math.ceil(totalTeams * 0.3);
+          
+          if (rank >= weakThreshold) {
+            weakCategories.push({ name, rank, id });
+          } else if (rank <= strongThreshold) {
+            strongCategories.push({ name, rank, id });
+          }
+        }
+      });
+
+      // Sort by rank (worst first for weak, best first for strong)
+      weakCategories.sort((a, b) => b.rank - a.rank);
+      strongCategories.sort((a, b) => a.rank - b.rank);
+
+      return {
+        weakCategories,
+        strongCategories,
+        totalTeams
+      };
+    },
+
+    // Format category analysis as HTML
+    formatAnalysisSummary: (analysis, mode = 'weekly') => {
+      if (!analysis) return '';
+
+      const { weakCategories, strongCategories } = analysis;
+      let summary = `<div class="analysis-content">`;
+
+      if (strongCategories.length > 0) {
+        const strongList = strongCategories.slice(0, 3).map(cat => 
+          `<strong>${cat.name}</strong> (${Utils.ordinal(cat.rank)})`
+        ).join(', ');
+        summary += `<div class="strength-summary">
+          <span class="highlight positive">Strongest categories:</span> ${strongList}
+        </div>`;
+      }
+
+      if (weakCategories.length > 0) {
+        const weakList = weakCategories.slice(0, 3).map(cat => 
+          `<strong>${cat.name}</strong> (${Utils.ordinal(cat.rank)})`
+        ).join(', ');
+        summary += `<div class="weakness-summary">
+          <span class="highlight negative">Areas to improve:</span> ${weakList}
+        </div>`;
+      }
+
+      summary += `</div>`;
+      return summary;
     }
   };
   
@@ -388,10 +453,17 @@ statCats.forEach(catObj => {
     
     // Render weekly table
     renderWeekTable: (teams) => {
-      const { scoreTable, showRanksChk } = DOM.weekly;
+      const { scoreTable, showRanksChk, analysisSummary } = DOM.weekly;
       
       scoreTable.innerHTML = '';
       if (!teams.length) return;
+
+      // Generate and display analysis summary
+      const ranks = Utils.computeRanks(teams);
+      const analysis = Utils.generateCategoryAnalysis(teams, ranks, 0);
+      if (analysisSummary) {
+        analysisSummary.innerHTML = Utils.formatAnalysisSummary(analysis, 'weekly');
+      }
 
       // Create table header
       scoreTable.insertAdjacentHTML('afterbegin',
@@ -399,7 +471,6 @@ statCats.forEach(catObj => {
       );
       
       const tbody = scoreTable.querySelector('tbody');
-      const ranks = Utils.computeRanks(teams);
       const showRanks = showRanksChk.checked;
       const base = teams[0];
 
@@ -652,6 +723,14 @@ statCats.forEach(catObj => {
       if (!payload) return;
       
       const processedData = DataService.processSeasonData(payload, mode);
+
+      // Generate and display analysis summary
+      const ranks = Utils.computeRanks(processedData);
+      const analysis = Utils.generateCategoryAnalysis(processedData, ranks, 0);
+      if (DOM.compare.analysisSummary) {
+        DOM.compare.analysisSummary.innerHTML = Utils.formatAnalysisSummary(analysis, 'season');
+      }
+
       Renderer.renderCompareTable(processedData);
       Renderer.renderCompareCards(processedData);
     }

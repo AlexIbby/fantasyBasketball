@@ -1748,3 +1748,56 @@ sup.rank{
     font-size: 12px;
   }
 }
+
+/* Analysis summary styles */
+.analysis-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.875rem;
+}
+
+.analysis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.strength-summary,
+.weakness-summary {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.strength-summary strong,
+.weakness-summary strong {
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.highlight {
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.highlight.positive {
+  color: #2f855a;
+}
+
+.highlight.negative {
+  color: #c53030;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .analysis-summary {
+    margin: 0.75rem 0;
+    padding: 0.75rem;
+  }
+  
+  .strength-summary,
+  .weakness-summary {
+    font-size: 0.9rem;
+  }
+}
