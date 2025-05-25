@@ -1983,12 +1983,12 @@ sup.rank{
 
 /* When user team is also selected team */
 .selected-team-row.user-team-row {
-  background: #e6fffa !important;
-  border-left: 4px solid #38b2ac;
+  background: #e8f3ff !important;
+  border-left: 4px solid #4299e1;
 }
 
 .selected-team-row.user-team-row td:first-child {
-  background: #e6fffa !important;
+  background: #e8f3ff !important;
 }
 
 .selected-team-row.user-team-row td:first-child::before {

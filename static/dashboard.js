@@ -723,12 +723,18 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ============ API SERVICES ============
-  const API = {    
-    // Load weekly scoreboard data
+  const API = {      // Load weekly scoreboard data
     loadWeek: async (week) => {
       const { scoreTable } = DOM.weekly;
       
-      scoreTable.innerHTML = '<caption>Loading …</caption>';
+      scoreTable.innerHTML = `
+        <caption>
+          <div class="trends-loading-wrapper">
+            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+            <div class="trends-loading-text">Loading weekly data...</div>
+          </div>
+        </caption>
+      `;
       try {
         const r = await fetch(`/api/scoreboard?week=${week}`);
         const raw = await r.json();
@@ -753,13 +759,19 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreTable.innerHTML = "<caption>Couldn't load data</caption>";
       }
     },
-    
-    // Load season stats
+      // Load season stats
     loadSeasonStats: async () => {
       const { compareTable } = DOM.compare;
       const { seasonMode } = STATE.compare;
       
-      compareTable.innerHTML = '<caption>Loading …</caption>';
+      compareTable.innerHTML = `
+        <caption>
+          <div class="trends-loading-wrapper">
+            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+            <div class="trends-loading-text">Loading season data...</div>
+          </div>
+        </caption>
+      `;
       try {
         const r = await fetch('/api/season_avg');
         const raw = await r.json();
