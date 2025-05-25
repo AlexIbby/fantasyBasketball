@@ -5,6 +5,7 @@
   <title>{{ team_name }} – Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='trade_analyzer.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
   <script defer src="{{ url_for('static', filename='trends.js') }}"></script>
@@ -156,7 +157,7 @@
         <button id="loadTrendsBtn" class="btn btn-primary load-trends-btn">Load Trends Data</button>
         
         <div id="trendsLoadingWrapper" class="trends-loading-wrapper">
-          <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
           <div id="trendsLoadingText" class="trends-loading-text">Gathering Trends</div>
           
           <!-- Progress bar for week loading -->
@@ -194,7 +195,7 @@
         <button id="loadContributionsBtn" class="btn btn-primary load-trends-btn">Load Player Data</button>
         
         <div id="contributionsLoadingWrapper" class="trends-loading-wrapper">
-          <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
           <div id="contributionsLoadingText" class="trends-loading-text">Gathering Player Data</div>
           
           <!-- Progress bar for loading -->
