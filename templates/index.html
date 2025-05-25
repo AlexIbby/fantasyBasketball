@@ -35,25 +35,7 @@
       font-size: 28px;
       font-weight: 700;
       letter-spacing: 0.5px;
-    }
-    
-    .basketball-icon {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 24px;
-      color: #f39c12;
-    }
-    
-    .basketball-left {
-      left: 25px;
-    }
-    
-    .basketball-right {
-      right: 25px;
-    }
-    
-    .login-content {
+    }    .login-content {
       position: relative;
       padding: 40px 30px;
       background: white;
@@ -169,23 +151,7 @@
     .nba-emblem i {
       font-size: 60px;
       color: rgba(26, 54, 93, 0.15);
-    }
-    
-    /* Animation for basketballs */
-    @keyframes bounce {
-      0%, 100% { transform: translateY(-50%) scale(1); }
-      50% { transform: translateY(-60%) scale(1.05); }
-    }
-    
-    .animated-ball {
-      animation: bounce 2s infinite ease-in-out;
-    }
-    
-    .basketball-right {
-      animation-delay: 1s;
-    }
-    
-    /* Basketball court pattern */
+    }    /* Basketball court pattern */
     .court-pattern {
       position: absolute;
       bottom: 0;
@@ -203,11 +169,8 @@
 </head>
 <body>
   <div class="container login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <i class="fas fa-basketball-ball basketball-icon basketball-left animated-ball"></i>
+    <div class="login-card">      <div class="login-header">
         <h1>Ibby's Fantasy Basketball App</h1>
-        <i class="fas fa-basketball-ball basketball-icon basketball-right animated-ball"></i>
       </div>
       <div class="login-content">
         <div class="court-pattern"></div>

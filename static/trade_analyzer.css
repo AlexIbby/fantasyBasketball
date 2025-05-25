@@ -541,11 +541,11 @@
 }
 
 .summary-row.gains {
-  background-color: #f0fff4 !important; 
+  background-color: white !important; 
 }
 
 .summary-row.losses {
-  background-color: #fff5f5 !important; 
+  background-color: white !important; 
 }
 
 .summary-row .category-list {
