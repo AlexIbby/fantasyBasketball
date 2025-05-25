@@ -276,12 +276,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <tr class="summary-row losses" style="display:none;">
             <td colspan="3" class="category-list"><strong>Declining Categories:</strong><br>${contextualSummary.decliningDetails}</td>
             <td colspan="2" class="impact-value">-${summary.declinedCount} categories</td>
-          </tr>
-          <tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Strategic Insights</td></tr>
+          </tr>          <tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Strategic Insights</td></tr>
           <tr class="summary-row" style="display:none; background-color: #f0f9ff !important;">
             <td colspan="5" class="category-list">${contextualSummary.strategicInsights}</td>
           </tr>
-      </tbody><tfoot><tr><td colspan="5">Analysis based on current season totals and player per-game averages</td></tr></tfoot></table>`;
+      </tbody></table>
+      <p class="trade-analysis-note">Analysis based on current season totals and player per-game averages</p>`;
       
       DOM.tradeResultsContainer.innerHTML = tableHTML;
       DOM.tradeResultsContainer.style.display = 'block';

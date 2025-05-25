@@ -1643,18 +1643,6 @@ sup.rank{
   text-align: center;
 }
 
-.trade-analysis-results tfoot {
-  background-color: #f7fafc; 
-  border-top: 2px solid #e2e8f0;
-}
-
-.trade-analysis-results tfoot td {
-  padding: 14px;
-  text-align: center;
-  font-weight: 600;
-  color: #4a5568; 
-}
-
 @keyframes highlightNew {
   0% { background-color: rgba(66, 153, 225, 0.15); }
   100% { background-color: transparent; }
@@ -1662,6 +1650,20 @@ sup.rank{
 
 .trade-analysis-results .highlight-new {
   animation: highlightNew 1.5s ease-out;
+}
+
+/* Trade analysis note styling */
+.trade-analysis-note {
+  margin: 8px 0 20px 0;
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  color: #4a5568;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 /* Mobile responsiveness for Trade Analysis Results Table */
@@ -1763,10 +1765,17 @@ sup.rank{
   }
 
   /* Specifically target the percentage values to prevent overflow */
-  .trade-analysis-results td[data-low-is-good="true"],
-  .trade-analysis-results .team-improves,
+  .trade-analysis-results td[data-low-is-good="true"],  .trade-analysis-results .team-improves,
   .trade-analysis-results .team-declines {
     font-size: 12px;
+  }
+
+  /* Mobile styles for trade analysis note */
+  .trade-analysis-note {
+    font-size: 13px;
+    padding: 10px;
+    margin: 6px 0 16px 0;
+    line-height: 1.3;
   }
 }
 
