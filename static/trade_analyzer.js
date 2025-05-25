@@ -267,18 +267,32 @@ document.addEventListener('DOMContentLoaded', () => {
                       <button id="showTradeSummaryBtn" class="summary-toggle">View Detailed Analysis</button>
                   </div>
               </td>
-          </tr>
-          <tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Trade Impact Analysis</td></tr>
-          <tr class="summary-row gains" style="display:none;">
-            <td colspan="3" class="category-list"><strong>Improving Categories:</strong><br>${contextualSummary.improvingDetails}</td>
+          </tr>          <tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Trade Impact Analysis</td></tr>          <tr class="summary-row gains" style="display:none;">
+            <td colspan="3" class="category-list">
+              <div class="summary-category-header">
+                <span class="summary-category-icon">↗</span>
+                <strong>Improving Categories</strong>
+              </div>
+              <div class="categories-mini-table">${contextualSummary.improvingDetails}</div>
+            </td>
             <td colspan="2" class="impact-value">+${summary.improvedCount} categories</td>
           </tr>
           <tr class="summary-row losses" style="display:none;">
-            <td colspan="3" class="category-list"><strong>Declining Categories:</strong><br>${contextualSummary.decliningDetails}</td>
+            <td colspan="3" class="category-list">
+              <div class="summary-category-header">
+                <span class="summary-category-icon">↘</span>
+                <strong>Declining Categories</strong>
+              </div>
+              <div class="categories-mini-table">${contextualSummary.decliningDetails}</div>
+            </td>
             <td colspan="2" class="impact-value">-${summary.declinedCount} categories</td>
-          </tr>          <tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Strategic Insights</td></tr>
+          </tr><tr class="summary-section" style="display:none;"><td colspan="5" class="summary-header">Strategic Insights</td></tr>
           <tr class="summary-row" style="display:none; background-color: #f0f9ff !important;">
-            <td colspan="5" class="category-list">${contextualSummary.strategicInsights}</td>
+            <td colspan="5" class="category-list">
+              <div class="strategic-insights-container">
+                ${Renderer.generateStrategicInsightsHTML(contextualSummary.strategicInsights)}
+              </div>
+            </td>
           </tr>
       </tbody></table>
       <p class="trade-analysis-note">Analysis based on current season totals and player per-game averages</p>`;
@@ -299,8 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
           });
       }
     },
-    
-    // NEW: Generate contextual summary based on rankings
+      // NEW: Generate contextual summary based on rankings
     generateContextualSummary: (summary, rankingAnalysis) => {
       const { weakCategories, strongCategories, currentRanks } = rankingAnalysis;
       const { gainingCategories, losingCategories, improvedCount, declinedCount } = summary;
@@ -325,54 +338,109 @@ document.addEventListener('DOMContentLoaded', () => {
         mainMessage = `Trade improves ${improvedCount} categories but may not be optimal for your team needs`;
       }
       
-      // Generate detailed breakdowns
-      const improvingDetails = gainingCategories.map(cat => {
-        const rank = currentRanks[Object.keys(currentRanks).find(id => 
-          window.CONFIG?.COLS?.find(([, name]) => name === cat)?.[0] === id
-        )];
-        const isWeak = weakCategories.some(weak => weak.name === cat);
-        const rankStr = rank && rank !== '-' ? ` (currently ${Utils.ordinal(rank)})` : '';
-        return `${cat}${rankStr}${isWeak ? ' 🎯' : ''}`;
-      }).join(', ') || 'None';
+      // Generate enhanced detailed breakdowns with chips
+      const improvingDetails = Renderer.generateCategoryChips(gainingCategories, currentRanks, weakCategories, strongCategories, 'improving');
+      const decliningDetails = Renderer.generateCategoryChips(losingCategories, currentRanks, weakCategories, strongCategories, 'declining');
       
-      const decliningDetails = losingCategories.map(cat => {
-        const rank = currentRanks[Object.keys(currentRanks).find(id => 
-          window.CONFIG?.COLS?.find(([, name]) => name === cat)?.[0] === id
-        )];
-        const isStrong = strongCategories.some(strong => strong.name === cat);
-        const rankStr = rank && rank !== '-' ? ` (currently ${Utils.ordinal(rank)})` : '';
-        return `${cat}${rankStr}${isStrong ? ' ⚠️' : ''}`;
-      }).join(', ') || 'None';
-      
-      // Generate strategic insights
+      // Generate strategic insights with enhanced formatting
       let strategicInsights = [];
-      
-      if (helpingWeakAreas.length > 0) {
-        strategicInsights.push(`✅ <strong>Addresses Weaknesses:</strong> This trade helps improve ${helpingWeakAreas.join(', ')}, which ${helpingWeakAreas.length > 1 ? 'are' : 'is'} currently among your worst categories.`);
+        if (helpingWeakAreas.length > 0) {
+        strategicInsights.push({
+          type: 'positive',
+          icon: '✓',
+          title: 'Addresses Weaknesses',
+          text: `This trade helps improve ${helpingWeakAreas.join(', ')}, which ${helpingWeakAreas.length > 1 ? 'are' : 'is'} currently among your worst categories.`
+        });
       }
       
       if (hurtingStrongAreas.length > 0) {
-        strategicInsights.push(`⚠️ <strong>Weakens Strengths:</strong> Be cautious - this trade hurts ${hurtingStrongAreas.join(', ')}, which ${hurtingStrongAreas.length > 1 ? 'are' : 'is'} currently among your best categories.`);
+        strategicInsights.push({
+          type: 'warning',
+          icon: '!',
+          title: 'Weakens Strengths',
+          text: `Be cautious - this trade hurts ${hurtingStrongAreas.join(', ')}, which ${hurtingStrongAreas.length > 1 ? 'are' : 'is'} currently among your best categories.`
+        });
       }
       
       const unaddressedWeakCategories = weakCategories.filter(weak => 
         !gainingCategories.includes(weak.name)
       );
       if (unaddressedWeakCategories.length > 0 && unaddressedWeakCategories.length === weakCategories.length) {
-        strategicInsights.push(`💡 <strong>Consider:</strong> This trade doesn't address your weakest categories: ${unaddressedWeakCategories.map(w => `${w.name} (${Utils.ordinal(w.rank)})`).join(', ')}. You might want to target players who excel in these areas.`);
+        strategicInsights.push({
+          type: 'neutral',
+          icon: 'i',
+          title: 'Consider',
+          text: `This trade doesn't address your weakest categories: ${unaddressedWeakCategories.map(w => `${w.name} (${Utils.ordinal(w.rank)})`).join(', ')}. You might want to target players who excel in these areas.`
+        });
       }
       
       if (strategicInsights.length === 0) {
-        strategicInsights.push("📊 This trade provides a balanced statistical adjustment without significantly impacting your strongest or weakest categories.");
+        strategicInsights.push({
+          type: 'neutral',
+          icon: '○',
+          title: 'Balanced Trade',
+          text: 'This trade provides a balanced statistical adjustment without significantly impacting your strongest or weakest categories.'
+        });
       }
       
       return {
         mainMessage,
         improvingDetails,
         decliningDetails,
-        strategicInsights: strategicInsights.join('<br><br>')
+        strategicInsights
       };
-    }
+    },
+
+    // NEW: Generate category chips for enhanced visual display
+    generateCategoryChips: (categories, currentRanks, weakCategories, strongCategories, type) => {
+      if (categories.length === 0) return '<div class="category-chip">None</div>';
+      
+      return categories.map(cat => {
+        const rank = currentRanks[Object.keys(currentRanks).find(id => 
+          window.CONFIG?.COLS?.find(([, name]) => name === cat)?.[0] === id
+        )];
+        const isWeak = weakCategories.some(weak => weak.name === cat);
+        const isStrong = strongCategories.some(strong => strong.name === cat);
+        const rankStr = rank && rank !== '-' ? Utils.ordinal(rank) : 'N/A';
+        
+        let chipClass = 'category-chip';
+        let chipIcon = '';
+          if (type === 'improving') {
+          chipClass += ' improving';
+          chipIcon = '↗';
+          if (isWeak) {
+            chipClass += ' weak-help';
+            chipIcon = '●';
+          }
+        } else if (type === 'declining') {
+          chipClass += ' declining';
+          chipIcon = '↘';
+          if (isStrong) {
+            chipClass += ' strong-hurt';
+            chipIcon = '!';
+          }
+        }
+        
+        return `<div class="${chipClass}">
+          <span class="chip-icon">${chipIcon}</span>
+          ${cat}
+          <span class="chip-rank">${rankStr}</span>
+        </div>`;
+      }).join('');
+    },
+
+    // NEW: Generate enhanced strategic insights HTML
+    generateStrategicInsightsHTML: (insights) => {
+      return insights.map(insight => `
+        <div class="insight-item ${insight.type}">
+          <div class="insight-icon">${insight.icon}</div>
+          <div class="insight-content">
+            <strong>${insight.title}</strong>
+            <div class="insight-text">${insight.text}</div>
+          </div>
+        </div>
+      `).join('');
+    },
   };
 
   const Events = {

@@ -699,6 +699,164 @@
   }
 }
 
+/* ───── Enhanced Trade Impact Styling ───── */
+
+/* Main strategic insights container */
+.strategic-insights-container {
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.strategic-insights-container p {
+  margin: 0 0 1rem 0;
+  font-size: 15px;
+}
+
+.strategic-insights-container strong {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Enhanced insight items with icons */
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  border-left: 4px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.insight-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.insight-item.positive {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+}
+
+.insight-item.warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.insight-item.neutral {
+  border-left-color: #6366f1;
+  background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
+}
+
+.insight-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.insight-content {
+  flex: 1;
+}
+
+.insight-content strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.insight-text {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+/* Categories mini-table styling */
+.categories-mini-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin: 12px 0 8px 0;
+  font-size: 13px;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.category-chip:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.category-chip.improving {
+  background: #ffffff;
+  border-color: #10b981;
+  color: #166534;
+  border-width: 2px;
+}
+
+.category-chip.declining {
+  background: #ffffff;
+  border-color: #ef4444;
+  color: #991b1b;
+  border-width: 2px;
+}
+
+.category-chip.weak-help {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.category-chip.strong-hurt {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.chip-icon {
+  font-size: 10px;
+}
+
+.chip-rank {
+  font-size: 10px;
+  opacity: 0.8;
+  margin-left: 2px;
+}
+
+/* Enhanced summary rows */
+.summary-row .category-list {
+  padding: 16px 20px;
+}
+
+.summary-category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1f2937;
+}
+
+.summary-category-icon {
+  font-size: 16px;
+}
+
 /* Analysis summary styles - updated for compact info-box integration */
 .analysis-summary {
   background: #f8fafc;
@@ -771,6 +929,51 @@
   .analysis-team-name {
     font-size: 12px;
     padding: 3px 6px;
+  }
+  /* Mobile adjustments for enhanced trade impact styling */
+  .insight-item {
+    margin: 12px 0;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .insight-icon {
+    font-size: 22px; /* Increased from 18px for better mobile visibility */
+  }
+
+  .insight-content strong {
+    font-size: 14px;
+  }
+
+  .insight-text {
+    font-size: 13px;
+  }
+
+  .categories-mini-table {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .category-chip {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .chip-icon {
+    font-size: 12px; /* Increased from 10px for better mobile visibility */
+  }
+
+  .summary-category-header {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .summary-category-icon {
+    font-size: 18px; /* Increased from 16px for better mobile visibility */
+  }
+
+  .strategic-insights-container p {
+    font-size: 14px;
   }
 }
 
