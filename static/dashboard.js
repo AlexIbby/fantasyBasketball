@@ -786,6 +786,10 @@ statCats.forEach(catObj => {
         API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode);
       }
     });
+
+    // Trigger change events on checkboxes to ensure rankings are shown initially
+    DOM.weekly.showRanksChk?.dispatchEvent(new Event('change'));
+    DOM.compare.showRanksChk?.dispatchEvent(new Event('change'));
     
     // Load compare tab data when selected
     document.querySelector('[data-target="tab-compare"]')?.addEventListener('click', () => {
