@@ -54,16 +54,14 @@
       <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
       <button class="nav-tab"        data-target="tab-trends">Trends</button>
       <button class="nav-tab"        data-target="tab-trade">Trade Analyzer</button>
-    </nav>
-
-    <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
+    </nav>    <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
     <section id="tab-cat" class="tab-pane active">
       <div class="info-box">
-        <p>Compare performance against <em>every</em> team this week.</p>
+        <div class="info-main">
+          <p>Compare performance against <em>every</em> team this week.</p>
+        </div>
+        <div id="weeklyAnalysisSummary" class="info-analysis"></div>
       </div>
-
-      <!-- Add summary section -->
-      <div id="weeklyAnalysisSummary" class="analysis-summary"></div>
 
       <div class="filters">
         <div class="week-selector">
@@ -97,16 +95,14 @@
 
       <!-- mobile cards -->
       <div class="cards-container" id="cardsContainer"></div>
-    </section>
-
-    <!-- ═══════════ COMPARE TEAMS ═══════════ -->
+    </section>    <!-- ═══════════ COMPARE TEAMS ═══════════ -->
     <section id="tab-compare" class="tab-pane">
       <div class="info-box">
-        <p>Compare every team's <strong>season totals</strong> or their <strong>per-week averages</strong>. Switch using the <strong>view</strong> menu below.</p>
+        <div class="info-main">
+          <p>Compare every team's <strong>season totals</strong> or their <strong>per-week averages</strong>. Switch using the <strong>view</strong> menu below.</p>
+        </div>
+        <div id="seasonAnalysisSummary" class="info-analysis"></div>
       </div>
-
-      <!-- Add summary section -->
-      <div id="seasonAnalysisSummary" class="analysis-summary"></div>
 
       <div class="filters">
         <div class="week-selector">
