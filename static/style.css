@@ -1801,3 +1801,210 @@ sup.rank{
     font-size: 0.9rem;
   }
 }
+
+/* ───── Team Selection Feature Styles ───── */
+
+/* Team selector styling */
+.team-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+.team-select {
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2d3748;
+  transition: all 0.2s;
+}
+
+.team-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.team-select option {
+  padding: 8px;
+  font-weight: 500;
+}
+
+/* Visual indicators for selected team */
+.selected-team-row {
+  background: #e8f3ff !important;
+  border-left: 4px solid #4299e1;
+}
+
+.selected-team-row td:first-child {
+  background: #e8f3ff !important;
+  font-weight: 700;
+  position: relative;
+}
+
+.selected-team-row td:first-child::before {
+  content: "📊";
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+/* User team indicators */
+.user-team-row {
+  background: #f0fff4 !important;
+  border-left: 4px solid #48bb78;
+}
+
+.user-team-row td:first-child {
+  background: #f0fff4 !important;
+  position: relative;
+}
+
+.user-team-row td:first-child::after {
+  content: " (Your Team)";
+  font-size: 12px;
+  color: #48bb78;
+  font-weight: 600;
+}
+
+/* When user team is also selected team */
+.selected-team-row.user-team-row {
+  background: #e6fffa !important;
+  border-left: 4px solid #38b2ac;
+}
+
+.selected-team-row.user-team-row td:first-child {
+  background: #e6fffa !important;
+}
+
+.selected-team-row.user-team-row td:first-child::before {
+  content: "👑";
+}
+
+/* Card styling for user team */
+.user-team-card {
+  border: 2px solid #48bb78;
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15);
+}
+
+.user-team-card .card-header {
+  background: #48bb78;
+  position: relative;
+}
+
+.user-team-card .card-header::after {
+  content: " (Your Team)";
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Analysis summary team name styling */
+.analysis-team-name {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #4a5568;
+  text-align: center;
+}
+
+.analysis-team-name strong {
+  color: #2d3748;
+  font-weight: 700;
+}
+
+/* Responsive adjustments for team selector */
+@media (max-width: 768px) {
+  .filters {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .team-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .team-select {
+    flex: 1;
+    min-width: 0;
+    max-width: 200px;
+  }
+  
+  .team-label {
+    font-size: 14px;
+  }
+  
+  /* Stack elements on very small screens */
+  @media (max-width: 480px) {
+    .filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .team-selector,
+    .week-selector,
+    .checkbox-container {
+      justify-content: space-between;
+      width: 100%;
+    }
+    
+    .team-select {
+      max-width: none;
+    }
+  }
+}
+
+/* Enhanced hover effects for better UX */
+.team-select:hover {
+  border-color: #cbd5e0;
+}
+
+.selected-team-row:hover {
+  background: #dbeafe !important;
+}
+
+.selected-team-row:hover td:first-child {
+  background: #dbeafe !important;
+}
+
+/* Better visual separation for compare mode */
+.reference-team {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.reference-team strong {
+  color: #2d3748;
+}
+
+/* Loading state for team selectors */
+.team-select:disabled {
+  background: #f7fafc;
+  color: #a0aec0;
+  cursor: not-allowed;
+}
+
+/* Focus states for accessibility */
+.team-select:focus-visible {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}

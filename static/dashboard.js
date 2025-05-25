@@ -1,5 +1,4 @@
-/* ───── Refactored dashboard.js ───── */
-/* ───── Refactored dashboard.js ───── */
+/* ───── Refactored dashboard.js with Team Selection ───── */
 document.addEventListener('DOMContentLoaded', () => {
   // ============ CONFIG ============
   const CONFIG = {
@@ -60,17 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Weekly view elements
     weekly: {
       weekSel: document.getElementById('weekSel'),
+      teamSel: document.getElementById('weeklyTeamSel'),
       scoreTable: document.getElementById('scoreTable'),
       cardsContainer: document.getElementById('cardsContainer'),
       cardsViewBtn: document.getElementById('cardsView'),
       tableViewBtn: document.getElementById('tableView'),
       tableWrapper: document.querySelector('#tab-cat .table-container'),
       showRanksChk: document.querySelector('#tab-cat .checkbox-container input[type="checkbox"]'),
-      // Add weekly analysis summary reference
       analysisSummary: document.getElementById('weeklyAnalysisSummary')
     },
     // Compare view elements
     compare: {
+      teamSel: document.getElementById('compareTeamSel'),
       compareTable: document.getElementById('compareTable'),
       cardsContainer: document.getElementById('compareCardsContainer'),
       cardsViewBtn: document.getElementById('compareCardsView'),
@@ -78,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tableWrapper: document.querySelector('#tab-compare .table-container'),
       viewSel: document.getElementById('viewSel'),
       showRanksChk: document.querySelector('#tab-compare .checkbox-container input[type="checkbox"]'),
-      // Add season analysis summary reference
       analysisSummary: document.getElementById('seasonAnalysisSummary')
     }
   };
@@ -86,11 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============ STATE ============
   const STATE = {
     weekly: {
-      loadedTeams: []
+      loadedTeams: [],
+      selectedTeamIndex: 0,
+      userTeamIndex: 0
     },
     compare: {
       seasonPayload: null,
-      seasonMode: 'tot'
+      seasonMode: 'tot',
+      selectedTeamIndex: 0,
+      userTeamIndex: 0
     }
   };
 
@@ -135,11 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     
     // Calculate win-loss record between two teams
-    recordVsUser: (user, opp) => {
+    recordVsUser: (baseTeam, oppTeam) => {
       let w = 0, l = 0;
       CONFIG.COLS.forEach(([id, , dir]) => {
-        const u = parseFloat(user[id]);
-        const o = parseFloat(opp[id]);
+        const u = parseFloat(baseTeam[id]);
+        const o = parseFloat(oppTeam[id]);
         if (isNaN(u) || isNaN(o) || u === o) return;
         (dir === 'high' ? u > o : u < o) ? w++ : l++;
       });
@@ -165,32 +168,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Responsive view based on window width
     initResponsiveView: () => {
-      // Store the current breakpoint state (true if mobile, false if desktop)
       let currentBreakpointIsMobile = window.innerWidth <= 768;
 
-      // Function to set the initial views based on the current breakpoint
       const setInitialViews = () => {
         Utils.switchView(currentBreakpointIsMobile ? 'cards' : 'table', DOM.weekly);
         Utils.switchView(currentBreakpointIsMobile ? 'cards' : 'table', DOM.compare);
       };
       
-      // Function to handle resize events
       const handleResize = () => {
         const newBreakpointIsMobile = window.innerWidth <= 768;
-        // Only switch the view if the breakpoint (mobile/desktop) has changed
         if (newBreakpointIsMobile !== currentBreakpointIsMobile) {
           Utils.switchView(newBreakpointIsMobile ? 'cards' : 'table', DOM.weekly);
           Utils.switchView(newBreakpointIsMobile ? 'cards' : 'table', DOM.compare);
-          currentBreakpointIsMobile = newBreakpointIsMobile; // Update the stored breakpoint state
+          currentBreakpointIsMobile = newBreakpointIsMobile;
         }
-        // If the breakpoint hasn't changed (e.g., mobile stays mobile),
-        // do nothing, thereby respecting the user's explicit view selection.
       };
       
-      // Set initial view on load
       setInitialViews();
-      
-      // Update on resize, but only if the breakpoint status changes
       window.addEventListener('resize', handleResize);
     },
     
@@ -198,13 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
     formatStatValue: (id, value) => {
       if (value === null || value === undefined || value === '') return '–';
       
-      // Handle percentage stats specially
       if (CONFIG.PERCENTAGE_STATS.includes(id)) {
-        // Convert values like ".333" to "0.333"
         const num = parseFloat(value);
         if (isNaN(num)) return value;
-        
-        // Format with leading zero if needed
         return num.toFixed(3).replace(/^0\./, '.');
       }
       
@@ -212,13 +202,13 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     // Generate category strength analysis
-    generateCategoryAnalysis: (teams, ranks, userIndex = 0) => {
-      if (!teams.length || !ranks.length) return null;
+    generateCategoryAnalysis: (teams, ranks, selectedTeamIndex = 0) => {
+      if (!teams.length || !ranks.length || selectedTeamIndex >= teams.length) return null;
 
       const totalTeams = teams.length;
       const weakCategories = [];
       const strongCategories = [];
-      const myRanks = ranks[userIndex];
+      const myRanks = ranks[selectedTeamIndex];
 
       CONFIG.COLS.forEach(([id, name, sortDir]) => {
         const rank = myRanks[id];
@@ -234,14 +224,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      // Sort by rank (worst first for weak, best first for strong)
       weakCategories.sort((a, b) => b.rank - a.rank);
       strongCategories.sort((a, b) => a.rank - b.rank);
 
       return {
         weakCategories,
         strongCategories,
-        totalTeams
+        totalTeams,
+        teamName: teams[selectedTeamIndex].name
       };
     },
 
@@ -249,8 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
     formatAnalysisSummary: (analysis, mode = 'weekly') => {
       if (!analysis) return '';
 
-      const { weakCategories, strongCategories } = analysis;
+      const { weakCategories, strongCategories, teamName } = analysis;
       let summary = `<div class="analysis-content">`;
+
+      // Add team name indicator
+      summary += `<div class="analysis-team-name">Analysis for: <strong>${teamName}</strong></div>`;
 
       if (strongCategories.length > 0) {
         const strongList = strongCategories.slice(0, 3).map(cat => 
@@ -272,6 +265,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       summary += `</div>`;
       return summary;
+    },
+
+    // Populate team selector dropdown
+    populateTeamSelector: (teams, selectElement, selectedIndex = 0, userTeamIndex = 0) => {
+      selectElement.innerHTML = '';
+      teams.forEach((team, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = team.isMine ? `${team.name} (Your Team)` : team.name;
+        if (index === selectedIndex) option.selected = true;
+        selectElement.appendChild(option);
+      });
     }
   };
   
@@ -285,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const data = await r.json();
         
-        // Access the stat_categories directly
         const settings = data.fantasy_content.league[1]?.settings?.[0];
         if (!settings || !settings.stat_categories || !settings.stat_categories.stats) {
           console.warn('No stat_categories found in expected structure');
@@ -297,25 +301,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const categories = [];
         
-// Process each stat category
-statCats.forEach(catObj => {
-  const stat = catObj.stat;
-  if (!stat || stat.enabled !== '1') return;
-  
-  const id = stat.stat_id.toString();
-  const meta = CONFIG.STAT_METADATA[id] || {
-    name: stat.name,
-    display_name: stat.display_name,
-    sort_order: stat.sort_order
-  };
-  
-  // Use the abbreviation (display_name from API) instead of the full name
-  categories.push([
-    id, 
-    stat.display_name || stat.abbr || meta.name, // This will use the abbreviation from the API response
-    meta.sort_order === '1' ? 'high' : 'low'
-  ]);
-});
+        statCats.forEach(catObj => {
+          const stat = catObj.stat;
+          if (!stat || stat.enabled !== '1') return;
+          
+          const id = stat.stat_id.toString();
+          
+          // Skip 3PTA (3-point attempts) as it's rarely a scoring category
+          if (id === '9') return;
+          
+          const meta = CONFIG.STAT_METADATA[id] || {
+            name: stat.name,
+            display_name: stat.display_name,
+            sort_order: stat.sort_order
+          };
+          
+          categories.push([
+            id, 
+            stat.display_name || stat.abbr || meta.name,
+            meta.sort_order === '1' ? 'high' : 'low'
+          ]);
+        });
         
         if (categories.length > 0) {
           console.log('Successfully loaded league categories:', categories);
@@ -379,7 +385,7 @@ statCats.forEach(catObj => {
       const teams = [];
       
       Object.values(teamsO).forEach(tw => {
-        if (!tw?.team) return; // skip "count"
+        if (!tw?.team) return;
         const t = tw.team;
         
         let name = '—', isMine = false;
@@ -418,7 +424,6 @@ statCats.forEach(catObj => {
             return; 
           }
           
-          // Parse the value
           const numVal = parseFloat(v);
           if (isNaN(numVal)) {
             sm[id] = v;
@@ -426,7 +431,6 @@ statCats.forEach(catObj => {
           }
           
           if (mode === 'avg') {
-            // Special handling for percentages
             if (CONFIG.PERCENTAGE_STATS.includes(id)) {
               sm[id] = Utils.formatStatValue(id, numVal);
             } else {
@@ -452,7 +456,7 @@ statCats.forEach(catObj => {
     },
     
     // Render weekly table
-    renderWeekTable: (teams) => {
+    renderWeekTable: (teams, selectedTeamIndex = 0) => {
       const { scoreTable, showRanksChk, analysisSummary } = DOM.weekly;
       
       scoreTable.innerHTML = '';
@@ -460,7 +464,7 @@ statCats.forEach(catObj => {
 
       // Generate and display analysis summary
       const ranks = Utils.computeRanks(teams);
-      const analysis = Utils.generateCategoryAnalysis(teams, ranks, 0);
+      const analysis = Utils.generateCategoryAnalysis(teams, ranks, selectedTeamIndex);
       if (analysisSummary) {
         analysisSummary.innerHTML = Utils.formatAnalysisSummary(analysis, 'weekly');
       }
@@ -472,12 +476,13 @@ statCats.forEach(catObj => {
       
       const tbody = scoreTable.querySelector('tbody');
       const showRanks = showRanksChk.checked;
-      const base = teams[0];
+      const baseTeam = teams[selectedTeamIndex];
 
       // Create table rows
       teams.forEach((t, idx) => {
         const tr = document.createElement('tr');
-        if (idx === 0) tr.className = 'user-row';
+        if (idx === selectedTeamIndex) tr.className = 'selected-team-row';
+        if (t.isMine) tr.classList.add('user-team-row');
         tr.insertAdjacentHTML('beforeend', `<td>${t.name}</td>`);
 
         // Add stat cells
@@ -485,8 +490,8 @@ statCats.forEach(catObj => {
           const raw = Utils.formatStatValue(id, t.statMap[id]);
           let cls = '';
           
-          if (idx && raw !== '–' && base.statMap[id] !== '–') {
-            const a = parseFloat(raw), b = parseFloat(base.statMap[id]);
+          if (idx !== selectedTeamIndex && raw !== '–' && baseTeam.statMap[id] !== '–') {
+            const a = parseFloat(raw), b = parseFloat(baseTeam.statMap[id]);
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
             }
@@ -498,33 +503,36 @@ statCats.forEach(catObj => {
         });
         
         // Add score cell
-        const rec = idx ? Utils.recordVsUser(base.statMap, t.statMap) : '';
+        const rec = idx !== selectedTeamIndex ? Utils.recordVsUser(baseTeam.statMap, t.statMap) : '';
         tr.insertAdjacentHTML('beforeend', `<td class="score-cell">${rec}</td>`);
         tbody.appendChild(tr);
       });
     },
     
     // Render weekly cards
-    renderWeekCards: (teams) => {
+    renderWeekCards: (teams, selectedTeamIndex = 0) => {
       const { cardsContainer, showRanksChk } = DOM.weekly;
       
       cardsContainer.innerHTML = '';
       if (!teams.length) return;
 
-      const base = teams[0];
+      const baseTeam = teams[selectedTeamIndex];
       const ranks = Utils.computeRanks(teams);
       const showRanks = showRanksChk.checked;
 
       // Add reference team header
       cardsContainer.insertAdjacentHTML('beforeend',
-        `<div class="reference-team"><strong>Comparing with:</strong> ${base.name}</div>`
+        `<div class="reference-team"><strong>Comparing with:</strong> ${baseTeam.name}</div>`
       );
 
-      // Create cards for each team (except the user's)
-      teams.slice(1).forEach((t, idx) => {
-        const rec = Utils.recordVsUser(base.statMap, t.statMap);
+      // Create cards for each team (except the selected one)
+      teams.forEach((t, idx) => {
+        if (idx === selectedTeamIndex) return; // Skip the selected team
+
+        const rec = Utils.recordVsUser(baseTeam.statMap, t.statMap);
         const card = document.createElement('div');
         card.className = 'card';
+        if (t.isMine) card.classList.add('user-team-card');
         
         // Create card header
         card.innerHTML = `
@@ -539,7 +547,7 @@ statCats.forEach(catObj => {
         // Add stat items
         CONFIG.COLS.forEach(([id, label, dir]) => {
           const raw = Utils.formatStatValue(id, t.statMap[id]);
-          const ur = Utils.formatStatValue(id, base.statMap[id]);
+          const ur = Utils.formatStatValue(id, baseTeam.statMap[id]);
           let cls = '', diff = '';
           
           if (raw !== '–' && ur !== '–') {
@@ -547,13 +555,12 @@ statCats.forEach(catObj => {
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
               let d = a - b; 
-              // Special handling for percentages
               diff = CONFIG.PERCENTAGE_STATS.includes(id) ? d.toFixed(3).replace(/^-?0\./, '.') : d.toFixed(0);
               if (d > 0) diff = '+' + diff;
             }
           }
           
-          const rk = ranks[idx + 1][id];
+          const rk = ranks[idx][id];
           const sup = (showRanks && rk !== '-') ? `<span class="stat-rank">${Utils.ordinal(rk)}</span>` : '';
           
           grid.insertAdjacentHTML('beforeend',
@@ -569,7 +576,7 @@ statCats.forEach(catObj => {
     },
     
     // Render compare table (season data)
-    renderCompareTable: (teams) => {
+    renderCompareTable: (teams, selectedTeamIndex = 0) => {
       const { compareTable, showRanksChk } = DOM.compare;
       
       compareTable.innerHTML = '';
@@ -583,12 +590,13 @@ statCats.forEach(catObj => {
       const tbody = compareTable.querySelector('tbody');
       const ranks = Utils.computeRanks(teams);
       const showRanks = showRanksChk.checked;
-      const base = teams[0];
+      const baseTeam = teams[selectedTeamIndex];
 
       // Create table rows
       teams.forEach((t, idx) => {
         const tr = document.createElement('tr');
-        if (idx === 0) tr.className = 'user-row';
+        if (idx === selectedTeamIndex) tr.className = 'selected-team-row';
+        if (t.isMine) tr.classList.add('user-team-row');
         tr.insertAdjacentHTML('beforeend', `<td>${t.name}</td>`);
 
         // Add stat cells
@@ -596,8 +604,8 @@ statCats.forEach(catObj => {
           const raw = t.statMap[id];
           let cls = '';
           
-          if (idx && raw !== '–' && base.statMap[id] !== '–') {
-            const a = parseFloat(raw), b = parseFloat(base.statMap[id]);
+          if (idx !== selectedTeamIndex && raw !== '–' && baseTeam.statMap[id] !== '–') {
+            const a = parseFloat(raw), b = parseFloat(baseTeam.statMap[id]);
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
             }
@@ -613,26 +621,29 @@ statCats.forEach(catObj => {
     },
     
     // Render compare cards (season data)
-    renderCompareCards: (teams) => {
+    renderCompareCards: (teams, selectedTeamIndex = 0) => {
       const { cardsContainer, showRanksChk } = DOM.compare;
       
       cardsContainer.innerHTML = '';
       if (!teams.length) return;
 
-      const base = teams[0];
+      const baseTeam = teams[selectedTeamIndex];
       const ranks = Utils.computeRanks(teams);
       const showRanks = showRanksChk.checked;
 
       // Add reference team header
       cardsContainer.insertAdjacentHTML('beforeend',
-        `<div class="reference-team"><strong>Comparing with:</strong> ${base.name}</div>`
+        `<div class="reference-team"><strong>Comparing with:</strong> ${baseTeam.name}</div>`
       );
 
-      // Create cards for each team (except the user's)
-      teams.slice(1).forEach((t, idx) => {
-        const rec = Utils.recordVsUser(base.statMap, t.statMap);
+      // Create cards for each team (except the selected one)
+      teams.forEach((t, idx) => {
+        if (idx === selectedTeamIndex) return; // Skip the selected team
+
+        const rec = Utils.recordVsUser(baseTeam.statMap, t.statMap);
         const card = document.createElement('div');
         card.className = 'card';
+        if (t.isMine) card.classList.add('user-team-card');
         
         // Create card header
         card.innerHTML = `
@@ -647,7 +658,7 @@ statCats.forEach(catObj => {
         // Add stat items
         CONFIG.COLS.forEach(([id, label, dir]) => {
           const raw = t.statMap[id];
-          const ur = base.statMap[id];
+          const ur = baseTeam.statMap[id];
           let cls = '', diff = '';
           
           if (raw !== '–' && ur !== '–') {
@@ -655,13 +666,12 @@ statCats.forEach(catObj => {
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
               let d = a - b;
-              // Special handling for percentages
               diff = CONFIG.PERCENTAGE_STATS.includes(id) ? d.toFixed(3).replace(/^-?0\./, '.') : d.toFixed(0);
               if (d > 0) diff = '+' + diff;
             }
           }
           
-          const rk = ranks[idx + 1][id];
+          const rk = ranks[idx][id];
           const sup = (showRanks && rk !== '-') ? `<span class="stat-rank">${Utils.ordinal(rk)}</span>` : '';
           
           grid.insertAdjacentHTML('beforeend',
@@ -690,9 +700,19 @@ statCats.forEach(catObj => {
         
         const teams = DataService.extractWeekTeams(raw);
         
+        // Find user team index
+        const userTeamIndex = teams.findIndex(t => t.isMine);
+        
         STATE.weekly.loadedTeams = teams;
-        Renderer.renderWeekTable(teams);
-        Renderer.renderWeekCards(teams);
+        STATE.weekly.userTeamIndex = userTeamIndex >= 0 ? userTeamIndex : 0;
+        STATE.weekly.selectedTeamIndex = userTeamIndex >= 0 ? userTeamIndex : 0;
+        
+        // Populate team selector
+        Utils.populateTeamSelector(teams, DOM.weekly.teamSel, STATE.weekly.selectedTeamIndex, STATE.weekly.userTeamIndex);
+        
+        // Render with selected team
+        Renderer.renderWeekTable(teams, STATE.weekly.selectedTeamIndex);
+        Renderer.renderWeekCards(teams, STATE.weekly.selectedTeamIndex);
       } catch (e) {
         console.error(e);
         scoreTable.innerHTML = "<caption>Couldn't load data</caption>";
@@ -710,8 +730,17 @@ statCats.forEach(catObj => {
         const raw = await r.json();
         const payload = DataService.transformSeasonData(raw);
         
+        // Find user team index
+        const userTeamIndex = payload.teams.findIndex(t => t.isMine);
+        
         STATE.compare.seasonPayload = payload;
-        API.renderCompare(payload, seasonMode);
+        STATE.compare.userTeamIndex = userTeamIndex >= 0 ? userTeamIndex : 0;
+        STATE.compare.selectedTeamIndex = userTeamIndex >= 0 ? userTeamIndex : 0;
+        
+        // Populate team selector
+        Utils.populateTeamSelector(payload.teams, DOM.compare.teamSel, STATE.compare.selectedTeamIndex, STATE.compare.userTeamIndex);
+        
+        API.renderCompare(payload, seasonMode, STATE.compare.selectedTeamIndex);
       } catch (e) {
         console.error(e);
         compareTable.innerHTML = "<caption>Couldn't load data</caption>";
@@ -719,20 +748,20 @@ statCats.forEach(catObj => {
     },
     
     // Render compare view with season data
-    renderCompare: (payload, mode) => {
+    renderCompare: (payload, mode, selectedTeamIndex = 0) => {
       if (!payload) return;
       
       const processedData = DataService.processSeasonData(payload, mode);
 
       // Generate and display analysis summary
       const ranks = Utils.computeRanks(processedData);
-      const analysis = Utils.generateCategoryAnalysis(processedData, ranks, 0);
+      const analysis = Utils.generateCategoryAnalysis(processedData, ranks, selectedTeamIndex);
       if (DOM.compare.analysisSummary) {
         DOM.compare.analysisSummary.innerHTML = Utils.formatAnalysisSummary(analysis, 'season');
       }
 
-      Renderer.renderCompareTable(processedData);
-      Renderer.renderCompareCards(processedData);
+      Renderer.renderCompareTable(processedData, selectedTeamIndex);
+      Renderer.renderCompareCards(processedData, selectedTeamIndex);
     }
   };
 
@@ -744,7 +773,6 @@ statCats.forEach(catObj => {
       console.log('Final CONFIG.COLS after initialization:', CONFIG.COLS);
     } catch (e) {
       console.error('Failed to load league settings:', e);
-      // Continue with default categories
     }
     
     // Initialize tab navigation
@@ -754,7 +782,7 @@ statCats.forEach(catObj => {
         document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(tab.dataset.target).classList.add('active');
-      });
+      });  
     });
     
     // Initialize week selector
@@ -772,18 +800,38 @@ statCats.forEach(catObj => {
     // Set up event listeners
     DOM.weekly.weekSel.addEventListener('change', () => API.loadWeek(+DOM.weekly.weekSel.value));
     
+    // Team selection event listeners
+    DOM.weekly.teamSel?.addEventListener('change', () => {
+      const selectedIndex = parseInt(DOM.weekly.teamSel.value);
+      STATE.weekly.selectedTeamIndex = selectedIndex;
+      
+      if (STATE.weekly.loadedTeams.length) {
+        Renderer.renderWeekTable(STATE.weekly.loadedTeams, selectedIndex);
+        Renderer.renderWeekCards(STATE.weekly.loadedTeams, selectedIndex);
+      }
+    });
+
+    DOM.compare.teamSel?.addEventListener('change', () => {
+      const selectedIndex = parseInt(DOM.compare.teamSel.value);
+      STATE.compare.selectedTeamIndex = selectedIndex;
+      
+      if (STATE.compare.seasonPayload) {
+        API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode, selectedIndex);
+      }
+    });
+    
     // Add event listener for the weekly showRanks checkbox 
     DOM.weekly.showRanksChk?.addEventListener('change', () => {
       if (STATE.weekly.loadedTeams.length) {
-        Renderer.renderWeekTable(STATE.weekly.loadedTeams);
-        Renderer.renderWeekCards(STATE.weekly.loadedTeams);
+        Renderer.renderWeekTable(STATE.weekly.loadedTeams, STATE.weekly.selectedTeamIndex);
+        Renderer.renderWeekCards(STATE.weekly.loadedTeams, STATE.weekly.selectedTeamIndex);
       }
     });
     
     // Add event listener for the compare showRanks checkbox
     DOM.compare.showRanksChk?.addEventListener('change', () => {
       if (STATE.compare.seasonPayload) {
-        API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode);
+        API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode, STATE.compare.selectedTeamIndex);
       }
     });
 
@@ -802,7 +850,7 @@ statCats.forEach(catObj => {
     DOM.compare.viewSel?.addEventListener('change', () => {
       STATE.compare.seasonMode = DOM.compare.viewSel.value;
       if (STATE.compare.seasonPayload) {
-        API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode);
+        API.renderCompare(STATE.compare.seasonPayload, STATE.compare.seasonMode, STATE.compare.selectedTeamIndex);
       }
     });
     
