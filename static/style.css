@@ -115,6 +115,8 @@ select{
   width:100%;
   overflow-x:auto;
   position:relative; /* Important for positioning */
+  scroll-snap-type: x mandatory; /* Enable horizontal snap scrolling */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 table{
   width:100%;
@@ -133,6 +135,7 @@ th{
   position:sticky;
   top:0;
   z-index:2; /* Higher than td:first-child */
+  scroll-snap-align: start; /* Add snap alignment for header columns */
 }
 th:first-child{
   text-align:left;
@@ -140,6 +143,7 @@ th:first-child{
   min-width:220px;
   z-index:3; /* Highest z-index to stay on top when scrolling */
   left:0; /* Stick to the left */
+  scroll-snap-align: none; /* Don't snap on the first column since it's sticky */
 }
 td{
   padding:14px 8px;
@@ -148,6 +152,7 @@ td{
   position:relative;
   white-space:nowrap;
   background:inherit; /* This helps with the sticky column */
+  scroll-snap-align: start; /* Add snap alignment for columns */
 }
 td:first-child{
   text-align:left;
@@ -160,6 +165,7 @@ td:first-child{
   left:0; /* Stick to the left */
   z-index:1; /* Above other cells but below headers */
   background:inherit; /* Inherit the background from tr */
+  scroll-snap-align: none; /* Don't snap on the first column since it's sticky */
 }
 tr:nth-child(even){background:#f7fafc}
 tr:hover{background:#ebf4ff}
@@ -422,6 +428,20 @@ sup.rank{
   .cards-container{display:flex}
   .view-toggle{display:flex}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
+  
+  /* Enhanced mobile table scrolling when table view is selected */
+  .table-container {
+    /* Improve snap scrolling behavior on mobile */
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 160px; /* Account for sticky first column width */
+  }
+  
+  /* Ensure snap points work well with smaller mobile columns */
+  th:not(:first-child), 
+  td:not(:first-child) {
+    scroll-snap-align: start;
+    min-width: 80px; /* Minimum width for proper snapping */
+  }
   
   /* Login/select mobile adjustments */
   .form-actions {
@@ -1475,6 +1495,7 @@ sup.rank{
   text-align: center;
   position: relative;
   letter-spacing: 0.3px;
+  scroll-snap-align: start; /* Add snap alignment for trade table headers */
 }
 
 .trade-analysis-results th:first-child {
@@ -1505,6 +1526,7 @@ sup.rank{
   text-align: center;
   vertical-align: middle;
   border-right: 1px solid #e2e8f0; 
+  scroll-snap-align: start; /* Add snap alignment for trade table cells */
 }
 
 .trade-analysis-results td:first-child {
@@ -1673,6 +1695,12 @@ sup.rank{
     min-width: 0; /* ADDED: Override general table min-width to allow shrinking */
   }
 
+  /* Enable snap scrolling for trade results container on mobile */
+  .trade-results-container {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* Apply common styles AND width to all th and td */
   .trade-analysis-results th,
   .trade-analysis-results td {
@@ -1717,6 +1745,7 @@ sup.rank{
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory; /* Enable horizontal snap scrolling */
    }
   .trade-analysis-results {
     min-width: 340px; /* MODIFIED: Reduced min-width for very small screens, allows scrolling if content still overflows */
