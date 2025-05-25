@@ -1860,6 +1860,58 @@ sup.rank{
 }
 
 /* User team indicators */
+.user-team-row:not(.selected-team-row) {
+  background: #f0fff4 !important;
+  border-left: 4px solid #48bb78;
+}
+
+.user-team-row:not(.selected-team-row) td:first-child {
+  background: #f0fff4 !important;
+  position: relative;
+}
+
+.user-team-row:not(.selected-team-row) td:first-child::after {
+  content: " (Your Team)";
+  font-size: 12px;
+  color: #48bb78;
+  font-weight: 600;
+}
+
+/* When user team is selected */
+.selected-team-row.user-team-row td:first-child::after {
+  content: " (Your Team)";
+  font-size: 12px;
+  color: #4299e1;
+  font-weight: 600;
+}
+
+.selected-team-row.user-team-row td:first-child::before {
+  content: "👑";
+}
+
+/* Card styling for user team when not selected */
+.user-team-card:not(.selected-team-card) {
+  border: 2px solid #48bb78;
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15);
+}
+
+.user-team-card:not(.selected-team-card) .card-header {
+  background: #48bb78;
+  position: relative;
+}
+
+/* Selected team card styling */
+.selected-team-card {
+  border: 2px solid #4299e1;
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
+}
+
+.selected-team-card .card-header {
+  background: #4299e1;
+  position: relative;
+}
+
+/* User team indicators */
 .user-team-row {
   background: #f0fff4 !important;
   border-left: 4px solid #48bb78;

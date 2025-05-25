@@ -478,10 +478,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const showRanks = showRanksChk.checked;
       const baseTeam = teams[selectedTeamIndex];
 
-      // Create table rows
+      // First, create row for the selected team
+      const selectedTeamTr = document.createElement('tr');
+      selectedTeamTr.className = 'selected-team-row';
+      if (baseTeam.isMine) selectedTeamTr.classList.add('user-team-row');
+      selectedTeamTr.insertAdjacentHTML('beforeend', `<td>${baseTeam.name}</td>`);
+
+      // Add stat cells for selected team
+      CONFIG.COLS.forEach(([id]) => {
+        const raw = Utils.formatStatValue(id, baseTeam.statMap[id]);
+        const rk = ranks[selectedTeamIndex][id];
+        const sup = (showRanks && rk !== '-') ? `<sup class="rank">${Utils.ordinal(rk)}</sup>` : '';
+        selectedTeamTr.insertAdjacentHTML('beforeend', `<td>${raw}${sup}</td>`);
+      });
+
+      // Add empty score cell for selected team
+      selectedTeamTr.insertAdjacentHTML('beforeend', `<td class="score-cell"></td>`);
+      tbody.appendChild(selectedTeamTr);
+
+      // Then create rows for all other teams
       teams.forEach((t, idx) => {
+        if (idx === selectedTeamIndex) return; // Skip selected team as it's already shown
+
         const tr = document.createElement('tr');
-        if (idx === selectedTeamIndex) tr.className = 'selected-team-row';
         if (t.isMine) tr.classList.add('user-team-row');
         tr.insertAdjacentHTML('beforeend', `<td>${t.name}</td>`);
 
@@ -490,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const raw = Utils.formatStatValue(id, t.statMap[id]);
           let cls = '';
           
-          if (idx !== selectedTeamIndex && raw !== '–' && baseTeam.statMap[id] !== '–') {
+          if (raw !== '–' && baseTeam.statMap[id] !== '–') {
             const a = parseFloat(raw), b = parseFloat(baseTeam.statMap[id]);
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
@@ -503,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         // Add score cell
-        const rec = idx !== selectedTeamIndex ? Utils.recordVsUser(baseTeam.statMap, t.statMap) : '';
+        const rec = Utils.recordVsUser(baseTeam.statMap, t.statMap);
         tr.insertAdjacentHTML('beforeend', `<td class="score-cell">${rec}</td>`);
         tbody.appendChild(tr);
       });
@@ -592,10 +611,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const showRanks = showRanksChk.checked;
       const baseTeam = teams[selectedTeamIndex];
 
-      // Create table rows
+      // First, create row for the selected team
+      const selectedTeamTr = document.createElement('tr');
+      selectedTeamTr.className = 'selected-team-row';
+      if (baseTeam.isMine) selectedTeamTr.classList.add('user-team-row');
+      selectedTeamTr.insertAdjacentHTML('beforeend', `<td>${baseTeam.name}</td>`);
+
+      // Add stat cells for selected team
+      CONFIG.COLS.forEach(([id]) => {
+        const raw = baseTeam.statMap[id];
+        const rk = ranks[selectedTeamIndex][id];
+        const sup = (showRanks && rk !== '-') ? `<sup class="rank">${Utils.ordinal(rk)}</sup>` : '';
+        selectedTeamTr.insertAdjacentHTML('beforeend', `<td>${raw}${sup}</td>`);
+      });
+      tbody.appendChild(selectedTeamTr);
+
+      // Then create rows for all other teams
       teams.forEach((t, idx) => {
+        if (idx === selectedTeamIndex) return; // Skip selected team as it's already shown
+
         const tr = document.createElement('tr');
-        if (idx === selectedTeamIndex) tr.className = 'selected-team-row';
         if (t.isMine) tr.classList.add('user-team-row');
         tr.insertAdjacentHTML('beforeend', `<td>${t.name}</td>`);
 
@@ -604,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const raw = t.statMap[id];
           let cls = '';
           
-          if (idx !== selectedTeamIndex && raw !== '–' && baseTeam.statMap[id] !== '–') {
+          if (raw !== '–' && baseTeam.statMap[id] !== '–') {
             const a = parseFloat(raw), b = parseFloat(baseTeam.statMap[id]);
             if (!isNaN(a) && !isNaN(b) && a !== b) {
               cls = (dir === 'high' ? b > a : b < a) ? 'better' : 'worse';
