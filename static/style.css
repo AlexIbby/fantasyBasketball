@@ -1384,10 +1384,6 @@ sup.rank{
   color: #c05621; /* Dark orange text */
 }
 
-/* Force override for blue background (use as last resort - seems not needed now) */
-/* #tab-trade { background-color: white !important; } */
-/* #tab-trade .info-box { background: #f8fafc !important; } */
-
 /* Mobile styles for Trade Analyzer layout */
 @media (max-width: 768px) {
   .trade-sides-container {
@@ -1461,14 +1457,6 @@ sup.rank{
   padding: 0; /* Reset padding if any from general .tab-pane */
   /* background-color: white; is handled by .tab-pane.active */
 }
-
-/* Force container backgrounds to be transparent if there were issues */
-/* .trade-analyzer-container, 
-.trade-sides-container, 
-.trade-stats-container {
-  background-color: transparent !important;
-} */
-
 
 /* ───── Trade Analysis Results Table ───── */
 .trade-analysis-results {
@@ -1744,8 +1732,6 @@ sup.rank{
    .trade-results-container { /* This is the direct parent of .trade-analysis-results */
         width: 100%;
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x mandatory; /* Enable horizontal snap scrolling */
    }
   .trade-analysis-results {
     min-width: 340px; /* MODIFIED: Reduced min-width for very small screens, allows scrolling if content still overflows */
