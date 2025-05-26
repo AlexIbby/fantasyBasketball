@@ -49,53 +49,11 @@
       </div>
     </header>    <!-- nav tabs -->
     <nav class="nav-tabs">
-      <button class="nav-tab active" data-target="tab-cat">Category Strengths by Week</button>
-      <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
+      <button class="nav-tab active" data-target="tab-compare">Compare Teams</button>
+      <button class="nav-tab"        data-target="tab-cat">Category Strengths by Week</button>
       <button class="nav-tab"        data-target="tab-trends">Trends</button>
-      <button class="nav-tab"        data-target="tab-trade">Trade Analyzer</button>
-    </nav><!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
-    <section id="tab-cat" class="tab-pane active">
-      <div class="info-box">
-        <div class="info-main">
-          <p>Compare performance against <em>every</em> team this week.</p>
-        </div>
-        <div id="weeklyAnalysisSummary" class="info-analysis"></div>
-      </div>
-
-      <div class="filters">
-        <div class="week-selector">
-          <span class="week-label">Week:</span>
-          <select id="weekSel"></select>
-        </div>
-
-        <div class="team-selector">
-          <span class="team-label">Viewing as:</span>
-          <select id="weeklyTeamSel" class="team-select">
-            <option value="">Loading teams...</option>
-          </select>
-        </div>
-
-        <label class="checkbox-container">
-          <input type="checkbox" id="showRanks" checked>
-          Show team ranks per category
-        </label>
-
-        <!-- view-toggle appears on mobile -->
-        <div class="view-toggle">
-          <button id="cardsView" class="active">Cards</button>
-          <button id="tableView">Table</button>
-        </div>
-      </div>
-
-      <!-- desktop table -->
-      <div class="table-container">
-        <table id="scoreTable"></table>
-      </div>
-
-      <!-- mobile cards -->
-      <div class="cards-container" id="cardsContainer"></div>
-    </section>    <!-- ═══════════ COMPARE TEAMS ═══════════ -->
-    <section id="tab-compare" class="tab-pane">
+      <button class="nav-tab"        data-target="tab-trade">Trade Analyzer</button>    </nav><!-- ═══════════ COMPARE TEAMS ═══════════ -->
+    <section id="tab-compare" class="tab-pane active">
       <div class="info-box">
         <div class="info-main">
           <p>Compare every team's <strong>season totals</strong> or their <strong>per-week averages</strong>. Switch using the <strong>view</strong> menu below.</p>
@@ -141,6 +99,48 @@
       <div class="cards-container" id="compareCardsContainer"></div>
     </section>
 
+    <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
+    <section id="tab-cat" class="tab-pane">
+      <div class="info-box">
+        <div class="info-main">
+          <p>Compare performance against <em>every</em> team this week.</p>
+        </div>
+        <div id="weeklyAnalysisSummary" class="info-analysis"></div>
+      </div>
+
+      <div class="filters">
+        <div class="week-selector">
+          <span class="week-label">Week:</span>
+          <select id="weekSel"></select>
+        </div>
+
+        <div class="team-selector">
+          <span class="team-label">Viewing as:</span>
+          <select id="weeklyTeamSel" class="team-select">
+            <option value="">Loading teams...</option>
+          </select>
+        </div>
+
+        <label class="checkbox-container">
+          <input type="checkbox" id="showRanks" checked>
+          Show team ranks per category
+        </label>
+
+        <!-- view-toggle appears on mobile -->
+        <div class="view-toggle">
+          <button id="cardsView" class="active">Cards</button>
+          <button id="tableView">Table</button>
+        </div>
+      </div>
+
+      <!-- desktop table -->
+      <div class="table-container">
+        <table id="scoreTable"></table>
+      </div>
+
+      <!-- mobile cards -->
+      <div class="cards-container" id="cardsContainer"></div>
+    </section>
     <!-- ═══════════ TRENDS ═══════════ -->
     <section id="tab-trends" class="tab-pane">
 
