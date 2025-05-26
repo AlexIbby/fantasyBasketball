@@ -593,17 +593,16 @@ document.addEventListener('DOMContentLoaded', () => {
         cardsContainer.appendChild(card);
       });
     },
-    
-    // Render compare table (season data)
+      // Render compare table (season data)
     renderCompareTable: (teams, selectedTeamIndex = 0) => {
       const { compareTable, showRanksChk } = DOM.compare;
       
       compareTable.innerHTML = '';
       if (!teams.length) return;
 
-      // Create table header
+      // Create table header with Score column
       compareTable.insertAdjacentHTML('afterbegin',
-        `<thead><tr><th>Team</th>${CONFIG.COLS.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead><tbody></tbody>`
+        `<thead><tr><th>Team</th>${CONFIG.COLS.map(c => `<th>${c[1]}</th>`).join('')}<th>Score</th></tr></thead><tbody></tbody>`
       );
       
       const tbody = compareTable.querySelector('tbody');
@@ -624,6 +623,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const sup = (showRanks && rk !== '-') ? `<sup class="rank">${Utils.ordinal(rk)}</sup>` : '';
         selectedTeamTr.insertAdjacentHTML('beforeend', `<td>${raw}${sup}</td>`);
       });
+
+      // Add empty score cell for selected team
+      selectedTeamTr.insertAdjacentHTML('beforeend', `<td class="score-cell"></td>`);
       tbody.appendChild(selectedTeamTr);
 
       // Then create rows for all other teams
@@ -651,6 +653,9 @@ document.addEventListener('DOMContentLoaded', () => {
           tr.insertAdjacentHTML('beforeend', `<td class="${cls}">${raw}${sup}</td>`);
         });
         
+        // Add score cell
+        const rec = Utils.recordVsUser(baseTeam.statMap, t.statMap);
+        tr.insertAdjacentHTML('beforeend', `<td class="score-cell">${rec}</td>`);
         tbody.appendChild(tr);
       });
     },
