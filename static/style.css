@@ -117,6 +117,7 @@ select{
   position:relative; /* Important for positioning */
   scroll-snap-type: x mandatory; /* Enable horizontal snap scrolling */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scroll-padding-left: 220px; /* Account for sticky column width */
 }
 table{
   width:100%;
@@ -135,7 +136,7 @@ th{
   position:sticky;
   top:0;
   z-index:2; /* Higher than td:first-child */
-  scroll-snap-align: start; /* Add snap alignment for header columns */
+  scroll-snap-align: none; /* Default to none for all headers */
 }
 th:first-child{
   text-align:left;
@@ -145,6 +146,10 @@ th:first-child{
   left:0; /* Stick to the left */
   scroll-snap-align: none; /* Don't snap on the first column since it's sticky */
 }
+/* Only enable snap alignment starting from the 2nd column since 1st is sticky */
+th:nth-child(n+2){
+  scroll-snap-align: start;
+}
 td{
   padding:14px 8px;
   text-align:center;
@@ -152,7 +157,7 @@ td{
   position:relative;
   white-space:nowrap;
   background:inherit; /* This helps with the sticky column */
-  scroll-snap-align: start; /* Add snap alignment for columns */
+  scroll-snap-align: none; /* Default to none for all cells */
 }
 td:first-child{
   text-align:left;
@@ -166,6 +171,10 @@ td:first-child{
   z-index:1; /* Above other cells but below headers */
   background:inherit; /* Inherit the background from tr */
   scroll-snap-align: none; /* Don't snap on the first column since it's sticky */
+}
+/* Only enable snap alignment starting from the 2nd column since 1st is sticky */
+td:nth-child(n+2){
+  scroll-snap-align: start;
 }
 tr:nth-child(even){background:#f7fafc}
 tr:hover{background:#ebf4ff}
@@ -932,6 +941,24 @@ sup.rank{
     align-items: stretch;
     gap: 16px;
     padding: 16px 20px;
+  }
+  
+  /* Fix mobile table scroll-snap behavior */
+  .table-container {
+    scroll-snap-type: none; /* Disable aggressive snapping on mobile */
+    scroll-padding-left: 0; /* Reset scroll padding on mobile */
+  }
+  
+  /* Make table scrolling smoother on mobile */
+  table {
+    min-width: 800px; /* Reduce min-width for better mobile experience */
+  }
+  
+  /* Adjust column widths for mobile table view */
+  th:first-child,
+  td:first-child {
+    width: 180px; /* Slightly smaller sticky column on mobile */
+    min-width: 180px;
   }
   
   .week-selector, .team-selector {

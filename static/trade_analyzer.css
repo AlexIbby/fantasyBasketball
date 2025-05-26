@@ -388,7 +388,7 @@
   text-align: center;
   position: relative;
   letter-spacing: 0.3px;
-  scroll-snap-align: start; /* Add snap alignment for trade table headers */
+  scroll-snap-align: none; /* Default to none for all headers */
 }
 
 .trade-analysis-results th:first-child {
@@ -399,6 +399,11 @@
 
 .trade-analysis-results th:last-child {
   border-top-right-radius: 8px; /* For rounded table corners */
+}
+
+/* Only enable snap alignment starting from the 3rd column to avoid premature snapping */
+.trade-analysis-results th:nth-child(n+3){
+  scroll-snap-align: start;
 }
 
 .trade-analysis-results tbody tr {
@@ -419,13 +424,18 @@
   text-align: center;
   vertical-align: middle;
   border-right: 1px solid #e2e8f0; 
-  scroll-snap-align: start; /* Add snap alignment for trade table cells */
+  scroll-snap-align: none; /* Default to none for all cells */
 }
 
 .trade-analysis-results td:first-child {
   text-align: left;
   padding-left: 20px;
   font-weight: 600;
+}
+
+/* Only enable snap alignment starting from the 3rd column to avoid premature snapping */
+.trade-analysis-results td:nth-child(n+3){
+  scroll-snap-align: start;
 }
 
 .trade-analysis-results td:last-child {
@@ -587,11 +597,11 @@
     font-size: 13px; /* MODIFIED: Slightly smaller font for better fit */
     min-width: 0; /* ADDED: Override general table min-width to allow shrinking */
   }
-
-  /* Enable snap scrolling for trade results container on mobile */
+  /* Disable aggressive snap scrolling for trade results container on mobile */
   .trade-results-container {
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: none; /* Disable aggressive snapping on mobile */
     -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
   }
 
   /* Apply common styles AND width to all th and td */
