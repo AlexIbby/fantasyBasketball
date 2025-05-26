@@ -908,6 +908,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load initial data
     API.loadWeek(1);
+    // Also load season stats for the compare tab
+    if (document.querySelector('[data-target="tab-compare"]')?.classList.contains('active')) {
+      API.loadSeasonStats();
+    }
   };
 
   // Initialize application
