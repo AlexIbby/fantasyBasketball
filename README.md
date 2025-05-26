@@ -1,6 +1,6 @@
-# Fantasy Basketball Analytics
+# H2H Yahoo Fantasy Basketball helper
 
-A comprehensive web application for analyzing Yahoo Fantasy Basketball league performance, providing detailed insights into team strengths, statistical trends, and trade opportunities.
+A comprehensive web application for analyzing H2H Categories Yahoo Fantasy Basketball league performance, providing detailed insights into team strengths, statistical trends, and trade opportunities.
 
 ## Features
 
