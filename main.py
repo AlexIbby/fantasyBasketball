@@ -2,10 +2,10 @@
 import os, json, logging, time
 from nba_api.stats.static import players as nba_static_players
 from nba_api.stats.endpoints import playerindex, PlayerDashboardByGeneralSplits
-from datetime import datetime
+from datetime import datetime, timezone
 import traceback # For detailed error logging
 
-from typing import Any, Dict, Iterable, Iterator, List, Optional
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set
 
 import requests
 from authlib.integrations.flask_client import OAuth
@@ -93,6 +93,54 @@ def _league_meta_value(payload: Dict[str, Any], field: str):
     elif isinstance(league, dict):
         return league.get(field)
     return None
+
+
+def _previous_league_key(payload: Dict[str, Any]) -> Optional[str]:
+    """Return the most recent prior league_key if Yahoo exposes one."""
+    raw = _league_meta_value(payload, "renewed")
+    if isinstance(raw, str):
+        candidate = raw.strip()
+        if candidate and candidate != "0":
+            return _normalize_previous_key(candidate)
+    if isinstance(raw, dict):
+        for key in ("value", "league_key"):
+            candidate = raw.get(key)
+            if isinstance(candidate, str):
+                candidate = candidate.strip()
+                if candidate:
+                    return _normalize_previous_key(candidate)
+    # Some payloads expose the previous season under `renew` instead.
+    alt = _league_meta_value(payload, "renew")
+    if isinstance(alt, str):
+        candidate = alt.strip()
+        if candidate and candidate != "0":
+            return _normalize_previous_key(candidate)
+    if isinstance(alt, dict):
+        for key in ("value", "league_key"):
+            candidate = alt.get(key)
+            if isinstance(candidate, str):
+                candidate = candidate.strip()
+                if candidate:
+                    return _normalize_previous_key(candidate)
+    return None
+
+
+def _normalize_previous_key(candidate: str) -> str:
+    """Ensure the league key is in Yahoo's expected format (game.l.league)."""
+    if "." in candidate:
+        return candidate
+    if "_" in candidate:
+        game_id, _, league_id = candidate.partition("_")
+        if game_id and league_id:
+            return f"{game_id}.l.{league_id}"
+    if candidate.isdigit():
+        # When only league id is returned, reuse the active league's game prefix.
+        current = session.get("league_key")
+        if isinstance(current, str) and ".l." in current:
+            prefix = current.split(".l.", 1)[0]
+            if prefix:
+                return f"{prefix}.l.{candidate}"
+    return candidate
 
 
 def _extract_scoring_type(settings_payload: Optional[Dict[str, Any]]) -> Optional[str]:
@@ -384,36 +432,91 @@ def api_draft_keepers():
     teams_meta = _parse_teams_meta(teams_payload)
     keepers = _parse_keeper_players(keepers_payload)
 
-    keepers_by_team: Dict[str, List[Dict[str, Any]]] = {}
-    orphans: List[Dict[str, Any]] = []
+    def _organize_rosters(raw: List[Dict[str, Any]]):
+        grouped: Dict[str, List[Dict[str, Any]]] = {}
+        missing: List[Dict[str, Any]] = []
+        for entry in raw:
+            owner_key = entry.get("owner_team_key")
+            if owner_key:
+                grouped.setdefault(owner_key, []).append(entry)
+            else:
+                missing.append(entry)
+        for roster in grouped.values():
+            roster.sort(key=lambda player: (player.get("name_full") or "").lower())
+        return grouped, missing
 
-    for keeper in keepers:
-        owner_key = keeper.get("owner_team_key")
-        if owner_key:
-            keepers_by_team.setdefault(owner_key, []).append(keeper)
-        else:
-            orphans.append(keeper)
-
-    for roster in keepers_by_team.values():
-        roster.sort(key=lambda player: (player.get("name_full") or "").lower())
+    keepers_by_team, orphans = _organize_rosters(keepers)
 
     if orphans:
         log.info("Found %d keeper records without owner_team_key for league %s", len(orphans), league_key)
+
+    current_keeper_count = sum(len(roster) for roster in keepers_by_team.values())
+
+    previous_data: Optional[Dict[str, Any]] = None
+    previous_keeper_count = 0
+    previous_league_key = _previous_league_key(teams_payload)
+
+    if previous_league_key and previous_league_key != league_key:
+        log.info("Attempting to fetch previous season keepers via league %s", previous_league_key)
+        try:
+            prev_keepers_payload = yahoo_api(f"fantasy/v2/league/{previous_league_key}/players;status=K;out=ownership")
+            prev_teams_payload = yahoo_api(f"fantasy/v2/league/{previous_league_key}/teams")
+        except requests.exceptions.HTTPError as e:
+            log.warning("Yahoo API error while fetching previous keepers for %s: %s", previous_league_key, e)
+        except Exception as e:
+            log.exception("Unexpected error while fetching previous keepers for %s", previous_league_key)
+        else:
+            prev_teams_meta = _parse_teams_meta(prev_teams_payload)
+            prev_keepers = _parse_keeper_players(prev_keepers_payload)
+            prev_grouped, prev_orphans = _organize_rosters(prev_keepers)
+            previous_keeper_count = sum(len(roster) for roster in prev_grouped.values())
+            previous_data = {
+                "league_key": previous_league_key,
+                "season": _league_meta_value(prev_teams_payload, "season"),
+                "teams": prev_teams_meta,
+                "keepers_by_team": prev_grouped,
+                "orphans": prev_orphans,
+            }
 
     metadata = {
         "league_key": league_key,
         "league_name": _league_meta_value(teams_payload, "name"),
         "season": _league_meta_value(teams_payload, "season"),
         "scoring_type": _extract_scoring_type(settings_payload),
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "previous_league_key": previous_league_key,
+        "previous_season": previous_data.get("season") if previous_data else None,
+        "current_keeper_count": current_keeper_count,
+        "previous_keeper_count": previous_keeper_count,
     }
 
-    return jsonify({
+    seasons: List[str] = []
+    if isinstance(metadata.get("season"), str) and metadata["season"]:
+        seasons.append(metadata["season"])
+    if previous_data and isinstance(previous_data.get("season"), str) and previous_data["season"]:
+        seasons.append(previous_data["season"])
+    if seasons:
+        # Preserve unique values while maintaining insertion order (current season first).
+        seen: Set[str] = set()
+        deduped: List[str] = []
+        for season in seasons:
+            if season not in seen:
+                seen.add(season)
+                deduped.append(season)
+        metadata["available_seasons"] = deduped
+
+    metadata["fallback_to_previous"] = bool(not current_keeper_count and previous_keeper_count)
+
+    response_payload: Dict[str, Any] = {
         "teams": teams_meta,
         "keepers_by_team": keepers_by_team,
         "orphans": orphans,
         "metadata": metadata,
-    })
+    }
+    if previous_data:
+        response_payload["previous_season"] = previous_data
+
+    return jsonify(response_payload)
 
 
 # Helper to get user's fantasy team_key from Yahoo data (original from prompt)

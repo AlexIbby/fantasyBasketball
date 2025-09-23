@@ -1376,6 +1376,44 @@ sup.rank{
   gap:20px;
   padding:0 24px 24px;
 }
+.keepers-previous {
+  margin:0 24px 24px;
+  padding:20px;
+  border:1px solid #dbeafe;
+  border-radius:12px;
+  background:#f8fafc;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.keepers-previous-header {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.keepers-previous-title {
+  margin:0;
+  font-size:18px;
+  font-weight:600;
+  color:#1e293b;
+}
+.keepers-previous-note {
+  margin:0;
+  font-size:14px;
+  color:#475569;
+}
+.keepers-container-previous {
+  padding:0;
+}
+.keepers-team-previous .keepers-team-header {
+  background:#edf2ff;
+}
+.keepers-team-previous {
+  border-color:#c7d2fe;
+}
+.keepers-team-previous .keeper-badge {
+  background:#4338ca;
+}
 .keepers-team {
   border:1px solid #e2e8f0;
   border-radius:12px;
@@ -1478,6 +1516,14 @@ sup.rank{
   }
   .keepers-container {
     padding:0 16px 16px;
+  }
+  .keepers-previous {
+    margin:0 16px 16px;
+    padding:16px;
+    gap:12px;
+  }
+  .keepers-previous-title {
+    font-size:17px;
   }
   .draft-subtabs {
     margin:0 16px 12px;

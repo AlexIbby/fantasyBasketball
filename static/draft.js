@@ -1,4 +1,4 @@
-﻿/* draft.js - handles the Draft > Keepers experience */
+/* draft.js - handles the Draft > Keepers experience */
 document.addEventListener('DOMContentLoaded', () => {
   const DOM = {
     tabButton: document.querySelector('.nav-tab[data-target="tab-draft"]'),
@@ -12,6 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     error: document.getElementById('keepersError'),
     empty: document.getElementById('keepersEmpty'),
     container: document.getElementById('keepersContainer'),
+    fallbackNotice: document.getElementById('keepersFallbackNotice'),
+    previousWrapper: document.getElementById('keepersPreviousWrapper'),
+    previousContainer: document.getElementById('keepersPreviousContainer'),
+    previousEmpty: document.getElementById('keepersPreviousEmpty'),
+    previousMeta: document.getElementById('keepersPreviousMeta'),
     orphanNotice: document.getElementById('keepersOrphanNotice')
   };
 
@@ -24,7 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loaded: false,
     selectedTeam: 'ALL',
     data: null,
-    teamMap: {}
+    previous: null,
+    metadata: null,
+    teamMap: {},
+    previousTeamMap: {}
   };
 
   DOM.subTabs.forEach((btn) => {
@@ -85,12 +93,16 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error((payload && payload.error) || 'Unable to load keeper data.');
       }
 
-      state.data = normalizePayload(payload);
+      const normalized = normalizePayload(payload);
+      state.data = normalized.current;
+      state.previous = normalized.previous;
+      state.metadata = normalized.metadata;
       state.loaded = true;
-      populateSeasonSelect(state.data.metadata);
+      populateSeasonSelect(state.metadata);
       populateTeamSelect();
-      updateScoringNote(state.data.metadata);
+      updateScoringNote(state.metadata);
       renderKeepers();
+      updateFallbackNotice();
     } catch (error) {
       showError(error.message || 'Unable to load keeper data.');
     } finally {
@@ -100,19 +112,95 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function normalizePayload(payload) {
-    const teams = Array.isArray(payload && payload.teams) ? payload.teams.slice() : [];
-    const keepersByTeam = {};
-    if (payload && typeof payload.keepers_by_team === 'object' && payload.keepers_by_team !== null) {
-      Object.entries(payload.keepers_by_team).forEach(([teamKey, players]) => {
-        if (Array.isArray(players)) {
-          keepersByTeam[teamKey] = players.map(formatKeeper);
+    const metadata = normalizeMetadata(payload && payload.metadata);
+    const currentBlock = {
+      teams: payload && payload.teams,
+      keepers_by_team: payload && payload.keepers_by_team,
+      orphans: payload && payload.orphans,
+      season: metadata.season,
+      league_key: metadata.league_key
+    };
+    const previousBlock = payload && typeof payload.previous_season === 'object' ? payload.previous_season : null;
+
+    return {
+      current: normalizeSeasonBlock(currentBlock),
+      previous: previousBlock ? normalizeSeasonBlock(previousBlock) : null,
+      metadata
+    };
+  }
+
+  function normalizeMetadata(raw) {
+    if (!raw || typeof raw !== 'object') {
+      return {};
+    }
+    const meta = {};
+    if (raw.league_key) meta.league_key = String(raw.league_key);
+    if (raw.league_name) meta.league_name = String(raw.league_name);
+    if (raw.season) meta.season = String(raw.season);
+    if (raw.scoring_type) meta.scoring_type = String(raw.scoring_type);
+    if (raw.generated_at) meta.generated_at = String(raw.generated_at);
+    if (raw.previous_league_key) meta.previous_league_key = String(raw.previous_league_key);
+    if (raw.previous_season) meta.previous_season = String(raw.previous_season);
+    if (Array.isArray(raw.available_seasons)) {
+      meta.available_seasons = raw.available_seasons.map((season) => String(season));
+    }
+    const currentCount = Number(raw.current_keeper_count);
+    meta.current_keeper_count = Number.isFinite(currentCount) ? currentCount : 0;
+    const previousCount = Number(raw.previous_keeper_count);
+    meta.previous_keeper_count = Number.isFinite(previousCount) ? previousCount : 0;
+    meta.fallback_to_previous = Boolean(raw.fallback_to_previous);
+    return meta;
+  }
+
+  function normalizeSeasonBlock(block) {
+    if (!block || typeof block !== 'object') {
+      return {
+        leagueKey: '',
+        season: '',
+        teams: [],
+        keepersByTeam: {},
+        orphans: []
+      };
+    }
+
+    const teams = Array.isArray(block.teams) ? block.teams.slice() : [];
+    const sanitizedTeams = teams
+      .map((team) => {
+        if (!team || typeof team !== 'object') {
+          return null;
         }
+        const teamKey = team.team_key ? String(team.team_key) : '';
+        if (!teamKey) {
+          return null;
+        }
+        return {
+          team_key: teamKey,
+          team_name: team.team_name ? String(team.team_name) : 'Team',
+          manager_name: team.manager_name ? String(team.manager_name) : ''
+        };
+      })
+      .filter(Boolean);
+    sanitizedTeams.sort((a, b) => (a.team_name || '').localeCompare(b.team_name || ''));
+
+    const keepersByTeam = {};
+    if (block.keepers_by_team && typeof block.keepers_by_team === 'object') {
+      Object.entries(block.keepers_by_team).forEach(([teamKey, players]) => {
+        if (!Array.isArray(players)) {
+          return;
+        }
+        keepersByTeam[String(teamKey)] = players.map(formatKeeper);
       });
     }
-    const orphans = Array.isArray(payload && payload.orphans) ? payload.orphans.map(formatKeeper) : [];
-    const metadata = payload && typeof payload.metadata === 'object' && payload.metadata !== null ? payload.metadata : {};
-    teams.sort((a, b) => (a && a.team_name ? a.team_name : '').localeCompare(b && b.team_name ? b.team_name : ''));
-    return { teams, keepersByTeam, orphans, metadata };
+
+    const orphans = Array.isArray(block.orphans) ? block.orphans.map(formatKeeper) : [];
+
+    return {
+      leagueKey: block.league_key ? String(block.league_key) : '',
+      season: block.season ? String(block.season) : '',
+      teams: sanitizedTeams,
+      keepersByTeam,
+      orphans
+    };
   }
 
   function formatKeeper(raw) {
@@ -126,11 +214,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  function getAugmentedTeamList() {
-    if (!state.data) return [];
-    const list = Array.isArray(state.data.teams) ? state.data.teams.slice() : [];
+  function getAugmentedTeamList(source) {
+    if (!source) return [];
+    const list = Array.isArray(source.teams) ? source.teams.slice() : [];
     const knownKeys = new Set(list.map((team) => team.team_key));
-    Object.keys(state.data.keepersByTeam).forEach((teamKey) => {
+    Object.keys(source.keepersByTeam || {}).forEach((teamKey) => {
       if (!knownKeys.has(teamKey)) {
         list.push({
           team_key: teamKey,
@@ -147,31 +235,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!DOM.seasonSelect) return;
     const select = DOM.seasonSelect;
     select.innerHTML = '';
-    const seasons = Array.isArray(metadata && metadata.available_seasons) ? metadata.available_seasons.slice() : [];
-    const primarySeason = metadata && metadata.season ? String(metadata.season) : '';
-    if (primarySeason && !seasons.includes(primarySeason)) {
-      seasons.push(primarySeason);
+    const currentSeason = metadata && metadata.season ? String(metadata.season) : '';
+    const previousSeason = metadata && metadata.previous_season ? String(metadata.previous_season) : '';
+
+    const options = [];
+    if (currentSeason) {
+      options.push({ value: currentSeason, label: `Current: ${currentSeason}` });
+    } else {
+      options.push({ value: '', label: 'Current Season' });
     }
-    if (!seasons.length) {
-      const opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = 'Current Season';
-      opt.selected = true;
-      select.appendChild(opt);
-      select.disabled = true;
-      return;
+    if (previousSeason) {
+      options.push({ value: previousSeason, label: `Last: ${previousSeason}` });
     }
-    seasons.sort((a, b) => String(b).localeCompare(String(a)));
-    seasons.forEach((seasonValue) => {
+
+    options.forEach((entry, index) => {
       const option = document.createElement('option');
-      option.value = String(seasonValue);
-      option.textContent = String(seasonValue);
-      if (primarySeason && String(primarySeason) === String(seasonValue)) {
+      option.value = entry.value;
+      option.textContent = entry.label;
+      if (index === 0) {
         option.selected = true;
       }
       select.appendChild(option);
     });
-    select.disabled = seasons.length <= 1;
+
+    select.disabled = true;
   }
 
   function populateTeamSelect() {
@@ -186,13 +273,13 @@ document.addEventListener('DOMContentLoaded', () => {
     select.appendChild(defaultOption);
 
     state.teamMap = {};
-    const augmented = getAugmentedTeamList();
+    const augmented = getAugmentedTeamList(state.data);
     augmented.forEach((team) => {
       if (!team || !team.team_key) return;
       state.teamMap[team.team_key] = team;
       const option = document.createElement('option');
       option.value = team.team_key;
-      option.textContent = team.manager_name ? `${team.team_name} — ${team.manager_name}` : team.team_name;
+      option.textContent = team.manager_name ? `${team.team_name} -- ${team.manager_name}` : team.team_name;
       select.appendChild(option);
     });
 
@@ -211,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const selectedKey = state.selectedTeam || 'ALL';
     const teamsToRender = selectedKey === 'ALL'
-      ? getAugmentedTeamList()
+      ? getAugmentedTeamList(state.data)
       : [state.teamMap[selectedKey]].filter(Boolean);
 
     if (!teamsToRender.length) {
@@ -220,6 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.exportBtn) {
         DOM.exportBtn.disabled = true;
       }
+      updateFallbackNotice();
+      renderPreviousKeepers();
       return;
     }
 
@@ -237,6 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.exportBtn) {
         DOM.exportBtn.disabled = true;
       }
+      updateFallbackNotice();
+      renderPreviousKeepers();
       return;
     }
 
@@ -245,11 +336,151 @@ document.addEventListener('DOMContentLoaded', () => {
     if (DOM.exportBtn) {
       DOM.exportBtn.disabled = totalKeepers === 0;
     }
+    updateFallbackNotice();
+    renderPreviousKeepers();
   }
 
-  function buildTeamSection(team, keepers) {
+  function renderPreviousKeepers() {
+    if (!DOM.previousWrapper) return;
+
+    const previous = state.previous;
+    const hasPreviousData = Boolean(
+      previous && (
+        previous.season ||
+        previous.leagueKey ||
+        Object.keys(previous.keepersByTeam || {}).length ||
+        (previous.orphans || []).length
+      )
+    );
+
+    if (!hasPreviousData) {
+      DOM.previousWrapper.hidden = true;
+      if (DOM.previousContainer) {
+        DOM.previousContainer.innerHTML = '';
+        DOM.previousContainer.hidden = true;
+      }
+      if (DOM.previousMeta) {
+        DOM.previousMeta.textContent = '';
+      }
+      if (DOM.previousEmpty) {
+        DOM.previousEmpty.hidden = true;
+      }
+      state.previousTeamMap = {};
+      return;
+    }
+
+    const container = DOM.previousContainer;
+    if (!container) {
+      return;
+    }
+
+    DOM.previousWrapper.hidden = false;
+    container.innerHTML = '';
+    toggleLoading(false);
+
+    const teams = getAugmentedTeamList(previous);
+    state.previousTeamMap = {};
+    teams.forEach((team) => {
+      if (team && team.team_key) {
+        state.previousTeamMap[team.team_key] = team;
+      }
+    });
+
+    const selectedKey = state.selectedTeam || 'ALL';
+    let teamsToRender = teams;
+    let filterMatched = true;
+    if (selectedKey !== 'ALL') {
+      const currentTeam = state.teamMap[selectedKey];
+      if (currentTeam) {
+        const matches = teams.filter((team) => {
+          if (!team) return false;
+          if (team.team_key === selectedKey) return true;
+          const sameName = currentTeam.team_name && team.team_name && currentTeam.team_name === team.team_name;
+          const sameManager = currentTeam.manager_name && team.manager_name && currentTeam.manager_name === team.manager_name;
+          return sameName || sameManager;
+        });
+        teamsToRender = matches;
+        filterMatched = matches.length > 0;
+      } else {
+        teamsToRender = [];
+        filterMatched = false;
+      }
+    }
+
+    let totalPreviousKeepers = 0;
+    const badgeLabel = formatPreviousBadge(previous.season);
+    teamsToRender.forEach((team) => {
+      if (!team) return;
+      const keepers = previous.keepersByTeam[team.team_key] || [];
+      totalPreviousKeepers += keepers.length;
+      container.appendChild(buildTeamSection(team, keepers, {
+        badgeLabel,
+        wrapperClass: 'keepers-team-previous'
+      }));
+    });
+
+    if (DOM.previousMeta) {
+      const parts = [];
+      if (previous.season) {
+        parts.push(`Season ${previous.season}`);
+      }
+      if (state.metadata && typeof state.metadata.previous_keeper_count === 'number') {
+        const count = state.metadata.previous_keeper_count;
+        parts.push(`${count} keeper${count === 1 ? '' : 's'} recorded`);
+      }
+      if (selectedKey !== 'ALL' && filterMatched) {
+        const currentTeam = state.teamMap[selectedKey];
+        const label = currentTeam && currentTeam.team_name ? currentTeam.team_name : 'Selected team';
+        parts.push(`Matching ${label}`);
+      }
+      DOM.previousMeta.textContent = parts.join(' | ');
+    }
+
+    if (!totalPreviousKeepers) {
+      if (DOM.previousEmpty) {
+        const filterApplied = selectedKey !== 'ALL';
+        DOM.previousEmpty.hidden = false;
+        DOM.previousEmpty.textContent = filterApplied && !filterMatched
+          ? 'No last season keepers matched the selected team.'
+          : 'No keepers recorded for last season.';
+      }
+      container.hidden = true;
+      toggleLoading(false);
+    } else {
+      if (DOM.previousEmpty) {
+        DOM.previousEmpty.hidden = true;
+      }
+      container.hidden = false;
+    }
+    toggleLoading(false);
+  }
+
+  function formatPreviousBadge(season) {
+    if (season) {
+      return `${season} Keeper`;
+    }
+    return 'Previous Keeper';
+  }
+
+  function updateFallbackNotice() {
+    if (!DOM.fallbackNotice) return;
+    if (!state.metadata || !state.metadata.fallback_to_previous) {
+      DOM.fallbackNotice.hidden = true;
+      DOM.fallbackNotice.textContent = '';
+      return;
+    }
+    const currentSeason = state.metadata && state.metadata.season ? state.metadata.season : 'the current season';
+    const previousSeason = state.metadata && state.metadata.previous_season ? state.metadata.previous_season : 'last season';
+    DOM.fallbackNotice.hidden = false;
+    DOM.fallbackNotice.textContent = `No approved keepers yet for season ${currentSeason}. Showing ${previousSeason} keepers below.`;
+  }
+
+  function buildTeamSection(team, keepers, options = {}) {
     const wrapper = document.createElement('section');
     wrapper.className = 'keepers-team';
+    if (options.wrapperClass) {
+      wrapper.classList.add(options.wrapperClass);
+    }
 
     const header = document.createElement('div');
     header.className = 'keepers-team-header';
@@ -309,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nameCell.className = 'keeper-name';
       const badge = document.createElement('span');
       badge.className = 'keeper-badge';
-      badge.textContent = player.badge || 'Keeper';
+      badge.textContent = options.badgeLabel || player.badge || 'Keeper';
       nameCell.appendChild(badge);
       const nameLabel = document.createElement('span');
       nameLabel.textContent = player.name_full || 'Unnamed Player';
@@ -317,15 +548,15 @@ document.addEventListener('DOMContentLoaded', () => {
       row.appendChild(nameCell);
 
       const posCell = document.createElement('td');
-      posCell.textContent = player.display_position || '—';
+      posCell.textContent = player.display_position || '--';
       row.appendChild(posCell);
 
       const keyCell = document.createElement('td');
-      keyCell.textContent = player.player_key || '—';
+      keyCell.textContent = player.player_key || '--';
       row.appendChild(keyCell);
 
       const idCell = document.createElement('td');
-      idCell.textContent = player.player_id || '—';
+      idCell.textContent = player.player_id || '--';
       row.appendChild(idCell);
 
       tbody.appendChild(row);
@@ -364,6 +595,13 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.error.hidden = false;
     DOM.error.textContent = message;
     DOM.container.hidden = true;
+    if (DOM.previousWrapper) {
+      DOM.previousWrapper.hidden = true;
+    }
+    if (DOM.fallbackNotice) {
+      DOM.fallbackNotice.hidden = true;
+      DOM.fallbackNotice.textContent = '';
+    }
     showEmpty(false);
     if (DOM.exportBtn) {
       DOM.exportBtn.disabled = true;
@@ -444,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.data) return [];
     const rows = [];
     const selectedKey = state.selectedTeam || 'ALL';
-    const teams = selectedKey === 'ALL' ? getAugmentedTeamList() : [state.teamMap[selectedKey]].filter(Boolean);
+    const teams = selectedKey === 'ALL' ? getAugmentedTeamList(state.data) : [state.teamMap[selectedKey]].filter(Boolean);
 
     teams.forEach((team) => {
       const keepers = state.data.keepersByTeam[team.team_key] || [];
