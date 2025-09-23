@@ -12,6 +12,7 @@
   <script defer src="{{ url_for('static', filename='player_contributions.js') }}"></script>
   <script defer src="{{ url_for('static', filename='navbar.js') }}"></script>
   <script defer src="{{ url_for('static', filename='team_logo.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='draft.js') }}"></script>
   <script defer src="{{ url_for('static', filename='trade_analyzer.js') }}"></script>
 </head>
 <body>
@@ -52,6 +53,7 @@
       <button class="nav-tab active" data-target="tab-compare">Compare Teams</button>
       <button class="nav-tab"        data-target="tab-cat">Category Strengths by Week</button>
       <button class="nav-tab"        data-target="tab-trends">Trends</button>
+      <button class="nav-tab"        data-target="tab-draft">Draft</button>
       <button class="nav-tab"        data-target="tab-trade">Trade Analyzer</button>    </nav><!-- ═══════════ COMPARE TEAMS ═══════════ -->
     <section id="tab-compare" class="tab-pane active">
       <div class="info-box">
@@ -232,6 +234,50 @@
     </section>
 
     <!-- ═══════════ TRADE ANALYZER ═══════════ -->
+    <!-- Draft Tab -->
+    <section id="tab-draft" class="tab-pane">
+      <div class="info-box">
+        <div class="info-main">
+          <p>Review keeper designations for every team ahead of the draft. Filter by team and export the list at any time.</p>
+        </div>
+        <div id="keepersScoringNote" class="info-analysis"></div>
+      </div>
+
+      <div class="draft-subtabs">
+        <button class="draft-subtab active" data-draft-target="keepers-panel">Keepers</button>
+      </div>
+
+      <div id="keepers-panel" class="draft-panel active">
+        <div class="filters draft-filters">
+          <div class="filter-group">
+            <span class="filter-label">Season</span>
+            <select id="keepersSeasonSelect" aria-label="Season">
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Team</span>
+            <select id="keepersTeamSelect" aria-label="Team filter">
+              <option value="ALL" selected>All Teams</option>
+            </select>
+          </div>
+          <button id="keepersExportBtn" class="keepers-export" type="button" disabled>Export CSV</button>
+        </div>
+
+        <div id="keepersLoading" class="keepers-loading">
+          <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          <p>Loading keeper data...</p>
+        </div>
+
+        <div id="keepersError" class="keepers-empty" hidden></div>
+        <div id="keepersEmpty" class="keepers-empty" hidden>No approved keepers for this league/season.</div>
+
+        <div id="keepersContainer" class="keepers-container" hidden></div>
+
+        <div id="keepersOrphanNotice" class="keepers-empty subtle" hidden></div>
+      </div>
+    </section>
+
     <section id="tab-trade" class="tab-pane">
       <div class="info-box">
         <p>Analyze potential trades to see how they would impact your team's performance. Add players to both sides of the trade and click <strong>Evaluate Trade</strong>.</p>
