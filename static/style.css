@@ -1361,6 +1361,9 @@ sup.rank{
   padding:32px 24px;
   color:#475569;
 }
+[hidden] {
+  display:none !important;
+}
 .keepers-empty {
   padding:32px 24px;
   text-align:center;
@@ -1375,6 +1378,80 @@ sup.rank{
   flex-direction:column;
   gap:20px;
   padding:0 24px 24px;
+}
+.keepers-user-section {
+  border:1px solid #dbeafe;
+  border-radius:12px;
+  padding:20px 24px 24px;
+  background:#f8fafc;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.keepers-user-header h2 {
+  margin:0;
+  font-size:20px;
+  font-weight:600;
+  color:#1e293b;
+}
+.keepers-user-subtitle {
+  margin:4px 0 0;
+  color:#475569;
+  font-size:14px;
+}
+.keepers-user-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+  gap:18px;
+}
+.keepers-user-card {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.keepers-user-header {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.keepers-user-chip {
+  align-self:flex-start;
+  background:#2563eb;
+  color:#fff;
+  font-size:11px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:999px;
+  font-weight:600;
+}
+.keepers-user-empty {
+  padding:16px;
+  border-radius:8px;
+  background:#e2e8f0;
+  color:#475569;
+  font-style:italic;
+}
+.keepers-team-highlight {
+  border-color:#2563eb;
+  box-shadow:0 6px 16px rgba(37,99,235,.12);
+}
+.keepers-team-user .keepers-team-header {
+  background:#eff6ff;
+  border-bottom-color:#bfdbfe;
+}
+.keepers-team-lead {
+  font-size:12px;
+  font-weight:600;
+  color:#1d4ed8;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.keepers-header-note {
+  margin:6px 0 0;
+  font-size:13px;
+  color:#475569;
 }
 .keepers-previous {
   margin:0 24px 24px;
@@ -1486,6 +1563,93 @@ sup.rank{
   letter-spacing:.05em;
   text-transform:uppercase;
 }
+.keepers-league-section {
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.keepers-league-header h2 {
+  margin:0;
+  font-size:18px;
+  font-weight:600;
+  color:#1e293b;
+}
+.keepers-league-subtitle {
+  margin:4px 0 0;
+  font-size:14px;
+  color:#64748b;
+}
+.keepers-accordion {
+  display:flex;
+  flex-direction:column;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+}
+.keepers-accordion-item + .keepers-accordion-item {
+  border-top:1px solid #e2e8f0;
+}
+.keepers-accordion-header {
+  width:100%;
+  background:none;
+  border:none;
+  padding:18px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  cursor:pointer;
+  font-size:16px;
+  color:#1e293b;
+  transition:background .15s ease;
+  position:relative;
+}
+.keepers-accordion-header:hover,
+.keepers-accordion-header[aria-expanded="true"] {
+  background:#eff6ff;
+}
+.keepers-accordion-header::after {
+  content:'\25BC';
+  font-size:14px;
+  color:#1d4ed8;
+  margin-left:12px;
+  transition:transform .15s ease;
+}
+.keepers-accordion-header[aria-expanded="true"]::after {
+  transform:rotate(180deg);
+}
+.keepers-accordion-label {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+}
+.keepers-accordion-name {
+  font-weight:600;
+}
+.keepers-accordion-manager {
+  font-size:13px;
+  color:#64748b;
+}
+.keepers-accordion-count {
+  font-size:14px;
+  font-weight:600;
+  color:#1d4ed8;
+}
+.keepers-accordion-panel {
+  padding:0 20px 20px;
+  background:#f8fafc;
+}
+.keepers-team-accordion {
+  border:none;
+  box-shadow:none;
+}
+.keepers-team-accordion .keepers-table {
+  background:#fff;
+}
+.keepers-team-accordion .keepers-empty-team {
+  padding:16px 0;
+}
 .keepers-empty-team {
   padding:16px 24px;
   color:#64748b;
@@ -1506,6 +1670,14 @@ sup.rank{
   }
   .keepers-table {
     min-width:100%;
+  }
+  .keepers-user-grid {
+    grid-template-columns:1fr;
+  }
+  .keepers-accordion-header {
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
   }
 }
 @media (max-width:600px) {

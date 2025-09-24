@@ -194,20 +194,34 @@ def _parse_teams_meta(teams_payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         team_key = _first(team_core, "team_key")
         team_name = _first(team_core, "name")
         manager_name = None
+        manager_guid = None
+        is_current_login = False
         for attr in team_core:
-            if isinstance(attr, dict) and "managers" in attr:
-                for manager in _safe_iter(attr["managers"], "manager"):
-                    if isinstance(manager, dict):
-                        manager_name = _first(manager, "nickname") or _first(manager, "guid") or manager.get("manager_id")
-                        if manager_name:
-                            break
-            if manager_name:
+            if not isinstance(attr, dict) or "managers" not in attr:
+                continue
+            for manager in _safe_iter(attr["managers"], "manager"):
+                if not isinstance(manager, dict):
+                    continue
+                manager_name = manager_name or _first(manager, "nickname") or _first(manager, "guid") or manager.get("manager_id")
+                manager_guid = manager_guid or _first(manager, "guid") or manager.get("manager_id")
+                if str(_first(manager, "is_current_login")) == "1":
+                    is_current_login = True
+                if manager_name and manager_guid and is_current_login:
+                    # All desired attributes captured for this manager
+                    break
+            if manager_name and manager_guid and is_current_login:
                 break
         if team_key:
+            team_id = ""
+            if isinstance(team_key, str) and ".t." in team_key:
+                _, _, team_id = team_key.partition(".t.")
             results.append({
                 "team_key": team_key,
                 "team_name": team_name or "(Team)",
-                "manager_name": manager_name or ""
+                "team_id": team_id,
+                "manager_name": manager_name or "",
+                "manager_guid": manager_guid or "",
+                "is_current_login": is_current_login,
             })
     results.sort(key=lambda item: (item["team_name"] or "").lower())
     return results
@@ -432,6 +446,52 @@ def api_draft_keepers():
     teams_meta = _parse_teams_meta(teams_payload)
     keepers = _parse_keeper_players(keepers_payload)
 
+    selected_team_name = session.get("team_name")
+    normalized_selected_name = (
+        str(selected_team_name).strip().casefold()
+        if isinstance(selected_team_name, str) and selected_team_name.strip()
+        else ""
+    )
+
+    if normalized_selected_name:
+        for team in teams_meta:
+            team_name = team.get("team_name")
+            if isinstance(team_name, str) and team_name.strip().casefold() == normalized_selected_name:
+                team["is_current_login"] = True
+
+    user_team_keys: List[str] = []
+    user_team_ids: List[str] = []
+    user_team_names: List[str] = []
+    user_manager_guids: List[str] = []
+
+    for team in teams_meta:
+        if team.get("is_current_login"):
+            if team.get("team_key"):
+                user_team_keys.append(team["team_key"])
+            if team.get("team_id"):
+                user_team_ids.append(team["team_id"])
+            if team.get("team_name"):
+                user_team_names.append(team["team_name"])
+            if team.get("manager_guid"):
+                user_manager_guids.append(team["manager_guid"])
+
+    # Deduplicate while preserving order
+    def _dedupe(seq: List[str]) -> List[str]:
+        seen: Set[str] = set()
+        result: List[str] = []
+        for item in seq:
+            key = item.strip()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            result.append(key)
+        return result
+
+    user_team_keys = _dedupe(user_team_keys)
+    user_team_ids = _dedupe(user_team_ids)
+    user_team_names = _dedupe(user_team_names)
+    user_manager_guids = _dedupe(user_manager_guids)
+
     def _organize_rosters(raw: List[Dict[str, Any]]):
         grouped: Dict[str, List[Dict[str, Any]]] = {}
         missing: List[Dict[str, Any]] = []
@@ -467,6 +527,21 @@ def api_draft_keepers():
             log.exception("Unexpected error while fetching previous keepers for %s", previous_league_key)
         else:
             prev_teams_meta = _parse_teams_meta(prev_teams_payload)
+            id_set = set(user_team_ids)
+            guid_set = set(user_manager_guids)
+            name_set = {name.casefold() for name in user_team_names}
+            for team in prev_teams_meta:
+                if not isinstance(team, dict):
+                    continue
+                team_id = str(team.get("team_id") or "").strip()
+                manager_guid = str(team.get("manager_guid") or "").strip()
+                team_name = str(team.get("team_name") or "").strip()
+                if team_id and team_id in id_set:
+                    team["is_current_login"] = True
+                elif manager_guid and manager_guid in guid_set:
+                    team["is_current_login"] = True
+                elif team_name and team_name.casefold() in name_set:
+                    team["is_current_login"] = True
             prev_keepers = _parse_keeper_players(prev_keepers_payload)
             prev_grouped, prev_orphans = _organize_rosters(prev_keepers)
             previous_keeper_count = sum(len(roster) for roster in prev_grouped.values())
@@ -489,6 +564,15 @@ def api_draft_keepers():
         "current_keeper_count": current_keeper_count,
         "previous_keeper_count": previous_keeper_count,
     }
+
+    if user_team_keys:
+        metadata["user_team_keys"] = user_team_keys
+    if user_team_ids:
+        metadata["user_team_ids"] = user_team_ids
+    if user_team_names:
+        metadata["user_team_names"] = user_team_names
+    if user_manager_guids:
+        metadata["user_manager_guids"] = user_manager_guids
 
     seasons: List[str] = []
     if isinstance(metadata.get("season"), str) and metadata["season"]:
