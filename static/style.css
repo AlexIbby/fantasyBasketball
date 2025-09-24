@@ -1552,6 +1552,66 @@ sup.rank{
   font-weight:600;
   color:#1e293b;
 }
+.keeper-player {
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.keeper-name-body {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.keeper-name-text {
+  font-weight:600;
+  color:#1e293b;
+  line-height:1.2;
+}
+.keeper-player-photo-wrapper {
+  position:relative;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:#e2e8f0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.keeper-player-photo-spinner {
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:2px solid rgba(148,163,184,.6);
+  border-top-color:#1d4ed8;
+  animation:keeper-photo-spin .75s linear infinite;
+}
+.keeper-player-photo {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+.keeper-player-photo-visible {
+  opacity:1;
+}
+.keeper-player-photo-ready .keeper-player-photo {
+  opacity:1;
+}
+.keeper-player-photo-fallback {
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#1d4ed8;
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:.02em;
+}
 .keeper-badge {
   display:inline-flex;
   align-items:center;
@@ -1567,6 +1627,25 @@ sup.rank{
   display:flex;
   flex-direction:column;
   gap:16px;
+}
+
+@keyframes keeper-photo-spin {
+  from {
+    transform:rotate(0);
+  }
+  to {
+    transform:rotate(360deg);
+  }
+}
+
+@media (max-width:600px) {
+  .keeper-player-photo-wrapper {
+    width:40px;
+    height:40px;
+  }
+  .keeper-player {
+    gap:10px;
+  }
 }
 .keepers-league-header h2 {
   margin:0;

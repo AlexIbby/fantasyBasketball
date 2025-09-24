@@ -247,11 +247,101 @@ export function initKeepers() {
     return {
       player_key: raw && raw.player_key ? String(raw.player_key) : '',
       player_id: raw && raw.player_id ? String(raw.player_id) : '',
+      nba_id: raw && raw.nba_id != null ? String(raw.nba_id) : '',
       name_full: raw && raw.name_full ? String(raw.name_full) : '',
       display_position: raw && raw.display_position ? String(raw.display_position) : '',
       owner_team_key: raw && raw.owner_team_key ? String(raw.owner_team_key) : '',
       badge: raw && raw.badge ? String(raw.badge) : 'Keeper'
     };
+  }
+
+  function createKeeperHeadshot(player) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'keeper-player-photo-wrapper';
+
+    const spinner = document.createElement('div');
+    spinner.className = 'keeper-player-photo-spinner';
+    wrapper.appendChild(spinner);
+
+    const finish = () => {
+      if (!wrapper.classList.contains('keeper-player-photo-ready')) {
+        wrapper.classList.add('keeper-player-photo-ready');
+      }
+      if (spinner.parentNode === wrapper) {
+        wrapper.removeChild(spinner);
+      }
+    };
+
+    const renderFallback = () => {
+      if (wrapper.querySelector('.keeper-player-photo-fallback')) {
+        finish();
+        return;
+      }
+      const fallback = document.createElement('div');
+      fallback.className = 'keeper-player-photo-fallback';
+      fallback.textContent = getKeeperInitials(player && player.name_full);
+      wrapper.appendChild(fallback);
+      finish();
+    };
+
+    const nbaId = resolveKeeperHeadshotId(player);
+    if (nbaId) {
+      const image = document.createElement('img');
+      image.className = 'keeper-player-photo';
+      image.alt = player && player.name_full ? `${player.name_full} headshot` : 'Player headshot';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.addEventListener('load', () => {
+        image.classList.add('keeper-player-photo-visible');
+        finish();
+      });
+      image.addEventListener('error', () => {
+        if (image.parentNode === wrapper) {
+          wrapper.removeChild(image);
+        }
+        renderFallback();
+      });
+      image.src = `https://cdn.nba.com/headshots/nba/latest/260x190/${nbaId}.png`;
+      wrapper.appendChild(image);
+    } else {
+      renderFallback();
+    }
+
+    return wrapper;
+  }
+
+  function resolveKeeperHeadshotId(player) {
+    if (!player) {
+      return '';
+    }
+    if (player.nba_id && /^\d+$/.test(String(player.nba_id))) {
+      return String(player.nba_id);
+    }
+    if (player.player_id && /^\d+$/.test(String(player.player_id))) {
+      return String(player.player_id);
+    }
+    if (player.player_key && typeof player.player_key === 'string') {
+      const match = player.player_key.match(/\.p\.(\d+)/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return '';
+  }
+
+  function getKeeperInitials(name) {
+    if (!name) {
+      return 'NBA';
+    }
+    const parts = String(name)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!parts.length) {
+      return 'NBA';
+    }
+    const initials = parts.slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase();
+    return initials || 'NBA';
   }
 
   function getAugmentedTeamList(source) {
@@ -727,13 +817,26 @@ export function initKeepers() {
 
       const nameCell = document.createElement('td');
       nameCell.className = 'keeper-name';
+      const playerWrapper = document.createElement('div');
+      playerWrapper.className = 'keeper-player';
+
+      playerWrapper.appendChild(createKeeperHeadshot(player));
+
+      const detailsWrapper = document.createElement('div');
+      detailsWrapper.className = 'keeper-name-body';
+
       const badge = document.createElement('span');
       badge.className = 'keeper-badge';
       badge.textContent = options.badgeLabel || player.badge || 'Keeper';
-      nameCell.appendChild(badge);
+      detailsWrapper.appendChild(badge);
+
       const nameLabel = document.createElement('span');
+      nameLabel.className = 'keeper-name-text';
       nameLabel.textContent = player.name_full || 'Unnamed Player';
-      nameCell.appendChild(nameLabel);
+      detailsWrapper.appendChild(nameLabel);
+
+      playerWrapper.appendChild(detailsWrapper);
+      nameCell.appendChild(playerWrapper);
       row.appendChild(nameCell);
 
       const posCell = document.createElement('td');

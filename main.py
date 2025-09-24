@@ -1,11 +1,11 @@
 # main.py
-import os, json, logging, time
+import os, json, logging, time, re
 from nba_api.stats.static import players as nba_static_players
 from nba_api.stats.endpoints import playerindex, PlayerDashboardByGeneralSplits
 from datetime import datetime, timezone
 import traceback # For detailed error logging
 
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Set
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple
 
 import requests
 from authlib.integrations.flask_client import OAuth
@@ -25,6 +25,92 @@ if os.getenv("FLASK_ENV", "development") == "development":
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger("fantasy-app")
+
+# ─────────────────────────── NBA player cache ─────────────────────────────
+_NBA_PLAYER_NAME_INDEX: Dict[str, List[Dict[str, Any]]] = {}
+_NBA_PLAYER_NAME_CACHE: Dict[str, Optional[int]] = {}
+_NBA_NAME_NORMALIZER = re.compile(r"[^a-z0-9]+")
+_NBA_SUFFIXES: Tuple[str, ...] = (" jr", " sr", " ii", " iii", " iv", " v")
+
+
+def _normalize_player_name(value: str) -> str:
+    if not value:
+        return ""
+    normalized = _NBA_NAME_NORMALIZER.sub(" ", value.lower()).strip()
+    if not normalized:
+        return ""
+    for suffix in _NBA_SUFFIXES:
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)].strip()
+    return normalized
+
+
+def _candidate_normalized_keys(normalized: str) -> List[str]:
+    if not normalized:
+        return []
+    parts = normalized.split()
+    candidates = [normalized]
+    if len(parts) > 2:
+        candidates.append(f"{parts[0]} {parts[-1]}")
+    squashed = normalized.replace(" ", "")
+    if squashed and squashed != normalized:
+        candidates.append(squashed)
+    return candidates
+
+
+def _ensure_nba_player_index() -> None:
+    if _NBA_PLAYER_NAME_INDEX:
+        return
+    for player in nba_static_players.get_players():
+        key = _normalize_player_name(player.get('full_name', ''))
+        if not key:
+            continue
+        _NBA_PLAYER_NAME_INDEX.setdefault(key, []).append(player)
+
+
+def _lookup_nba_player_id(full_name: str) -> Optional[int]:
+    normalized = _normalize_player_name(full_name)
+    if not normalized:
+        return None
+    if normalized in _NBA_PLAYER_NAME_CACHE:
+        return _NBA_PLAYER_NAME_CACHE[normalized]
+
+    _ensure_nba_player_index()
+
+    def _match_from_index(key: str) -> Optional[int]:
+        players = _NBA_PLAYER_NAME_INDEX.get(key)
+        if not players:
+            return None
+        for player in players:
+            try:
+                return int(player['id'])
+            except (KeyError, TypeError, ValueError):
+                continue
+        return None
+
+    nba_id = _match_from_index(normalized)
+
+    if nba_id is None:
+        for key in _candidate_normalized_keys(normalized):
+            nba_id = _match_from_index(key)
+            if nba_id is not None:
+                break
+
+    if nba_id is None:
+        matches = nba_static_players.find_players_by_full_name(full_name)
+        for match in matches:
+            key = _normalize_player_name(match.get('full_name', ''))
+            if not key:
+                continue
+            _NBA_PLAYER_NAME_INDEX.setdefault(key, []).append(match)
+            if nba_id is None:
+                try:
+                    nba_id = int(match['id'])
+                except (KeyError, TypeError, ValueError):
+                    nba_id = None
+
+    _NBA_PLAYER_NAME_CACHE[normalized] = nba_id
+    return nba_id
 
 # ─────────────────────────── Flask app ────────────────────────────────
 app = Flask(__name__)
@@ -263,6 +349,7 @@ def _parse_keeper_players(keepers_payload: Dict[str, Any]) -> List[Dict[str, Any
         if isinstance(name_block, dict):
             name_full = name_block.get("full") or " ".join(filter(None, [name_block.get("first"), name_block.get("last")]))
         display_position = _first(player_core, "display_position")
+        nba_player_id = _lookup_nba_player_id(name_full)
         keepers.append({
             "player_key": _first(player_core, "player_key"),
             "player_id": _first(player_core, "player_id"),
@@ -270,6 +357,7 @@ def _parse_keeper_players(keepers_payload: Dict[str, Any]) -> List[Dict[str, Any
             "display_position": display_position or "",
             "owner_team_key": owner_team_key,
             "badge": "Keeper",
+            "nba_id": nba_player_id,
             "is_keeper": True,
         })
     return keepers
