@@ -1716,8 +1716,15 @@ sup.rank{
   color:#1d4ed8;
 }
 .keepers-accordion-panel {
-  padding:0 20px 20px;
+  padding:20px;
   background:#f8fafc;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.keepers-accordion-panel > .keepers-team {
+  box-shadow:none;
+  border-color:#dbeafe;
 }
 .keepers-team-accordion {
   border:none;
