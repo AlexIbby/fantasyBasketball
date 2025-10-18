@@ -466,6 +466,10 @@ def dashboard():
 def about():
     return render_template("about.html")
 
+@app.route("/ironman")
+def ironman_rankings():
+    return render_template("ironman.html")
+
 # --- Yahoo API routes for dashboard data (original from prompt) ---
 @app.route("/api/scoreboard") # Matches original
 def api_scoreboard():
