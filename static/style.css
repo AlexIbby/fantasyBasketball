@@ -34,6 +34,17 @@ body{
   display:flex;
   background:#f1f5f9;
   border-bottom:1px solid #e2e8f0;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(100,116,139,.45) transparent;
+}
+.nav-tabs::-webkit-scrollbar{
+  height:6px;
+}
+.nav-tabs::-webkit-scrollbar-thumb{
+  background-color:rgba(100,116,139,.45);
+  border-radius:9999px;
 }
 .nav-tab{
   flex:1 1 0;
@@ -50,6 +61,18 @@ body{
 .nav-tab.active{
   border-bottom-color:#4299e1;
   color:#2b6cb0;
+}
+
+@media (max-width: 768px) {
+  .nav-tabs{
+    gap:8px;
+    padding:0 16px 8px;
+  }
+
+  .nav-tab{
+    flex:0 0 auto;
+    white-space:nowrap;
+  }
 }
 
 /* panes */
