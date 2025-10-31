@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============ CONFIG ============
   const CONFIG = {
     MAX_WEEKS: 26,
+    CURRENT_WEEK: 1,
     // Default categories - will be used as fallback
     COLS: [
       ['10', '3PTM', 'high'],
@@ -87,7 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
     weekly: {
       loadedTeams: [],
       selectedTeamIndex: 0,
-      userTeamIndex: 0
+      userTeamIndex: 0,
+      selectedWeek: 1,
+      currentWeek: 1
     },
     compare: {
       seasonPayload: null,
@@ -287,53 +290,70 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const r = await fetch('/api/league_settings');
         if (!r.ok) throw new Error(`API returned ${r.status}`);
-        
+
         const data = await r.json();
-        
-        const settings = data.fantasy_content.league[1]?.settings?.[0];
-        if (!settings || !settings.stat_categories || !settings.stat_categories.stats) {
-          console.warn('No stat_categories found in expected structure');
-          return false;
+        const leagueBlocks = data?.fantasy_content?.league || [];
+
+        const normalizeWeek = value => {
+          if (value === null || value === undefined) return null;
+          const raw = Array.isArray(value) ? value[0] : value;
+          const parsed = parseInt(raw, 10);
+          return Number.isNaN(parsed) ? null : parsed;
+        };
+
+        const metaBlock = leagueBlocks.find(block => block?.current_week || block?.[0]?.current_week) || leagueBlocks[0] || {};
+        let currentWeek = normalizeWeek(metaBlock?.current_week ?? metaBlock?.[0]?.current_week);
+        if (currentWeek === null) {
+          currentWeek = CONFIG.CURRENT_WEEK || 1;
         }
-        
-        const statCats = settings.stat_categories.stats;
+
+        const settingsBlock = leagueBlocks.find(block => block?.settings)?.settings?.[0];
+        if (!settingsBlock || !settingsBlock.stat_categories || !settingsBlock.stat_categories.stats) {
+          console.warn('No stat_categories found in expected structure');
+          CONFIG.CURRENT_WEEK = currentWeek;
+          return { success: true, categoriesLoaded: false, currentWeek };
+        }
+
+        const statCats = settingsBlock.stat_categories.stats;
         console.log('Found stat categories:', statCats.length);
-        
+
         const categories = [];
-        
+
         statCats.forEach(catObj => {
           const stat = catObj.stat;
           if (!stat || stat.enabled !== '1') return;
-          
+
           const id = stat.stat_id.toString();
-          
+
           // Skip 3PTA (3-point attempts) as it's rarely a scoring category
           if (id === '9') return;
-          
+
           const meta = CONFIG.STAT_METADATA[id] || {
             name: stat.name,
             display_name: stat.display_name,
             sort_order: stat.sort_order
           };
-          
+
           categories.push([
-            id, 
+            id,
             stat.display_name || stat.abbr || meta.name,
             meta.sort_order === '1' ? 'high' : 'low'
           ]);
         });
-        
-        if (categories.length > 0) {
+
+        const categoriesLoaded = categories.length > 0;
+        if (categoriesLoaded) {
           console.log('Successfully loaded league categories:', categories);
           CONFIG.COLS = categories;
-          return true;
         } else {
           console.warn('No enabled categories found in league settings');
-          return false;
         }
+
+        CONFIG.CURRENT_WEEK = currentWeek;
+        return { success: true, categoriesLoaded, currentWeek };
       } catch (e) {
         console.error('Error loading league settings:', e);
-        return false;
+        return { success: false, categoriesLoaded: false, currentWeek: CONFIG.CURRENT_WEEK || 1 };
       }
     },
 
@@ -450,8 +470,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const Renderer = {
     // Initialize week selector options
     initWeekSelector: () => {
-      for (let w = 1; w <= CONFIG.MAX_WEEKS; w++) {
-        DOM.weekly.weekSel.insertAdjacentHTML('beforeend', `<option value="${w}">${w}</option>`);
+      const { weekSel } = DOM.weekly;
+      if (!weekSel) return;
+
+      weekSel.innerHTML = '';
+      const totalWeeks = Math.max(CONFIG.MAX_WEEKS, STATE.weekly.currentWeek || CONFIG.CURRENT_WEEK || 1);
+      for (let w = 1; w <= totalWeeks; w++) {
+        weekSel.insertAdjacentHTML('beforeend', `<option value="${w}">${w}</option>`);
       }
     },
     
@@ -731,7 +756,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const API = {      // Load weekly scoreboard data
     loadWeek: async (week) => {
       const { scoreTable } = DOM.weekly;
-      
+
+      STATE.weekly.selectedWeek = week;
+      if (DOM.weekly.weekSel) {
+        DOM.weekly.weekSel.value = String(week);
+      }
+
       scoreTable.innerHTML = `
         <caption>
           <div class="trends-loading-wrapper">
@@ -820,12 +850,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============ Initialize UI ============
   const initUI = async () => {
     // Try to load league settings first
+    let leagueMeta = { currentWeek: CONFIG.CURRENT_WEEK || STATE.weekly.currentWeek || 1 };
     try {
-      await DataService.tryGetLeagueSettings();
+      const result = await DataService.tryGetLeagueSettings();
+      if (result) leagueMeta = result;
       console.log('Final CONFIG.COLS after initialization:', CONFIG.COLS);
     } catch (e) {
       console.error('Failed to load league settings:', e);
     }
+
+    const resolvedCurrentWeek = leagueMeta?.currentWeek || CONFIG.CURRENT_WEEK || STATE.weekly.currentWeek || 1;
+    STATE.weekly.currentWeek = resolvedCurrentWeek;
+    STATE.weekly.selectedWeek = resolvedCurrentWeek;
     
     // Initialize tab navigation
     document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -839,6 +875,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize week selector
     Renderer.initWeekSelector();
+    if (DOM.weekly.weekSel) {
+      DOM.weekly.weekSel.value = resolvedCurrentWeek.toString();
+    }
     
     // Set up toggle buttons for views
     DOM.weekly.cardsViewBtn?.addEventListener('click', () => Utils.switchView('cards', DOM.weekly));
@@ -850,7 +889,12 @@ document.addEventListener('DOMContentLoaded', () => {
     Utils.initResponsiveView();
     
     // Set up event listeners
-    DOM.weekly.weekSel.addEventListener('change', () => API.loadWeek(+DOM.weekly.weekSel.value));
+    DOM.weekly.weekSel?.addEventListener('change', () => {
+      const selectedWeek = parseInt(DOM.weekly.weekSel.value, 10);
+      if (Number.isNaN(selectedWeek)) return;
+      STATE.weekly.selectedWeek = selectedWeek;
+      API.loadWeek(selectedWeek);
+    });
     
     // Team selection event listeners
     DOM.weekly.teamSel?.addEventListener('change', () => {
@@ -907,7 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Load initial data
-    API.loadWeek(1);
+    API.loadWeek(resolvedCurrentWeek);
     // Also load season stats for the compare tab
     if (document.querySelector('[data-target="tab-compare"]')?.classList.contains('active')) {
       API.loadSeasonStats();
