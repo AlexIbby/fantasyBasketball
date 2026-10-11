@@ -1,5 +1,5 @@
 # main.py
-import os, json, logging, time, re
+import os, json, logging, time, re, uuid
 from nba_api.stats.static import players as nba_static_players
 from nba_api.stats.endpoints import playerindex, PlayerDashboardByGeneralSplits
 from datetime import datetime, timezone
@@ -13,6 +13,7 @@ from flask import (
     Flask, redirect, render_template, request,
     session, url_for, jsonify
 )
+from werkzeug.exceptions import HTTPException
 
 # ─────────────────────────── ENV & logging ────────────────────────────
 if os.getenv("FLASK_ENV", "development") == "development":
@@ -424,6 +425,60 @@ def handle_yahoo_auth_error(err):
     if request.path.startswith("/api/") or request.path.startswith("/debug/"):
         return jsonify({"error": "Your Yahoo session expired. Please log in again."}), 401
     return redirect(url_for("index", expired=1))
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(err):
+    # Turn unhandled crashes into a descriptive page (or JSON for /api) instead of
+    # Flask's generic "Internal Server Error". Set HIDE_ERROR_DETAILS=1 to hide the traceback.
+    if isinstance(err, HTTPException):  # 404, 405, etc. keep their normal responses
+        return err
+
+    error_id = uuid.uuid4().hex[:8]
+    log.exception("Unhandled error [%s] on %s %s", error_id, request.method, request.path)
+
+    token = session.get("token")
+    info: Dict[str, Any] = {
+        "error_id": error_id,
+        "time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "route": f"{request.method} {request.path}",
+        "error_type": type(err).__name__,
+        "message": str(err) or "(no message)",
+        # Key names only, never token values
+        "session": {
+            "logged_in": bool(token),
+            "token_fields": sorted(token.keys()) if isinstance(token, dict) else [],
+            "league_key": session.get("league_key"),
+            "team_name": session.get("team_name"),
+        },
+    }
+    # Deepest frame inside main.py = the app line that blew up
+    app_frames = [f for f in traceback.extract_tb(err.__traceback__) if os.path.basename(f.filename) == "main.py"]
+    if app_frames:
+        f = app_frames[-1]
+        info["location"] = f"main.py line {f.lineno}, in {f.name}(): {f.line}"
+    if request.method == "POST":
+        info["form_fields"] = {k: v for k, v in request.form.items()}
+
+    resp = getattr(err, "response", None)
+    if isinstance(err, requests.exceptions.RequestException) and resp is not None:
+        info["upstream"] = {
+            "status": resp.status_code,
+            "url": resp.url,
+            "body": (resp.text or "")[:3000],
+        }
+
+    show_traceback = os.getenv("HIDE_ERROR_DETAILS") != "1"
+    if show_traceback:
+        info["traceback"] = traceback.format_exc()
+
+    if request.path.startswith("/api/") or request.path.startswith("/debug/"):
+        return jsonify({"error": info["message"], "details": info}), 500
+    try:
+        return render_template("error.html", info=info), 500
+    except Exception:
+        log.exception("Error page failed to render [%s]", error_id)
+        return f"<pre>{json.dumps(info, indent=2, default=str)}</pre>", 500
 
 # NBA Season Helper (user-provided, kept from previous correct version)
 def current_nba_season():

@@ -56,3 +56,74 @@
     padding: var(--space-5);
   }
 }
+
+/* ==========================================================================
+   Error page (error.html) – shows crash details for debugging.
+   ========================================================================== */
+.error-card {
+  max-width: 760px;
+}
+
+.error-logo {
+  background: linear-gradient(135deg, #f87171, var(--color-loss-strong));
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
+  font-weight: 800;
+}
+
+.error-facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.error-facts > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.error-facts dt {
+  font-weight: 700;
+  color: var(--color-text-subtle);
+}
+
+.error-facts dd {
+  margin: 0;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.error-section-title {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-base);
+  color: var(--color-text);
+}
+
+.error-url {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.error-details summary {
+  margin: var(--space-4) 0 var(--space-2);
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.error-pre {
+  max-height: 360px;
+  margin: 0;
+  padding: var(--space-3);
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

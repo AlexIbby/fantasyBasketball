@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {% include 'partials/head_core.html' %}
+  <title>Something went wrong – Ibby's Fantasy App</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
+</head>
+<body>
+  <main class="login-container">
+    <div class="login-card error-card">
+      <div class="login-header">
+        <div class="login-logo error-logo" aria-hidden="true">!</div>
+        <h1>Something went wrong</h1>
+        <p class="login-tagline">Copy the details below when reporting this. Error ID <strong>{{ info.error_id }}</strong></p>
+      </div>
+      <div class="login-content">
+        <dl class="error-facts">
+          <div><dt>Page</dt><dd><code>{{ info.route }}</code></dd></div>
+          <div><dt>Error</dt><dd><code>{{ info.error_type }}</code>: {{ info.message }}</dd></div>
+          {% if info.location %}<div><dt>Location</dt><dd><code>{{ info.location }}</code></dd></div>{% endif %}
+          <div><dt>Time</dt><dd>{{ info.time }}</dd></div>
+          <div><dt>Session</dt><dd>
+            logged in: {{ 'yes' if info.session.logged_in else 'no' }}
+            {% if info.session.token_fields %}<br>token fields: {{ info.session.token_fields | join(', ') }}{% endif %}
+            {% if info.session.league_key %}<br>league: {{ info.session.league_key }} ({{ info.session.team_name }}){% endif %}
+          </dd></div>
+          {% if info.form_fields %}
+          <div><dt>Form</dt><dd>{% for k, v in info.form_fields.items() %}{{ k }} = "{{ v }}"{% if not loop.last %}<br>{% endif %}{% endfor %}</dd></div>
+          {% endif %}
+        </dl>
+
+        {% if info.upstream %}
+        <h2 class="error-section-title">Yahoo response (HTTP {{ info.upstream.status }})</h2>
+        <p class="error-url"><code>{{ info.upstream.url }}</code></p>
+        <pre class="error-pre">{{ info.upstream.body or '(empty body)' }}</pre>
+        {% endif %}
+
+        {% if info.traceback %}
+        <details class="error-details" open>
+          <summary>Traceback</summary>
+          <pre class="error-pre">{{ info.traceback }}</pre>
+        </details>
+        {% endif %}
+
+        <div class="form-actions">
+          <a href="{{ url_for('select') }}" class="btn btn-primary">Back to league selection</a>
+          <a href="{{ url_for('logout') }}" class="btn btn-secondary">Log out and start over</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
