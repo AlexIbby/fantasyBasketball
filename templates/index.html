@@ -17,6 +17,9 @@
         <p class="login-tagline">Deeper analytics for Yahoo head-to-head category leagues</p>
       </div>
       <div class="login-content">
+        {% if session_expired %}
+          <p class="login-alert" role="status">Your Yahoo session expired. Please log in again.</p>
+        {% endif %}
         {% if logged_in %}
           <div class="login-welcome">
             <p>You're already logged in and ready to dominate the fantasy courts!</p>

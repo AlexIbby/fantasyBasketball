@@ -362,22 +362,51 @@ def _parse_keeper_players(keepers_payload: Dict[str, Any]) -> List[Dict[str, Any
         })
     return keepers
 
-def _refresh_token() -> Dict[str, Any]: # Matches original
-    old = session.get("token", {})
-    r = yahoo.refresh_token(yahoo.refresh_token_url, refresh_token=old.get("refresh_token"))
-    session["token"] = r
+YAHOO_TOKEN_URL = "https://api.login.yahoo.com/oauth2/get_token"
+
+
+class YahooAuthError(Exception):
+    """The Yahoo token is missing or can't be renewed; the user has to log in again."""
+
+
+def _refresh_token() -> Dict[str, Any]:
+    # Authlib's Flask client has no refresh helper, so call Yahoo's token endpoint directly.
+    old = session.get("token") or {}
+    refresh = old.get("refresh_token")
+    if not refresh:
+        raise YahooAuthError("No refresh token in session")
+    resp = requests.post(
+        YAHOO_TOKEN_URL,
+        auth=(os.environ["YAHOO_CLIENT_ID"], os.environ["YAHOO_CLIENT_SECRET"]),
+        data={
+            "grant_type": "refresh_token",
+            "refresh_token": refresh,
+            "redirect_uri": url_for("callback", _external=True, _scheme="https"),
+        },
+        timeout=20,
+    )
+    if not resp.ok:
+        log.warning("Yahoo token refresh failed: %s %s", resp.status_code, resp.text[:300])
+        raise YahooAuthError(f"Token refresh failed ({resp.status_code})")
+    new = resp.json()
+    new.setdefault("refresh_token", refresh)  # Yahoo normally rotates it; keep the old one if not
+    session["token"] = new
     log.info("🔑  Yahoo token refreshed at %s", time.strftime("%H:%M:%S"))
-    return r
+    return new
 
 def yahoo_api(rel_path: str, *, _retry: bool = True) -> Dict[str, Any]: # Matches original
-    token = session["token"]
+    token = session.get("token")
+    if not token or "access_token" not in token:
+        raise YahooAuthError("Not logged in to Yahoo")
     resp = requests.get(
         f"https://fantasysports.yahooapis.com/{rel_path}",
         headers={"Authorization": f"Bearer {token['access_token']}", "Accept": "application/json"},
         params={"format": "json"},
         timeout=20,
     )
-    if resp.status_code == 401 and _retry:
+    if resp.status_code == 401:
+        if not _retry:
+            raise YahooAuthError("Yahoo rejected the refreshed token")
         _refresh_token()
         return yahoo_api(rel_path, _retry=False)
     resp.raise_for_status()
@@ -385,6 +414,16 @@ def yahoo_api(rel_path: str, *, _retry: bool = True) -> Dict[str, Any]: # Matche
     except ValueError: # Original fallback to xmltodict
         import xmltodict
         return xmltodict.parse(resp.text)
+
+
+@app.errorhandler(YahooAuthError)
+def handle_yahoo_auth_error(err):
+    # Expired/invalid Yahoo session: send the user back to log in instead of a 500 page.
+    log.info("Yahoo auth error on %s: %s", request.path, err)
+    session.pop("token", None)
+    if request.path.startswith("/api/") or request.path.startswith("/debug/"):
+        return jsonify({"error": "Your Yahoo session expired. Please log in again."}), 401
+    return redirect(url_for("index", expired=1))
 
 # NBA Season Helper (user-provided, kept from previous correct version)
 def current_nba_season():
@@ -401,7 +440,11 @@ def current_nba_season():
 # ─────────────────────────── routes (original from prompt) ───────────────────────────────────
 @app.route("/") # Matches original
 def index():
-    return render_template("index.html", logged_in=("token" in session))
+    return render_template(
+        "index.html",
+        logged_in=("token" in session),
+        session_expired=request.args.get("expired") == "1",
+    )
 
 @app.route("/login") # Reverted to your original _scheme hardcoding
 def login():
