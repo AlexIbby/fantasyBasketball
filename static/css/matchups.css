@@ -1,0 +1,459 @@
+/* ==========================================================================
+   Matchups: "Category Strengths by Week" and "Compare Teams" tabs.
+   Covers the analysis summary, the desktop stat table and the mobile cards.
+   Rows/cells are rendered by dashboard.js.
+   ========================================================================== */
+
+/* ---------- Strengths / weaknesses summary (inside .info-analysis) ---------- */
+.analysis-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.analysis-team-name {
+  grid-column: 1 / -1;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.analysis-team-name strong {
+  color: var(--color-text);
+}
+
+.analysis-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.analysis-group--win {
+  border-left: 4px solid var(--color-win-strong);
+}
+
+.analysis-group--loss {
+  border-left: 4px solid var(--color-loss-strong);
+}
+
+.analysis-group-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.analysis-group--win .analysis-group-title {
+  color: var(--color-win);
+}
+
+.analysis-group--loss .analysis-group-title {
+  color: var(--color-loss);
+}
+
+.analysis-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.analysis-empty {
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+}
+
+@media (max-width: 768px) {
+  .analysis-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Desktop stat table ---------- */
+.table-container {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 220px; /* width of the sticky team column */
+}
+
+.stat-table {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 12px 8px;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.stat-table td {
+  position: relative;
+  padding: 14px 8px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stat-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Sticky team-name column */
+.stat-table th:first-child,
+.stat-table td:first-child {
+  position: sticky;
+  left: 0;
+  width: 220px;
+  text-align: left;
+  border-right: 1px solid var(--color-border);
+}
+
+.stat-table th:first-child {
+  z-index: 3;
+  padding-left: var(--space-4);
+}
+
+.stat-table td:first-child {
+  z-index: 1;
+  padding-left: var(--space-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.stat-table th:nth-child(n + 2),
+.stat-table td:nth-child(n + 2) {
+  scroll-snap-align: start;
+}
+
+/* Row hover (kept low-specificity with :where so outcome colours win) */
+.stat-table :where(tbody tr:hover) td {
+  background: var(--color-surface-muted);
+}
+
+/* Outcome cells: the viewed team wins (green) / loses (red) the category */
+.stat-table td.better {
+  background: var(--color-win-bg);
+  color: var(--color-win);
+  font-weight: 600;
+}
+
+.stat-table td.worse {
+  background: var(--color-loss-bg);
+  color: var(--color-loss);
+  font-weight: 600;
+}
+
+/* Rank superscript in the corner of each cell */
+.stat-table sup.rank {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-text-subtle);
+  opacity: 0.85;
+}
+
+/* Score column: category record of the viewed team against that row */
+.stat-table th:last-child {
+  width: 110px;
+}
+
+.stat-table td.score-cell {
+  background: var(--color-surface-muted);
+  border-left: 1px solid var(--color-border);
+  font-weight: 800;
+  font-size: var(--text-base);
+}
+
+.stat-table td.score-cell.score-win {
+  background: var(--color-win-bg-soft);
+  color: var(--color-win);
+}
+
+.stat-table td.score-cell.score-loss {
+  background: var(--color-loss-bg-soft);
+  color: var(--color-loss);
+}
+
+.stat-table td.score-cell.score-tie {
+  color: var(--color-tie);
+}
+
+/* The team you're "viewing as" is pinned to the top row */
+.stat-table tr.selected-team-row td {
+  background: var(--color-accent-soft);
+  border-bottom: 2px solid var(--color-accent-border);
+  font-weight: 700;
+}
+
+.stat-table tr.selected-team-row td:first-child {
+  box-shadow: inset 4px 0 0 var(--color-accent);
+  color: var(--color-accent-hover);
+}
+
+.stat-table tr.selected-team-row td.score-cell::before {
+  content: "Baseline";
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/* Logged-in manager's own team gets a "YOU" tag wherever it appears */
+.stat-table tr.user-team-row td:first-child::before {
+  content: "YOU";
+  display: inline-block;
+  padding: 2px 6px;
+  margin-right: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-you);
+  color: var(--color-text-inverse);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  vertical-align: 1px;
+}
+
+.stat-table tr.user-team-row:not(.selected-team-row) td:first-child {
+  box-shadow: inset 4px 0 0 var(--color-you);
+}
+
+/* Loading / error states rendered into <caption> */
+.stat-table caption {
+  padding: var(--space-10) var(--space-4);
+  color: var(--color-text-subtle);
+  font-weight: 600;
+}
+
+.stat-table caption .trends-loading-wrapper {
+  position: static;
+  display: flex;
+  background: transparent;
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    scroll-snap-type: none;
+    scroll-padding-left: 0;
+    display: none; /* cards are the default on mobile; JS can switch */
+  }
+
+  .stat-table {
+    min-width: 800px;
+    font-size: var(--text-sm);
+  }
+
+  .stat-table th:first-child,
+  .stat-table td:first-child {
+    width: 160px;
+    padding-left: var(--space-3);
+  }
+
+  .stat-table th:last-child {
+    width: 90px;
+  }
+}
+
+/* ---------- Mobile cards ---------- */
+.cards-container {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--panel-gutter) var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .cards-container {
+    display: flex;
+  }
+}
+
+.reference-team {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-text-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.reference-team strong {
+  color: var(--color-accent-hover);
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.card-header > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-record {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-tie-bg);
+  color: var(--color-tie);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.card-record.score-win {
+  background: var(--color-win-bg);
+  color: var(--color-win);
+}
+
+.card-record.score-loss {
+  background: var(--color-loss-bg);
+  color: var(--color-loss);
+}
+
+.user-team-card {
+  border-color: var(--color-you-border);
+}
+
+.user-team-card .card-header {
+  background: var(--color-you-bg);
+  border-bottom-color: var(--color-you-border);
+}
+
+.user-team-card .card-header > span:first-child::before {
+  content: "YOU";
+  display: inline-block;
+  padding: 2px 6px;
+  margin-right: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-you);
+  color: var(--color-text-inverse);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  vertical-align: 1px;
+}
+
+.card-content {
+  padding: var(--space-3);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-item .stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.stat-item .stat-value {
+  position: relative;
+  display: inline-block;
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.stat-item .stat-rank {
+  margin-left: 2px;
+  font-size: 0.65em;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: super;
+  color: var(--color-text-subtle);
+}
+
+.stat-item .comparison-indicator {
+  min-height: 1em;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-subtle);
+}
+
+.stat-item.better {
+  border-color: var(--color-win-border);
+  background: var(--color-win-bg);
+}
+
+.stat-item.better .stat-value,
+.stat-item.better .comparison-indicator {
+  color: var(--color-win);
+}
+
+.stat-item.worse {
+  border-color: var(--color-loss-border);
+  background: var(--color-loss-bg);
+}
+
+.stat-item.worse .stat-value,
+.stat-item.worse .comparison-indicator {
+  color: var(--color-loss);
+}

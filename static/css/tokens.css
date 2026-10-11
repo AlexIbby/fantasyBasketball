@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Design tokens
+   Every colour, spacing step, radius and shadow used by the app lives here.
+   Feature stylesheets should reference these variables instead of raw values.
+
+   Breakpoints (CSS variables can't be used inside media queries):
+     --bp-mobile : max-width 768px  (matches the JS card/table switch)
+     --bp-small  : max-width 480px
+   ========================================================================== */
+:root {
+  /* Brand */
+  --color-brand-900: #0b1f3a;
+  --color-brand-800: #112a4d;
+  --color-brand-700: #1a365d;
+  --color-brand-600: #24497d;
+  --color-brand-500: #31609f;
+
+  /* Interactive accent */
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-soft: #eff6ff;
+  --color-accent-softer: #f5f9ff;
+  --color-accent-border: #bfdbfe;
+  --color-accent-ring: rgba(37, 99, 235, 0.25);
+  --color-orange: #f97316;
+
+  /* Neutrals */
+  --color-bg: #eef2f7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-surface-sunken: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-text: #0f172a;
+  --color-text-body: #334155;
+  --color-text-muted: #475569;
+  --color-text-subtle: #64748b;
+  --color-text-faint: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  /* Outcomes: green = good for you, red = bad for you */
+  --color-win: #166534;
+  --color-win-strong: #16a34a;
+  --color-win-bg: #dcfce7;
+  --color-win-bg-soft: #f0fdf4;
+  --color-win-border: #86efac;
+  --color-loss: #991b1b;
+  --color-loss-strong: #dc2626;
+  --color-loss-bg: #fee2e2;
+  --color-loss-bg-soft: #fef2f2;
+  --color-loss-border: #fca5a5;
+  --color-tie: #475569;
+  --color-tie-bg: #f1f5f9;
+  --color-warn: #92400e;
+  --color-warn-strong: #d97706;
+  --color-warn-bg: #fef3c7;
+  --color-warn-border: #fde68a;
+
+  /* "Your team" marker – deliberately not green so it never reads as a win */
+  --color-you: #6d28d9;
+  --color-you-bg: #f5f3ff;
+  --color-you-border: #c4b5fd;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  /* Spacing (4px scale) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Gutter used for content inside a tab panel */
+  --panel-gutter: var(--space-6);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.14);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --duration: 160ms;
+
+  /* Layout */
+  --content-max: 1320px;
+  --navbar-height: 60px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --panel-gutter: var(--space-4);
+  }
+}

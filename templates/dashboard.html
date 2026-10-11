@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  {% include 'partials/head_core.html' %}
   <title>{{ team_name }} – Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='trade_analyzer.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/matchups.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/trends.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/draft.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/trade.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
   <script defer src="{{ url_for('static', filename='trends.js') }}"></script>
@@ -16,24 +20,9 @@
   <script defer src="{{ url_for('static', filename='trade_analyzer.js') }}"></script>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar">
-      <a href="{{ url_for('dashboard') }}" class="navbar-brand">Ibby's Fantasy App</a>
-    <div class="navbar-links">
-      <a href="{{ url_for('dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('about') }}">About</a>
-      <a href="{{ url_for('ironman_rankings') }}" target="_blank" rel="noopener">Ironman Rankings</a>
-      <a href="https://github.com/AlexIbby/fantasyBasketball" target="_blank">GitHub</a>
-      <a href="{{ url_for('logout') }}">Logout</a>
-    </div>
-    <button class="hamburger">
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-    </button>
-  </nav>
-  <div class="overlay"></div>
-  
+  {% set active_page = 'dashboard' %}
+  {% include 'partials/navbar.html' %}
+
   <div class="container">
     <!-- header -->
     <header class="header">
@@ -45,34 +34,40 @@
           <img id="teamLogo" class="team-logo" src="" alt="Team Logo" style="display: none;">
         </div>
         <div class="team-info">
+          <span class="team-eyebrow">Fantasy Basketball Dashboard</span>
           <h1 class="team-title">{{ team_name }}</h1>
           <span class="league-id">League ID: {{ league_key }}</span>
         </div>
       </div>
-    </header>    <!-- nav tabs -->
-    <nav class="nav-tabs">
+    </header>
+
+    <!-- nav tabs -->
+    <nav class="nav-tabs" aria-label="Dashboard sections">
       <button class="nav-tab active" data-target="tab-cat">Category Strengths by Week</button>
       <button class="nav-tab"        data-target="tab-compare">Compare Teams</button>
       <button class="nav-tab"        data-target="tab-trends">Trends</button>
       <button class="nav-tab"        data-target="tab-draft">Draft</button>
-      <button class="nav-tab"        data-target="tab-trade">Trade Analyzer</button>    </nav><!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
+      <button class="nav-tab"        data-target="tab-trade">Trade Analyzer</button>
+    </nav>
+
+    <!-- ═══════════ CATEGORY STRENGTHS ═══════════ -->
     <section id="tab-cat" class="tab-pane active">
       <div class="info-box">
         <div class="info-main">
-          <p>Compare performance against <em>every</em> team this week.</p>
+          <p>See how your week stacks up against <em>every</em> team in the league, not just your opponent.</p>
         </div>
         <div id="weeklyAnalysisSummary" class="info-analysis"></div>
       </div>
 
       <div class="filters">
         <div class="week-selector">
-          <span class="week-label">Week:</span>
-          <select id="weekSel"></select>
+          <span class="week-label">Week</span>
+          <select id="weekSel" aria-label="Week"></select>
         </div>
 
         <div class="team-selector">
-          <span class="team-label">Viewing as:</span>
-          <select id="weeklyTeamSel" class="team-select">
+          <span class="team-label">Viewing as</span>
+          <select id="weeklyTeamSel" class="team-select" aria-label="Viewing as">
             <option value="">Loading teams...</option>
           </select>
         </div>
@@ -83,149 +78,164 @@
         </label>
 
         <!-- view-toggle appears on mobile -->
-        <div class="view-toggle">
-          <button id="cardsView" class="active">Cards</button>
-          <button id="tableView">Table</button>
+        <div class="view-toggle segmented" role="group" aria-label="Layout">
+          <button id="cardsView" class="active" type="button">Cards</button>
+          <button id="tableView" type="button">Table</button>
         </div>
+      </div>
+
+      <div class="legend" aria-label="Colour legend">
+        <span class="legend-item"><span class="legend-swatch legend-swatch--win"></span>Category win</span>
+        <span class="legend-item"><span class="legend-swatch legend-swatch--loss"></span>Category loss</span>
+        <span class="legend-item"><span class="legend-swatch legend-swatch--you"></span>Baseline ("Viewing as" team)</span>
+        <span class="legend-item">Score = categories won – lost</span>
       </div>
 
       <!-- desktop table -->
       <div class="table-container">
-        <table id="scoreTable"></table>
+        <table id="scoreTable" class="stat-table"></table>
       </div>
 
       <!-- mobile cards -->
       <div class="cards-container" id="cardsContainer"></div>
     </section>
+
     <!-- ═══════════ COMPARE TEAMS ═══════════ -->
     <section id="tab-compare" class="tab-pane">
       <div class="info-box">
         <div class="info-main">
-          <p>Compare every team's <strong>season totals</strong> or their <strong>per-week averages</strong>. Switch using the <strong>view</strong> menu below.</p>
+          <p>Compare every team's <strong>season totals</strong> or <strong>per-week averages</strong>. Switch using the <strong>View</strong> menu below.</p>
         </div>
         <div id="seasonAnalysisSummary" class="info-analysis"></div>
       </div>
 
       <div class="filters">
         <div class="week-selector">
-          <span class="week-label">View:</span>
-          <select id="viewSel">
+          <span class="week-label">View</span>
+          <select id="viewSel" aria-label="View">
             <option value="tot" selected>Totals</option>
             <option value="avg">Averages</option>
           </select>
         </div>
 
         <div class="team-selector">
-          <span class="team-label">Viewing as:</span>
-          <select id="compareTeamSel" class="team-select">
+          <span class="team-label">Viewing as</span>
+          <select id="compareTeamSel" class="team-select" aria-label="Viewing as">
             <option value="">Loading teams...</option>
           </select>
         </div>
 
-        <!-- Added checkbox for showing ranks in the Compare Teams tab -->
         <label class="checkbox-container">
-          <input type="checkbox" id="showRanks" checked>
+          <input type="checkbox" id="showRanksCompare" checked>
           Show team ranks per category
         </label>
 
         <!-- view-toggle appears on mobile -->
-        <div class="view-toggle">
-          <button id="compareCardsView" class="active">Cards</button>
-          <button id="compareTableView">Table</button>
+        <div class="view-toggle segmented" role="group" aria-label="Layout">
+          <button id="compareCardsView" class="active" type="button">Cards</button>
+          <button id="compareTableView" type="button">Table</button>
         </div>
+      </div>
+
+      <div class="legend" aria-label="Colour legend">
+        <span class="legend-item"><span class="legend-swatch legend-swatch--win"></span>Category win</span>
+        <span class="legend-item"><span class="legend-swatch legend-swatch--loss"></span>Category loss</span>
+        <span class="legend-item"><span class="legend-swatch legend-swatch--you"></span>Baseline ("Viewing as" team)</span>
+        <span class="legend-item">Score = categories won – lost</span>
       </div>
 
       <!-- desktop table -->
       <div class="table-container">
-        <table id="compareTable"></table>
+        <table id="compareTable" class="stat-table"></table>
       </div>
 
       <!-- mobile cards -->
       <div class="cards-container" id="compareCardsContainer"></div>
     </section>
+
     <!-- ═══════════ TRENDS ═══════════ -->
     <section id="tab-trends" class="tab-pane">
 
       <!-- Team Stats Trends Section -->
       <div class="section-header">
         <h3>Team Statistical Trends</h3>
-        <p>View how your team's performance has changed over the season</p>
+        <p>How your team's production has moved week to week this season.</p>
       </div>
 
       <div id="trendsContainer" class="trends-container">
         <!-- Initial load button -->
         <button id="loadTrendsBtn" class="btn btn-primary load-trends-btn">Load Trends Data</button>
-        
+
         <div id="trendsLoadingWrapper" class="trends-loading-wrapper">
           <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
           <div id="trendsLoadingText" class="trends-loading-text">Gathering Trends</div>
-          
+
           <!-- Progress bar for week loading -->
           <div id="loadingProgressBar" class="loading-progress-bar">
             <div id="loadingProgress" class="loading-progress"></div>
           </div>
-          
+
           <!-- Current week indicator -->
           <div id="loadingCurrentWeek" class="loading-current-week">Week 0 of 0</div>
         </div>
-        
+
         <!-- Chart container (initially hidden) -->
         <div id="chartContainer" class="chart-container">
           <div class="filters trends-filters">
             <div class="stat-selector">
-              <span class="stat-label">Statistic:</span>
-              <select id="statSelector" class="form-select"></select>
+              <span class="stat-label">Statistic</span>
+              <select id="statSelector" class="form-select" aria-label="Statistic"></select>
             </div>
           </div>
-          
+
           <div class="trends-chart-wrapper">
             <canvas id="trendsChart"></canvas>
           </div>
         </div>
       </div>
-      
+
       <!-- Player Contributions Section -->
       <div class="section-header">
         <h3>Player Contributions</h3>
-        <p>Analyze how individual players contribute to your team's statistics</p>
+        <p>Which players are driving each of your categories.</p>
       </div>
-      
+
       <div id="contributionsContainer" class="trends-container">
         <!-- Initial load button -->
         <button id="loadContributionsBtn" class="btn btn-primary load-trends-btn">Load Player Data</button>
-        
+
         <div id="contributionsLoadingWrapper" class="trends-loading-wrapper">
           <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
           <div id="contributionsLoadingText" class="trends-loading-text">Gathering Player Data</div>
-          
+
           <!-- Progress bar for loading -->
           <div id="contributionsLoadingProgress" class="loading-progress-bar">
             <div id="contributionsProgressBar" class="loading-progress"></div>
           </div>
-          
+
           <!-- Current week indicator -->
           <div id="contributionsCurrentWeek" class="loading-current-week">Week 0 of 0</div>
         </div>
-        
+
         <!-- Chart container (initially hidden) -->
         <div id="contributionsChartContainer" class="chart-container">
           <div class="filters contributions-filters">
-            <div class="view-mode-selector">
-              <button id="contributionWeeklyView" class="view-btn active">Weekly</button>
-              <button id="contributionSeasonView" class="view-btn">Season</button>
+            <div class="view-mode-selector segmented" role="group" aria-label="Time range">
+              <button id="contributionWeeklyView" class="view-btn active" type="button">Weekly</button>
+              <button id="contributionSeasonView" class="view-btn" type="button">Season</button>
             </div>
-            
+
             <div class="stat-selector">
-              <span class="stat-label">Statistic:</span>
-              <select id="contributionStatSelector" class="form-select"></select>
+              <span class="stat-label">Statistic</span>
+              <select id="contributionStatSelector" class="form-select" aria-label="Statistic"></select>
             </div>
-            
+
             <div class="week-selector">
-              <span class="stat-label">Week:</span>
-              <select id="contributionWeekSelector" class="form-select"></select>
+              <span class="stat-label">Week</span>
+              <select id="contributionWeekSelector" class="form-select" aria-label="Week"></select>
             </div>
           </div>
-          
+
           <div class="contributions-chart-wrapper">
             <canvas id="contributionsChart"></canvas>
           </div>
@@ -233,8 +243,7 @@
       </div>
     </section>
 
-    <!-- ═══════════ TRADE ANALYZER ═══════════ -->
-    <!-- Draft Tab -->
+    <!-- ═══════════ DRAFT ═══════════ -->
     <section id="tab-draft" class="tab-pane">
       <div class="info-box">
         <div class="info-main">
@@ -289,35 +298,32 @@
       </div>
     </section>
 
+    <!-- ═══════════ TRADE ANALYZER ═══════════ -->
     <section id="tab-trade" class="tab-pane">
       <div class="info-box">
-        <p>Analyze potential trades to see how they would impact your team's performance. Add players to both sides of the trade and click <strong>Evaluate Trade</strong>.</p>
+        <p>See how a trade would change your team's categories. Add players to both sides, then select <strong>Evaluate Trade</strong>.</p>
       </div>
 
       <div class="trade-analyzer-container">
         <div class="trade-sides-container">
           <!-- Trading Away Column -->
-          <div class="trade-column">
-            <div class="trade-column-title">TRADING AWAY</div>
+          <div class="trade-column trade-column--away">
+            <div class="trade-column-title">Trading Away</div>
             <div class="player-search-container">
-              <input type="text" class="player-search" id="tradingPlayerSearch" placeholder="Player Name">
+              <input type="text" class="player-search" id="tradingPlayerSearch" placeholder="Search for a player" aria-label="Search player to trade away" autocomplete="off">
               <div class="player-dropdown"></div>
             </div>
-            <div id="tradingPlayersContainer" class="players-container">
-              <!-- Player cards will be added here by JS -->
-            </div>
+            <div id="tradingPlayersContainer" class="players-container"></div>
           </div>
 
           <!-- Acquiring Column -->
-          <div class="trade-column">
-            <div class="trade-column-title">ACQUIRING</div>
+          <div class="trade-column trade-column--get">
+            <div class="trade-column-title">Acquiring</div>
             <div class="player-search-container">
-              <input type="text" class="player-search" id="acquiringPlayerSearch" placeholder="Player Name">
+              <input type="text" class="player-search" id="acquiringPlayerSearch" placeholder="Search for a player" aria-label="Search player to acquire" autocomplete="off">
               <div class="player-dropdown"></div>
             </div>
-            <div id="acquiringPlayersContainer" class="players-container">
-              <!-- Player cards will be added here by JS -->
-            </div>
+            <div id="acquiringPlayersContainer" class="players-container"></div>
           </div>
         </div>
 
@@ -331,7 +337,7 @@
       </div>
     </section>
 
-  </div> <!-- This closes div.container -->
+  </div>
 
 </body>
 </html>

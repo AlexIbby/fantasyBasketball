@@ -1,0 +1,143 @@
+/* ==========================================================================
+   Trends tab: team trend line chart and player contributions pie chart.
+   Visibility of loaders/charts is driven by trends.js and
+   player_contributions.js via inline display styles.
+   ========================================================================== */
+.trends-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  margin: var(--space-3) var(--panel-gutter) 0;
+  padding: var(--space-5);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+/* Once a chart is showing, drop the empty-state frame */
+.trends-container:has(> .chart-container[style*="block"]) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 0;
+}
+
+.load-trends-btn {
+  min-height: 52px;
+  padding: 14px 28px;
+  font-size: var(--text-base);
+}
+
+/* Full-panel loading overlay */
+.trends-loading-wrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.trends-loading-text {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.loading-progress-bar {
+  display: none;
+  width: 80%;
+  max-width: 300px;
+  height: 8px;
+  margin-top: var(--space-3);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+.loading-progress {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+  transition: width 0.3s ease;
+}
+
+.loading-current-week {
+  display: none;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-subtle);
+}
+
+/* Chart area */
+.chart-container {
+  display: none;
+  width: 100%;
+}
+
+.trends-filters,
+.contributions-filters {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.trends-filters {
+  justify-content: flex-start;
+}
+
+.contributions-filters {
+  justify-content: space-between;
+}
+
+.trends-chart-wrapper,
+.contributions-chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 450px;
+  margin-top: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+@media (max-width: 768px) {
+  .trends-container {
+    min-height: 280px;
+    padding: var(--space-4);
+  }
+
+  .trends-chart-wrapper {
+    height: 340px;
+    padding: var(--space-3);
+  }
+
+  /* Taller on mobile so the legend fits */
+  .contributions-chart-wrapper {
+    height: 500px;
+    padding: var(--space-3);
+  }
+
+  .trends-filters,
+  .contributions-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .contributions-filters .view-mode-selector {
+    width: 100%;
+  }
+}

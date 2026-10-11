@@ -151,6 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       return `${w} - ${l}`;
     },
+
+    // CSS class for a "w - l" record string: score-win / score-loss / score-tie
+    recordClass: rec => {
+      const [w, l] = String(rec).split('-').map(n => parseInt(n, 10));
+      if (isNaN(w) || isNaN(l) || w === l) return 'score-tie';
+      return w > l ? 'score-win' : 'score-loss';
+    },
     
     // Switch between table and card views
     switchView: (mode, elements) => {
@@ -243,28 +250,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!analysis) return '';
 
       const { weakCategories, strongCategories, teamName } = analysis;
+      const chips = (cats, tone) => cats.slice(0, 3).map(cat =>
+        `<span class="cat-chip cat-chip--${tone}">${cat.name} <span class="cat-chip-rank">${Utils.ordinal(cat.rank)}</span></span>`
+      ).join('');
+
       let summary = `<div class="analysis-content">`;
 
       // Add team name indicator
       summary += `<div class="analysis-team-name">Analysis for: <strong>${teamName}</strong></div>`;
 
-      if (strongCategories.length > 0) {
-        const strongList = strongCategories.slice(0, 3).map(cat => 
-          `<strong>${cat.name}</strong> (${Utils.ordinal(cat.rank)})`
-        ).join(', ');
-        summary += `<div class="strength-summary">
-          <span class="highlight positive">Strongest categories:</span> ${strongList}
+      summary += `<div class="analysis-group analysis-group--win strength-summary">
+          <span class="analysis-group-title">Strongest categories</span>
+          ${strongCategories.length
+            ? `<div class="analysis-chips">${chips(strongCategories, 'win')}</div>`
+            : `<span class="analysis-empty">No top-tier categories yet</span>`}
         </div>`;
-      }
 
-      if (weakCategories.length > 0) {
-        const weakList = weakCategories.slice(0, 3).map(cat => 
-          `<strong>${cat.name}</strong> (${Utils.ordinal(cat.rank)})`
-        ).join(', ');
-        summary += `<div class="weakness-summary">
-          <span class="highlight negative">Areas to improve:</span> ${weakList}
+      summary += `<div class="analysis-group analysis-group--loss weakness-summary">
+          <span class="analysis-group-title">Areas to improve</span>
+          ${weakCategories.length
+            ? `<div class="analysis-chips">${chips(weakCategories, 'loss')}</div>`
+            : `<span class="analysis-empty">No bottom-tier categories</span>`}
         </div>`;
-      }
 
       summary += `</div>`;
       return summary;
@@ -548,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add score cell
         const rec = Utils.recordVsUser(baseTeam.statMap, t.statMap);
-        tr.insertAdjacentHTML('beforeend', `<td class="score-cell">${rec}</td>`);
+        tr.insertAdjacentHTML('beforeend', `<td class="score-cell ${Utils.recordClass(rec)}">${rec}</td>`);
         tbody.appendChild(tr);
       });
     },
@@ -582,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
           <div class="card-header">
             <span>${t.name}</span>
-            <span class="card-record">${rec}</span>
+            <span class="card-record ${Utils.recordClass(rec)}">${rec}</span>
           </div>
           <div class="card-content"><div class="stats-grid"></div></div>`;
         
@@ -680,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add score cell
         const rec = Utils.recordVsUser(baseTeam.statMap, t.statMap);
-        tr.insertAdjacentHTML('beforeend', `<td class="score-cell">${rec}</td>`);
+        tr.insertAdjacentHTML('beforeend', `<td class="score-cell ${Utils.recordClass(rec)}">${rec}</td>`);
         tbody.appendChild(tr);
       });
     },
@@ -714,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
           <div class="card-header">
             <span>${t.name}</span>
-            <span class="card-record">${rec}</span>
+            <span class="card-record ${Utils.recordClass(rec)}">${rec}</span>
           </div>
           <div class="card-content"><div class="stats-grid"></div></div>`;
         

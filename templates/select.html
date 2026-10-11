@@ -1,22 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">  <title>Select Fantasy League</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='login_select.css') }}">
+  {% include 'partials/head_core.html' %}
+  <title>Select Fantasy League</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
-  <div class="container login-container">
+  <main class="login-container">
     <div class="login-card select-card">
       <div class="login-header">
+        <div class="login-logo" aria-hidden="true">🏀</div>
         <h1>Select Your Team</h1>
+        <p class="login-tagline">Pick the league you want to analyze</p>
       </div>
       <div class="login-content">
         <div class="select-form">
           <form id="leagueForm" action="{{ url_for('greet') }}" method="post">
             <div class="form-group">
-              <label for="team">Your Teams:</label>
+              <label for="team">Your teams</label>
               <select id="team" name="league_key" class="form-select">
                 <option value="" disabled selected>— Select your team —</option>
                 {% for l in leagues %}
@@ -28,7 +30,7 @@
             </div>
 
             <input type="hidden" name="team_name" id="teamField">
-            
+
             <div class="form-actions">
               <button class="btn btn-primary" type="submit">Continue to Dashboard</button>
               <a href="{{ url_for('logout') }}" class="btn btn-secondary">Log out</a>
@@ -37,13 +39,13 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const teamSelector = document.getElementById('team');
       const teamField = document.getElementById('teamField');
-    
+
       teamSelector.addEventListener('change', () => {
         const selectedOption = teamSelector.options[teamSelector.selectedIndex];
         teamField.value = selectedOption.dataset.team;

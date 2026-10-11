@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Navbar: top bar, slide-in mobile menu and its backdrop.
+   Behaviour lives in navbar.js (toggles .active on .navbar-links/.overlay).
+   ========================================================================== */
+.navbar {
+  position: relative;
+  z-index: 100; /* keeps the mobile panel above .overlay (99) */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--navbar-height);
+  padding: 0 max(var(--space-6), calc((100% - var(--content-max)) / 2));
+  background: var(--color-brand-900);
+  color: var(--color-text-inverse);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), var(--shadow-sm);
+}
+
+.navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-inverse);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navbar-brand:hover {
+  color: var(--color-text-inverse);
+}
+
+/* Little basketball mark drawn in CSS */
+.navbar-brand-mark {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(17, 24, 39, 0.75) 46%, rgba(17, 24, 39, 0.75) 54%, transparent 54%),
+    linear-gradient(0deg, transparent 46%, rgba(17, 24, 39, 0.75) 46%, rgba(17, 24, 39, 0.75) 54%, transparent 54%),
+    var(--color-orange);
+  box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.15);
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navbar-links a {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.navbar-links a:hover,
+.navbar-links a.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-inverse);
+}
+
+.hamburger {
+  display: none;
+  padding: 10px;
+  margin-right: -10px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.hamburger-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  margin: 5px 0;
+  border-radius: 2px;
+  background-color: var(--color-text-inverse);
+  transition: transform 200ms var(--ease), opacity 200ms var(--ease);
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 var(--space-4);
+  }
+
+  .navbar-links {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(80vw, 320px);
+    height: 100vh;
+    height: 100dvh;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    padding: calc(var(--navbar-height) + var(--space-4)) var(--space-4) var(--space-6);
+    background: var(--color-brand-900);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 280ms var(--ease), visibility 0s linear 280ms;
+  }
+
+  .navbar-links.active {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 280ms var(--ease);
+  }
+
+  .navbar-links a {
+    padding: 14px 16px;
+    font-size: var(--text-base);
+  }
+
+  .hamburger {
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Morph the hamburger into an X while the menu is open */
+  .navbar-links.active + .hamburger .hamburger-line:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+  .navbar-links.active + .hamburger .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+
+  .navbar-links.active + .hamburger .hamburger-line:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    display: none;
+    background: rgba(11, 31, 58, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  .overlay.active {
+    display: block;
+  }
+}

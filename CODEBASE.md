@@ -93,9 +93,15 @@ All endpoints require the Yahoo token in session; most also require `league_key`
 - `select.js`: light enhancement for the legacy select flow; the inline script in `select.html` duplicates this behavior but the file remains for older templates.
 
 ### Styling Assets
-- `static/style.css`: global layout, card/table styling, responsive behavior shared across tabs.
-- `static/login_select.css`: shared look for login and league selection pages.
-- `static/trade_analyzer.css`: dedicated styles for the trade UI columns, cards, and results panel.
+- `static/css/`: modular stylesheets, loaded per page in this order:
+  - `tokens.css` - design tokens (colours, spacing, radii, shadows, type). Use these variables instead of raw values.
+  - `base.css` - reset, body defaults, `[hidden]`, utilities. Shared by every page, including Ironman.
+  - `components.css` - buttons, form controls, segmented toggles, chips, spinners, messages.
+  - `navbar.css` - top bar and slide-in mobile menu.
+  - `layout.css` - page shell, team header, dashboard tabs, panels, toolbar, legend, section headings.
+  - Feature files: `matchups.css` (weekly/compare tables + mobile cards), `trends.css`, `draft.css`, `trade.css`, `auth.css` (login/select), `pages.css` (About).
+- `static/ironman/styles.css`: self-contained styles for the Ironman page (loads only tokens/base/navbar from the shared set).
+- `templates/partials/`: `head_core.html` (favicon, font, tokens, base) and `navbar.html` (set `active_page` before including).
 - `static/trade_analyzer.js` also expects `Fantasy App Icon.png` and other imagery for branding; `team_logo.js` handles Yahoo-provided images.
 
 ### Frontend ? Backend Contracts

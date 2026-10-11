@@ -125,12 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     generateChartColors: () => ({
-      borderColor:              '#4299e1',
-      backgroundColor:          'rgba(66,153,225,.2)',
-      pointBackgroundColor:     '#4299e1',
+      borderColor:              '#2563eb',
+      backgroundColor:          'rgba(37,99,235,.15)',
+      pointBackgroundColor:     '#2563eb',
       pointBorderColor:         '#fff',
       pointHoverBackgroundColor:'#fff',
-      pointHoverBorderColor:    '#3182ce'
+      pointHoverBorderColor:    '#1d4ed8'
     }),
 
     updateLoadingMessage: (msg, done = null, total = null) => {
